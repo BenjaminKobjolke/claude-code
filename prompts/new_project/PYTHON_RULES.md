@@ -355,6 +355,50 @@ self._localization = Localization(
 
 ---
 
+## Project Setup Scripts
+
+Copy the setup batch files from:
+`D:\GIT\BenjaminKobjolke\claude-code\prompts\new_project\python_setup_files`
+
+### install.bat
+
+Initial project setup:
+
+- Checks if `uv` is installed
+- Creates virtual environment via `uv sync --all-extras`
+- Runs tests to verify setup
+
+### update.bat
+
+Update all dependencies:
+
+- Updates lock file with `uv lock --upgrade`
+- Syncs updated dependencies
+- Runs linting checks (`ruff`, `mypy`)
+- Runs tests to verify compatibility
+
+### tools/tests.bat
+
+Run the test suite:
+
+- Runs `pytest tests/ -v` with verbose output
+- Shows pass/fail summary
+
+### Usage
+
+```bash
+# First time setup
+install.bat
+
+# Run tests
+tools\tests.bat
+
+# Update dependencies
+update.bat
+```
+
+---
+
 # 5 Essential Additional Rules (must-have)
 
 ## 1) Use `pyproject.toml` as the single source of truth
@@ -431,3 +475,31 @@ Rules:
 * Run tests in CI on every push.
 
 ---
+
+## 6) README.md is Mandatory
+
+Every project must have a `README.md` file in the root directory. It should include:
+
+* Project name and description
+* Installation/setup instructions
+* Usage examples
+* Dependencies and requirements
+
+---
+
+## 7) Required Batch Files
+
+Every project must include these batch files:
+
+* `start.bat` - In the root directory, starts the application
+* `tools/tests.bat` - Runs the test suite
+
+---
+
+## 8) Don't Repeat Yourself (DRY)
+
+Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable function, class, or module.
+
+* Duplicate code is harder to maintain and leads to bugs
+* Extract shared logic into helper functions or base classes
+* Use constants for repeated values (see String Constants section)

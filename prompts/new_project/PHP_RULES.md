@@ -1,5 +1,19 @@
 # PHP Rules
 
+## PHP Version
+
+Use PHP 8.4 for all projects. Set the requirement in `composer.json`:
+
+```json
+{
+    "require": {
+        "php": "^8.4"
+    }
+}
+```
+
+---
+
 ## String Constants
 
 STRING defines should be in separate classes.
@@ -332,3 +346,138 @@ $this->localization = new Localization([
 ### Reference
 
 Full documentation: D:\GIT\BenjaminKobjolke\php-localization\README.md
+
+---
+
+## Essential Rules
+
+### README.md is Mandatory
+
+Every project must have a `README.md` file in the root directory. It should include:
+
+- Project name and description
+- Installation/setup instructions
+- Usage examples
+- Dependencies and requirements
+
+---
+
+### Required Batch Files
+
+Every project must include:
+
+- `tools/tests.bat` - Runs the test suite
+
+---
+
+### Don't Repeat Yourself (DRY)
+
+Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable function, class, or trait.
+
+- Duplicate code is harder to maintain and leads to bugs
+- Extract shared logic into helper methods or base classes
+- Use constants for repeated values (see String Constants section)
+
+---
+
+### Confirm Dependency Versions
+
+Before adding any new Composer package or library, confirm the version with the user to ensure we use up-to-date dependencies.
+
+- Do not assume which version to use
+- Ask the user to verify the latest stable version
+- Avoid outdated packages that may have security vulnerabilities or missing features
+
+---
+
+### Configuration Files
+
+Use plain PHP config files instead of `.env` files. Do not use `vlucas/phpdotenv`.
+
+#### Structure
+
+```
+project/
+├── config/
+│   ├── app.php           # General application settings (gitignored)
+│   ├── app.php.example   # Template for app.php
+│   ├── database.php      # Database connection settings (gitignored)
+│   └── database.php.example  # Template for database.php
+```
+
+#### config/app.php.example
+
+```php
+<?php
+
+declare(strict_types=1);
+
+return [
+    'jwt_secret' => 'your-secret-key-change-in-production',
+    'jwt_lifetime' => 86400,
+    'debug' => true,
+];
+```
+
+#### config/database.php.example
+
+```php
+<?php
+
+declare(strict_types=1);
+
+use Cycle\Database\Config;
+
+$dbHost = 'localhost';
+$dbPort = 3306;
+$dbName = 'your_database';
+$dbUser = 'root';
+$dbPass = '';
+
+return new Config\DatabaseConfig([
+    'default' => 'default',
+    'databases' => [
+        'default' => ['connection' => 'mysql'],
+    ],
+    'connections' => [
+        'mysql' => new Config\MySQLDriverConfig(
+            connection: new Config\MySQL\TcpConnectionConfig(
+                database: $dbName,
+                host: $dbHost,
+                port: $dbPort,
+                user: $dbUser,
+                password: $dbPass,
+            ),
+            queryCache: true,
+        ),
+    ],
+]);
+```
+
+#### Usage in Code
+
+```php
+// Load app config
+$config = require __DIR__ . '/../config/app.php';
+$jwtSecret = $config['jwt_secret'];
+
+// Load database config (returns DatabaseConfig object)
+$dbConfig = require __DIR__ . '/../config/database.php';
+```
+
+#### .gitignore
+
+Always exclude the actual config files, only commit the examples:
+
+```
+config/app.php
+config/database.php
+```
+
+#### Setup Instructions (for README.md)
+
+```bash
+cp config/app.php.example config/app.php
+cp config/database.php.example config/database.php
+# Edit both files with your credentials
+```

@@ -503,3 +503,13 @@ Avoid code duplication. If the same logic appears in multiple places, extract it
 * Duplicate code is harder to maintain and leads to bugs
 * Extract shared logic into helper functions or base classes
 * Use constants for repeated values (see String Constants section)
+
+---
+
+## 9) Confirm Dependency Versions
+
+Before adding any new package or library, confirm the version with the user to ensure we use up-to-date dependencies.
+
+* Do not assume which version to use
+* Ask the user to verify the latest stable version
+* Avoid outdated packages that may have security vulnerabilities or missing features

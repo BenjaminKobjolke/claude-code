@@ -316,12 +316,18 @@ project/
 │   └── images/                 # Image assets
 ├── lib/
 │   ├── config/
+│   │   ├── app_config.dart     # API URLs, timeouts
 │   │   ├── constants.dart      # App constants
 │   │   └── translation_keys.dart
-│   ├── models/                 # Data models
-│   ├── services/               # Business logic / API
+│   ├── models/                 # Data models & ObjectBox entities
+│   ├── repositories/           # Data access (ObjectBox CRUD)
+│   ├── services/
+│   │   ├── api_client.dart     # Dio HTTP client singleton
+│   │   └── objectbox_service.dart  # ObjectBox initialization
 │   ├── screens/                # Full-screen widgets
 │   ├── widgets/                # Reusable widgets
+│   ├── objectbox.g.dart        # Generated ObjectBox code
+│   ├── objectbox-model.json    # Generated ObjectBox model
 │   └── main.dart
 ├── test/                       # Unit and widget tests
 ├── tools/                      # Build scripts
@@ -412,6 +418,38 @@ Recommended baseline:
 - Flutter/Dart SDK version constraints
 - Dependencies managed via `fvm flutter pub add ...`
 - Lock file committed: `pubspec.lock`
+
+### Standard Dependencies
+
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Localization
+  flutter_i18n_translations:
+    path: D:/GIT/BenjaminKobjolke/android/flutter-i18n-translations
+
+  # HTTP
+  dio: ^5.9.0
+
+  # Database
+  objectbox: ^5.1.0
+
+  # Utilities
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+  # ObjectBox code generation
+  objectbox_generator: ^5.1.0
+  build_runner: ^2.4.0
+```
 
 ---
 
@@ -517,12 +555,418 @@ Before adding any new package, confirm the version with the user to ensure we us
 
 ---
 
-## 9) State Management
+## 9) State Management (Cubit)
 
-For complex apps, use a state management solution. Recommended options:
+Use **Cubit** from the `flutter_bloc` package for state management. Cubit is the recommended approach for all Flutter projects.
 
-- **Provider**: Simple, built into Flutter ecosystem
-- **Riverpod**: Type-safe, testable, improved Provider
-- **BLoC**: For complex business logic separation
+### Why Cubit?
 
-Choose based on project complexity and discuss with the user.
+- **Simpler than BLoC**: No events, just methods that emit states
+- **Predictable**: Clear separation between UI and business logic
+- **Testable**: Easy to unit test state changes
+- **Scalable**: Works for simple screens and complex apps alike
+- **Less boilerplate**: Compared to full BLoC pattern
+
+### Installation
+
+```yaml
+dependencies:
+  flutter_bloc: ^8.1.0
+  equatable: ^2.0.5  # For state comparison
+```
+
+```bash
+fvm flutter pub get
+```
+
+### Basic Example
+
+**State class** (`lib/cubits/counter_state.dart`):
+
+```dart
+import 'package:equatable/equatable.dart';
+
+class CounterState extends Equatable {
+  final int count;
+  final bool isLoading;
+
+  const CounterState({
+    this.count = 0,
+    this.isLoading = false,
+  });
+
+  CounterState copyWith({int? count, bool? isLoading}) {
+    return CounterState(
+      count: count ?? this.count,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+
+  @override
+  List<Object?> get props => [count, isLoading];
+}
+```
+
+**Cubit class** (`lib/cubits/counter_cubit.dart`):
+
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'counter_state.dart';
+
+class CounterCubit extends Cubit<CounterState> {
+  CounterCubit() : super(const CounterState());
+
+  void increment() {
+    emit(state.copyWith(count: state.count + 1));
+  }
+
+  void decrement() {
+    emit(state.copyWith(count: state.count - 1));
+  }
+
+  Future<void> loadFromApi() async {
+    emit(state.copyWith(isLoading: true));
+    // Simulate API call
+    await Future.delayed(const Duration(seconds: 1));
+    emit(state.copyWith(count: 42, isLoading: false));
+  }
+}
+```
+
+**Usage in Widget**:
+
+```dart
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../cubits/counter_cubit.dart';
+import '../cubits/counter_state.dart';
+
+class CounterScreen extends StatelessWidget {
+  const CounterScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => CounterCubit(),
+      child: const CounterView(),
+    );
+  }
+}
+
+class CounterView extends StatelessWidget {
+  const CounterView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Counter')),
+      body: BlocBuilder<CounterCubit, CounterState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          return Center(
+            child: Text('Count: ${state.count}'),
+          );
+        },
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () => context.read<CounterCubit>().increment(),
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton(
+            onPressed: () => context.read<CounterCubit>().decrement(),
+            child: const Icon(Icons.remove),
+          ),
+        ],
+      ),
+    );
+  }
+}
+```
+
+### Project Structure
+
+```
+lib/
+├── cubits/
+│   ├── counter_cubit.dart
+│   ├── counter_state.dart
+│   ├── auth_cubit.dart
+│   └── auth_state.dart
+├── screens/
+│   └── counter_screen.dart
+└── main.dart
+```
+
+### Key Patterns
+
+- **One Cubit per feature/screen**: Keep cubits focused
+- **Immutable states**: Always use `copyWith` pattern
+- **Equatable**: Use for efficient state comparison
+- **BlocProvider**: Provide cubits at the widget level
+- **BlocBuilder**: Rebuild UI when state changes
+- **BlocListener**: Handle side effects (navigation, snackbars)
+
+---
+
+## 10) HTTP Communication (Dio)
+
+Use Dio for all HTTP communication.
+
+### Installation
+
+```bash
+fvm flutter pub add dio
+```
+
+Add to `pubspec.yaml`:
+
+```yaml
+dependencies:
+  dio: ^5.9.0
+```
+
+### API Client Singleton
+
+Create `lib/services/api_client.dart`:
+
+```dart
+import 'package:dio/dio.dart';
+import 'package:myapp/config/app_config.dart';
+
+class ApiClient {
+  ApiClient._();
+
+  static final Dio _dio = Dio(
+    BaseOptions(
+      baseUrl: AppConfig.apiBaseUrl,
+      connectTimeout: AppConfig.requestTimeout,
+      receiveTimeout: AppConfig.requestTimeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    ),
+  );
+
+  static Dio get instance => _dio;
+}
+```
+
+### Usage Example
+
+```dart
+import 'package:myapp/services/api_client.dart';
+
+class UserService {
+  final Dio _dio = ApiClient.instance;
+
+  Future<Map<String, dynamic>> getUser(int id) async {
+    final response = await _dio.get('/users/$id');
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> createUser(Map<String, dynamic> data) async {
+    final response = await _dio.post('/users', data: data);
+    return response.data;
+  }
+}
+```
+
+### Error Handling
+
+```dart
+import 'package:dio/dio.dart';
+
+Future<void> fetchData() async {
+  try {
+    final response = await ApiClient.instance.get('/data');
+    // Handle success
+  } on DioException catch (e) {
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+      case DioExceptionType.receiveTimeout:
+        // Handle timeout
+        break;
+      case DioExceptionType.badResponse:
+        final statusCode = e.response?.statusCode;
+        // Handle HTTP errors (400, 401, 404, 500, etc.)
+        break;
+      case DioExceptionType.connectionError:
+        // Handle no internet
+        break;
+      default:
+        // Handle other errors
+        break;
+    }
+  }
+}
+```
+
+---
+
+## 11) Database (ObjectBox)
+
+Use ObjectBox for local persistence.
+
+### Installation
+
+Add to `pubspec.yaml`:
+
+```yaml
+dependencies:
+  objectbox: ^5.1.0
+
+dev_dependencies:
+  objectbox_generator: ^5.1.0
+  build_runner: ^2.4.0
+```
+
+Run:
+
+```bash
+fvm flutter pub get
+fvm dart run build_runner build
+```
+
+### Entity Example
+
+Create `lib/models/user.dart`:
+
+```dart
+import 'package:objectbox/objectbox.dart';
+
+@Entity()
+class User {
+  @Id()
+  int id = 0;
+
+  String name;
+  String email;
+
+  @Property(type: PropertyType.date)
+  DateTime createdAt;
+
+  User({
+    this.id = 0,
+    required this.name,
+    required this.email,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+}
+```
+
+### ObjectBox Initialization
+
+Create `lib/services/objectbox_service.dart`:
+
+```dart
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import '../objectbox.g.dart';
+
+class ObjectBoxService {
+  ObjectBoxService._();
+
+  static Store? _store;
+
+  static Store get store {
+    if (_store == null) {
+      throw Exception('ObjectBox not initialized. Call init() first.');
+    }
+    return _store!;
+  }
+
+  static Future<void> init() async {
+    if (_store != null) return;
+
+    final dir = await getApplicationDocumentsDirectory();
+    final dbPath = p.join(dir.path, 'objectbox');
+    _store = await openStore(directory: dbPath);
+  }
+
+  static void close() {
+    _store?.close();
+    _store = null;
+  }
+}
+```
+
+Initialize in `main.dart`:
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize ObjectBox
+  await ObjectBoxService.init();
+
+  // Initialize localization
+  // ...
+
+  runApp(const MyApp());
+}
+```
+
+### Basic CRUD Operations
+
+```dart
+import 'package:myapp/models/user.dart';
+import 'package:myapp/services/objectbox_service.dart';
+import '../objectbox.g.dart';
+
+class UserRepository {
+  final Box<User> _box = ObjectBoxService.store.box<User>();
+
+  // Create or Update
+  int put(User user) {
+    return _box.put(user);
+  }
+
+  // Get by ID
+  User? get(int id) {
+    return _box.get(id);
+  }
+
+  // Get all
+  List<User> getAll() {
+    return _box.getAll();
+  }
+
+  // Delete
+  bool delete(int id) {
+    return _box.remove(id);
+  }
+
+  // Query
+  List<User> findByName(String name) {
+    final query = _box.query(User_.name.equals(name)).build();
+    final results = query.find();
+    query.close();
+    return results;
+  }
+}
+```
+
+---
+
+## 12) In-App Debugger (Logarte)
+
+For debugging network requests and viewing logs directly on the device, use Logarte.
+
+See the detailed integration guide: [In-App Debugger Documentation](flutter/IN_APP_DEBUGGER.md)
+
+**Requirements:**
+- Must be accessible from the Settings screen
+- Must be enable/disable via `AppConfig.enableLogarte`
+
+**Key features:**
+- Network request logging (automatic with Dio interceptor)
+- Navigation event logging
+- Searchable log viewer
+- Password protection for release builds
+- Log sharing and export

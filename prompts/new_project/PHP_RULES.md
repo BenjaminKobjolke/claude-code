@@ -481,3 +481,78 @@ cp config/app.php.example config/app.php
 cp config/database.php.example config/database.php
 # Edit both files with your credentials
 ```
+
+---
+
+## Database Timezone Handling
+
+When storing DATE type fields in a database using an ORM (Cycle, Doctrine, Eloquent), be careful with timezone handling. Creating a `DateTimeImmutable` from a date string without an explicit timezone can cause dates to shift by one day.
+
+### The Problem
+
+```php
+// Server timezone: Europe/Paris (UTC+1)
+$day = new DateTimeImmutable('2026-01-15');
+// Creates: 2026-01-15 00:00:00+01:00
+
+// When ORM stores as DATE type, it may convert to UTC:
+// 2026-01-15 00:00:00+01:00 → 2026-01-14 23:00:00 UTC
+// DATE becomes: 2026-01-14 (one day earlier!)
+```
+
+### The Solution
+
+Always use explicit UTC timezone with noon time for DATE fields:
+
+```php
+$day = DateTimeImmutable::createFromFormat(
+    'Y-m-d H:i:s',
+    $dateString . ' 12:00:00',
+    new \DateTimeZone('UTC')
+);
+```
+
+### Why Noon?
+
+Using noon (12:00) instead of midnight provides a safety buffer:
+- Noon UTC is within the same calendar day for all timezones (UTC-12 to UTC+14)
+- No timezone conversion can shift noon to a different day
+- Makes code resilient to any server timezone configuration
+
+### When This Pattern is Needed
+
+- **DATE type columns**: Any field that stores only a date without time
+- **User-provided date strings**: When parsing `Y-m-d` format from API requests
+- **Date comparisons in queries**: Ensure consistent date handling
+
+### When This Pattern is NOT Needed
+
+- **DATETIME/TIMESTAMP columns**: These store full timestamps with timezone info
+- **"Now" calculations**: `new DateTimeImmutable()` for current time is fine
+- **Timestamps** (`created_at`, `updated_at`): These are meant to store exact moments
+
+### Testing
+
+Always include unit tests that verify date handling across different timezones:
+
+```php
+public function testDatePreservedAcrossTimezones(): void
+{
+    $inputDate = '2026-01-15';
+    $originalTz = date_default_timezone_get();
+
+    foreach (['UTC', 'Europe/Paris', 'America/New_York'] as $tz) {
+        date_default_timezone_set($tz);
+
+        $day = DateTimeImmutable::createFromFormat(
+            'Y-m-d H:i:s',
+            $inputDate . ' 12:00:00',
+            new \DateTimeZone('UTC')
+        );
+
+        $this->assertSame($inputDate, $day->format('Y-m-d'));
+    }
+
+    date_default_timezone_set($originalTz);
+}
+```

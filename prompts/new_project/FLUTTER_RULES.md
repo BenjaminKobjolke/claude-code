@@ -1,5 +1,14 @@
 # Flutter Rules (FVM + Mobile)
 
+## Core principles
+
+1. Flutter's core principle: Composition over inheritance - small, focused widgets
+2. Testability: Each widget can be tested in isolation
+3. Single Responsibility: One widget = one job
+4. Reusability: Components can be used elsewhere
+5. Readability: Smaller files (~100-200 lines) are easier to maintain
+  
+  
 ## Flutter Version Management
 
 Use FVM (Flutter Version Manager) for all projects. Create `.fvmrc` in the project root:

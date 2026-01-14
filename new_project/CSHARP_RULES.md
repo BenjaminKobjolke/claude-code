@@ -384,15 +384,17 @@ public class AppSettings
 
 ### 3) Embed dependencies with Costura.Fody
 
-For single-file distribution, embed all DLLs into the executable:
+For single-file distribution, embed all DLLs into the executable.
 
-Install via NuGet:
-```
-Install-Package Costura.Fody
-Install-Package Fody
-```
+#### Step 1: Install packages
 
-Create `FodyWeavers.xml`:
+Copy packages from an existing project or download:
+- `packages/Fody.6.8.2/`
+- `packages/Costura.Fody.5.7.0/`
+
+#### Step 2: Create FodyWeavers.xml
+
+Create `FodyWeavers.xml` in project folder:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -400,6 +402,34 @@ Create `FodyWeavers.xml`:
   <Costura />
 </Weavers>
 ```
+
+#### Step 3: Update .csproj (CRITICAL)
+
+Add Costura.dll reference to ItemGroup with other References:
+
+```xml
+<Reference Include="Costura, Version=5.7.0.0, Culture=neutral, PublicKeyToken=null">
+  <HintPath>..\packages\Costura.Fody.5.7.0\lib\netstandard1.0\Costura.dll</HintPath>
+</Reference>
+```
+
+Include FodyWeavers.xml in an ItemGroup:
+
+```xml
+<None Include="FodyWeavers.xml" />
+```
+
+Add Import statements AFTER `<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />`:
+
+```xml
+<Import Project="..\packages\Costura.Fody.5.7.0\build\Costura.Fody.props" Condition="Exists('..\packages\Costura.Fody.5.7.0\build\Costura.Fody.props')" />
+<Import Project="..\packages\Fody.6.8.2\build\Fody.targets" Condition="Exists('..\packages\Fody.6.8.2\build\Fody.targets')" />
+<Import Project="..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.5.7.0\build\Costura.Fody.targets')" />
+```
+
+#### Verification
+
+After build, the output folder should NOT contain any third-party DLLs - they are embedded in the .exe.
 
 ---
 

@@ -1,3 +1,7 @@
+---
+description: fix issues, but do not create analysis files first
+---
+
 # Code Analysis Fix Instructions
 
 Work on fixing the problems reported in the CSV files located in the `@code_analysis_results` folder.

@@ -1,0 +1,23 @@
+{
+    "php": {
+        "command": "cmd",
+        "args": [
+            "/c",
+            "D:\\wamp64\\bin\\php\\php8.4.15\\php.exe",
+            "c:\\cmdtools\\phpactor.phar",
+            "language-server"
+        ],
+        "extensionToLanguage": {
+            ".php": "php",
+            ".phtml": "php",
+            ".php3": "php",
+            ".php4": "php",
+            ".php5": "php",
+            ".phps": "php"
+        },
+        "transport": "stdio",
+        "initializationOptions": {},
+        "settings": {},
+        "maxRestarts": 3
+    }
+}

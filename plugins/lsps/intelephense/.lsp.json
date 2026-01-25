@@ -1,0 +1,18 @@
+{
+    "php": {
+        "command": "cmd",
+        "args": ["/c", "intelephense", "--stdio"],
+        "extensionToLanguage": {
+            ".php": "php",
+            ".phtml": "php",
+            ".php3": "php",
+            ".php4": "php",
+            ".php5": "php",
+            ".phps": "php"
+        },
+        "transport": "stdio",
+        "initializationOptions": {},
+        "settings": {},
+        "maxRestarts": 3
+    }
+}

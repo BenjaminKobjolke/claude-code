@@ -1,5 +1,7 @@
 # Flutter Rules (FVM + Mobile)
 
+See `COMMON_RULES.md` for rules that apply to all languages.
+
 ## Core principles
 
 1. Flutter's core principle: Composition over inheritance - small, focused widgets
@@ -25,31 +27,6 @@ All Flutter commands should be prefixed with `fvm`:
 fvm flutter pub get
 fvm flutter run
 fvm flutter build apk
-```
-
----
-
-## String Constants
-
-String constants should be centralized in dedicated classes. Do not scatter raw strings across the codebase.
-
-```dart
-// lib/config/constants.dart
-class Constants {
-  Constants._();
-
-  static const String routeLogin = '/login';
-  static const String dateFormat = 'yyyy-MM-dd';
-  static const String appName = 'MyApp';
-}
-```
-
-Usage:
-
-```dart
-import 'package:myapp/config/constants.dart';
-
-final route = Constants.routeLogin;
 ```
 
 ---
@@ -519,17 +496,6 @@ Rules:
 
 ---
 
-## 5) README.md is Mandatory
-
-Every project must have a `README.md` file in the root directory. It should include:
-
-- Project name and description
-- Installation/setup instructions (including FVM)
-- Usage examples
-- Dependencies and requirements
-
----
-
 ## 6) Required Batch Files
 
 Every project must include these batch files:
@@ -539,28 +505,6 @@ Every project must include these batch files:
 - `tools/tests.bat` - Runs the test suite
 - `tools/build_debug.bat` - Builds debug APK
 - `tools/build_release.bat` - Builds release APK
-
----
-
-## 7) Don't Repeat Yourself (DRY)
-
-Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable function, class, or widget.
-
-- Duplicate code is harder to maintain and leads to bugs
-- Extract shared logic into helper methods or base classes
-- Use constants for repeated values (see String Constants section)
-- Create reusable widgets for common UI patterns
-
----
-
-## 8) Confirm Dependency Versions
-
-Before adding any new package, confirm the version with the user to ensure we use up-to-date dependencies.
-
-- Do not assume which version to use
-- Ask the user to verify the latest stable version
-- Avoid outdated packages that may have security vulnerabilities or missing features
-- Check pub.dev for latest versions
 
 ---
 

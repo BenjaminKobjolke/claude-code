@@ -1,3 +1,7 @@
+---
+description: write HANDOFF.md if you are running out of context
+---
+
 Write or update a handoff document so the next agent with fresh context can continue this work.
 
 Steps:

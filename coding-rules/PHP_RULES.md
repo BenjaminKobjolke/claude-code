@@ -1,5 +1,7 @@
 # PHP Rules
 
+See `COMMON_RULES.md` for rules that apply to all languages.
+
 ## PHP Version
 
 Use PHP 8.4 for all projects. Set the requirement in `composer.json`:
@@ -13,23 +15,6 @@ Use PHP 8.4 for all projects. Set the requirement in `composer.json`:
 ```
 
 ---
-
-## String Constants
-
-STRING defines should be in separate classes.
-Do not use them directly across all PHP classes.
-
-```php
-// Good - centralized constants
-final class Constants
-{
-    public const ROUTE_LOGIN = '/login';
-    public const FORMAT_DATE = 'Y-m-d';
-}
-
-// Usage
-$route = Constants::ROUTE_LOGIN;
-```
 
 ## Template Engine
 
@@ -351,42 +336,11 @@ Full documentation: D:\GIT\BenjaminKobjolke\php-localization\README.md
 
 ## Essential Rules
 
-### README.md is Mandatory
-
-Every project must have a `README.md` file in the root directory. It should include:
-
-- Project name and description
-- Installation/setup instructions
-- Usage examples
-- Dependencies and requirements
-
----
-
 ### Required Batch Files
 
 Every project must include:
 
 - `tools/tests.bat` - Runs the test suite
-
----
-
-### Don't Repeat Yourself (DRY)
-
-Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable function, class, or trait.
-
-- Duplicate code is harder to maintain and leads to bugs
-- Extract shared logic into helper methods or base classes
-- Use constants for repeated values (see String Constants section)
-
----
-
-### Confirm Dependency Versions
-
-Before adding any new Composer package or library, confirm the version with the user to ensure we use up-to-date dependencies.
-
-- Do not assume which version to use
-- Ask the user to verify the latest stable version
-- Avoid outdated packages that may have security vulnerabilities or missing features
 
 ---
 

@@ -1,0 +1,12 @@
+{
+  "name": "intelephense",
+  "version": "0.1.0",
+  "description": "PHP language server with code intelligence and diagnostics",
+  "author": {
+    "name": "Ben Mewburn",
+    "email": "ben@mewburn.id.au"
+  },
+  "repository": "https://github.com/bmewburn/intelephense",
+  "license": "Proprietary",
+  "keywords": ["php", "lsp", "language-server", "intelephense"]
+}

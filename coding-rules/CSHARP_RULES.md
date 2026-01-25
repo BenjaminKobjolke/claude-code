@@ -1,31 +1,6 @@
 # C# Rules (.NET Framework / Windows Forms)
 
-## String Constants
-
-String constants should be centralized in static classes. Do not scatter raw strings across the codebase.
-
-```csharp
-// Config/Constants.cs
-namespace MyApp.Config
-{
-    public static class Constants
-    {
-        public const string RouteLogin = "/login";
-        public const string DateFormat = "yyyy-MM-dd";
-        public const string AppName = "MyApplication";
-    }
-}
-```
-
-Usage:
-
-```csharp
-using MyApp.Config;
-
-var route = Constants.RouteLogin;
-```
-
----
+See `COMMON_RULES.md` for rules that apply to all languages.
 
 ## Localization
 
@@ -483,43 +458,12 @@ protected override void OnFormClosed(FormClosedEventArgs e)
 
 ---
 
-### 6) README.md is Mandatory
-
-Every project must have a `README.md` file in the root directory. It should include:
-
-- Project name and description
-- Installation/setup instructions
-- Usage examples
-- Dependencies and requirements
-
----
-
 ### 7) Required Batch Files
 
 Every project must include these batch files in the `tools/` directory:
 
 - `tools/tests.bat` - Runs the test suite
 - `tools/build_release.bat` - Builds the release version
-
----
-
-### 8) Don't Repeat Yourself (DRY)
-
-Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable method, class, or utility.
-
-- Duplicate code is harder to maintain and leads to bugs
-- Extract shared logic into helper methods or base classes
-- Use constants for repeated values (see String Constants section)
-
----
-
-### 9) Confirm Dependency Versions
-
-Before adding any new NuGet package or library, confirm the version with the user to ensure we use up-to-date dependencies.
-
-- Do not assume which version to use
-- Ask the user to verify the latest stable version
-- Avoid outdated packages that may have security vulnerabilities or missing features
 
 ---
 

@@ -1,29 +1,6 @@
 # Python Rules (uv)
 
-## String Constants
-
-STRING defines should be in separate classes/modules.
-Do not use raw strings across the codebase without centralizing them.
-
-```py
-# app/config/constants.py
-from dataclasses import dataclass
-
-@dataclass(frozen=True)
-class Constants:
-    ROUTE_LOGIN: str = "/login"
-    DATE_FORMAT: str = "%Y-%m-%d"  # Python strftime format
-```
-
-Usage:
-
-```py
-from app.config.constants import Constants
-
-route = Constants.ROUTE_LOGIN
-```
-
----
+See `COMMON_RULES.md` for rules that apply to all languages.
 
 ## Template Engine
 
@@ -476,40 +453,9 @@ Rules:
 
 ---
 
-## 6) README.md is Mandatory
-
-Every project must have a `README.md` file in the root directory. It should include:
-
-* Project name and description
-* Installation/setup instructions
-* Usage examples
-* Dependencies and requirements
-
----
-
 ## 7) Required Batch Files
 
 Every project must include these batch files:
 
 * `start.bat` - In the root directory, starts the application
 * `tools/tests.bat` - Runs the test suite
-
----
-
-## 8) Don't Repeat Yourself (DRY)
-
-Avoid code duplication. If the same logic appears in multiple places, extract it into a reusable function, class, or module.
-
-* Duplicate code is harder to maintain and leads to bugs
-* Extract shared logic into helper functions or base classes
-* Use constants for repeated values (see String Constants section)
-
----
-
-## 9) Confirm Dependency Versions
-
-Before adding any new package or library, confirm the version with the user to ensure we use up-to-date dependencies.
-
-* Do not assume which version to use
-* Ask the user to verify the latest stable version
-* Avoid outdated packages that may have security vulnerabilities or missing features

@@ -376,7 +376,7 @@ update.bat
 
 ---
 
-# 5 Essential Additional Rules (must-have)
+# 8 Essential Additional Rules (must-have)
 
 ## 1) Use `pyproject.toml` as the single source of truth
 
@@ -453,7 +453,79 @@ Rules:
 
 ---
 
-## 7) Required Batch Files
+## 6) Database access uses SQLAlchemy ORM
+
+If a database is needed, use SQLAlchemy ORM (not raw SQL or ad-hoc drivers).
+
+---
+
+## 7) Use `spec=` with MagicMock to catch interface mismatches
+
+`MagicMock` without `spec` accepts **any** attribute, even non-existent ones:
+
+```python
+# BAD - No interface validation
+mock = MagicMock()
+mock.nonexistent_attribute = "test"  # Silently works
+mock.typo_method()                   # Also works - won't catch bugs!
+```
+
+**Always use `spec=ClassName`** to validate against the real interface:
+
+```python
+# GOOD - Validates against real class
+from unittest.mock import MagicMock
+from mylib import EmailMessage
+
+mock = MagicMock(spec=EmailMessage)
+mock.nonexistent = "test"  # AttributeError - catches the bug!
+```
+
+### Common Pitfall: Mocking Methods vs Attributes
+
+If the real class has a **method**, mock it as a method:
+
+```python
+# Real class has: def get_body(self) -> str
+class EmailMessage:
+    def get_body(self) -> str:
+        return "content"
+
+# WRONG - Creates fake attribute that doesn't exist
+mock = MagicMock()
+mock.body = "test"  # EmailMessage has no .body attribute!
+
+# CORRECT - Mock the actual method
+mock = MagicMock(spec=EmailMessage)
+mock.get_body.return_value = "test"
+```
+
+### Quick Reference
+
+```python
+from unittest.mock import MagicMock, patch
+
+# Mock with spec (recommended)
+mock_obj = MagicMock(spec=RealClass)
+
+# Mock method return value
+mock_obj.method_name.return_value = "value"
+
+# Mock method to raise exception
+mock_obj.method_name.side_effect = ValueError("error")
+
+# Mock property (use PropertyMock)
+from unittest.mock import PropertyMock
+type(mock_obj).prop_name = PropertyMock(return_value="value")
+
+# Patch with spec
+with patch("module.ClassName", spec=RealClass) as mock_cls:
+    mock_cls.return_value.method.return_value = "value"
+```
+
+---
+
+## 8) Required Batch Files
 
 Every project must include these batch files:
 

@@ -1,0 +1,1 @@
+call composer install 

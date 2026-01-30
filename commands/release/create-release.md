@@ -3,7 +3,7 @@ description: create new release based on docs/CREATE_NEW_RELEASE.md
 ---
 
 Can you create a new release.
-There must be documentation bout that in docs/CREATE_NEW_RELEASE.md
+There must be documentation about that in docs/CREATE_NEW_RELEASE.md
 
 ## Step-by-Step Workflow
 

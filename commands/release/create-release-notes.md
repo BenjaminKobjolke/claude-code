@@ -3,7 +3,7 @@ description: create release notes based on docs/CREATE_NEW_RELEASE.md
 ---
 
 Can you create a new release.
-There must be documentation bout that in docs/CREATE_NEW_RELEASE.md
+There must be documentation bout that in $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md
 
 If not ask the user to run /release:setup
 

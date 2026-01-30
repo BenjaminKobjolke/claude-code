@@ -5,6 +5,8 @@ description: create release notes based on docs/CREATE_NEW_RELEASE.md
 Can you create a new release.
 There must be documentation bout that in docs/CREATE_NEW_RELEASE.md
 
+If not ask the user to run /release:setup
+
 ## Step-by-Step Workflow
 
 ### 1. Get the Next Build Number
@@ -47,11 +49,25 @@ Bash(git log --oneline <last_release_commit>..HEAD)
 **Examples:**
 - Simple (one feature): `"New: Quick filter bar to search files by name. Type multiple words separated by space to narrow down results."`
 - Complex (multiple changes):
-```
+
 New: Quick filter bar with multi-word search
 Improved: Lock button to keep filter active when navigating
 Fixed: Filter bar positioning on devices with navigation bar
+
+Structure:
+
 ```
+{
+  "_hint_": "If the language has a formal and an informal way. Then use the informal way.",
+  "_hint_2_": "All texts are for a BASIC APP FUNCTION. So the translations should be adjusted to this genre. Example: Home in english should be translated to Start in german since a translation like Zuhause doesnt make sense for an app like this",
+  "_hint_text": "Maximum length is 400 characters; if it's too long, you must shorten it, even if that means not adhering 100% to the original language. Count the characters afterwards and adjust the length if its still too long.",
+  "text": "Fixed some bugs."
+}
+```
+
+BASIC APP function needs to be a very short description of what the app does.
+Like "file explorer and media viewer app".
+
 
 ### 5. Important Reminders
 - **Only create en.json** - Do not create translations for other languages. Those will be created by another tool.

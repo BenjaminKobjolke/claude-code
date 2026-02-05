@@ -9,8 +9,33 @@ See `COMMON_RULES.md` for rules that apply to all languages.
 3. Single Responsibility: One widget = one job
 4. Reusability: Components can be used elsewhere
 5. Readability: Smaller files (~100-200 lines) are easier to maintain
-  
-  
+6. Follow SOLID principles (Single Responsibility, Open/Closed, Liskov Substitution, Interface Segregation, Dependency Inversion)
+
+## Documentation Comments
+
+Use `///` doc comments on all public classes, methods, and properties:
+
+```dart
+/// Service responsible for user authentication.
+class AuthService {
+  /// Attempts to log in with the given [email] and [password].
+  ///
+  /// Returns the authenticated [User] on success.
+  /// Throws [AuthException] if credentials are invalid.
+  Future<User> login(String email, String password) async {
+    // ...
+  }
+}
+```
+
+Rules:
+- Every public class, method, and property must have a `///` comment
+- Use `[paramName]` to reference parameters in doc comments
+- Keep descriptions concise; one sentence for simple members
+- Do not use `//` block comments for documentation
+
+---
+
 ## Flutter Version Management
 
 Use FVM (Flutter Version Manager) for all projects. Create `.fvmrc` in the project root:
@@ -477,9 +502,101 @@ class AppConfig {
 }
 ```
 
+### Sensitive Data
+
+Never commit API keys, secrets, or credentials to version control. Use `.env` files for sensitive values:
+
+1. Add `flutter_dotenv` to `pubspec.yaml`:
+
+```yaml
+dependencies:
+  flutter_dotenv: ^5.1.0
+```
+
+2. Create a `.env` file in the project root:
+
+```
+API_KEY=your_secret_key_here
+API_SECRET=your_secret_here
+```
+
+3. Add `.env` to `.gitignore`:
+
+```
+.env
+```
+
+4. Load in `main.dart`:
+
+```dart
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+void main() async {
+  await dotenv.load(fileName: ".env");
+  // Access values: dotenv.env['API_KEY']
+  runApp(const MyApp());
+}
+```
+
+5. Provide a `.env.example` file (committed) with placeholder values so other developers know which keys are required.
+
 ---
 
-## 4) Tests are mandatory
+## 4) Logging & Error Handling
+
+### Logging
+
+Never use `print()` for logging. Use `dart:developer` or the `logger` package:
+
+```dart
+import 'dart:developer' as developer;
+
+// Simple log
+developer.log('User loaded successfully', name: 'UserService');
+
+// Log with error
+developer.log('Failed to load user', name: 'UserService', error: e, stackTrace: stackTrace);
+```
+
+Or with the `logger` package:
+
+```yaml
+dependencies:
+  logger: ^2.0.0
+```
+
+```dart
+import 'package:logger/logger.dart';
+
+final logger = Logger();
+
+logger.d('Debug message');
+logger.i('Info message');
+logger.w('Warning message');
+logger.e('Error message', error: e, stackTrace: stackTrace);
+```
+
+### Error Handling
+
+- Use try-catch for all async and critical operations
+- Display user-friendly error messages in the UI (never show raw exceptions)
+- Log errors with context (class name, method name, relevant parameters)
+
+```dart
+Future<void> loadUser(int userId) async {
+  try {
+    final user = await _userService.getUser(userId);
+    emit(state.copyWith(user: user));
+  } on DioException catch (e) {
+    developer.log('Failed to load user $userId', name: 'UserCubit', error: e);
+    emit(state.copyWith(errorMessage: AppLocalizations.tr(TK.errorLoadFailed)));
+  }
+}
+```
+
+---
+
+## 5) Tests are mandatory
 
 Use Flutter test framework:
 
@@ -508,7 +625,7 @@ Every project must include these batch files:
 
 ---
 
-## 9) State Management (Cubit)
+## 7) State Management (Cubit)
 
 Use **Cubit** from the `flutter_bloc` package for state management. Cubit is the recommended approach for all Flutter projects.
 
@@ -666,7 +783,7 @@ lib/
 
 ---
 
-## 10) HTTP Communication (Dio)
+## 8) HTTP Communication (Dio)
 
 Use Dio for all HTTP communication.
 
@@ -762,7 +879,7 @@ Future<void> fetchData() async {
 
 ---
 
-## 11) Database (ObjectBox)
+## 9) Database (ObjectBox)
 
 Use ObjectBox for local persistence.
 
@@ -907,7 +1024,7 @@ class UserRepository {
 
 ---
 
-## 12) In-App Debugger (Logarte)
+## 10) In-App Debugger (Logarte)
 
 For debugging network requests and viewing logs directly on the device, use Logarte.
 

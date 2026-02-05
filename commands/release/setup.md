@@ -21,6 +21,8 @@ You also need to find out how to get the current build number, increment the bui
 If not figure out how it works in this application and make a plan to create those files.
 Then save the information about that to docs/CREATE_NEW_RELEASE.md too.
 
+There should also be an automated way to add the release notes to the final build. It would be great if the release_notes folder could be packaged with the application and not just copied to the release folder. And we need a way to view the release notes from within the application. If those two features do not exist create a plan to implement them and suggest that to the user.
+
 The actual creating of release notes is not part of this task.
 But when you are done you can check [create-release-notes.md](create-release-notes.md) and check if you would be able to create the release notes that way.
 

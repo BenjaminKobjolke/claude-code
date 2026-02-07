@@ -254,3 +254,40 @@ Start with small ones:
 Then continue.
 
 ---
+
+## 8) Troubleshooting: `fvm flutter` produces no output
+
+On Windows, `fvm flutter pub outdated` (and other `fvm flutter` commands) may exit with code 0 but produce **no output at all**. This is an FVM bug where the proxy swallows stdout.
+
+### How to diagnose
+
+Run `fvm doctor` and check the output. If you see:
+
+* `Config Present: No`
+* `Pinned Version: None`
+
+Then FVM has no pinned version and is just proxying to the system Flutter, which causes the stdout issue.
+
+### Solution 1: Pin the Flutter version (fixes the root cause)
+
+```bash
+fvm use <VERSION>
+```
+
+Example: `fvm use 3.35.7`. This creates a `.fvmrc` file in the project root. After pinning, `fvm flutter pub outdated` should produce output normally.
+
+### Solution 2: Call Flutter directly (bypass FVM)
+
+If pinning doesn't help, call Flutter without the FVM wrapper:
+
+```bash
+flutter pub outdated
+```
+
+This works when no FVM version is pinned and the system Flutter is the intended SDK.
+
+### Solution 3: Use `pub get` output as a workaround
+
+`fvm flutter pub get` prints lines like `package_name 1.0.0 (2.0.0 available)` as a side effect. This gives the same information in a different format.
+
+---

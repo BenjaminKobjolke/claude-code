@@ -16,6 +16,57 @@ Use PHP 8.4 for all projects. Set the requirement in `composer.json`:
 
 ---
 
+## Web Server & Asset Paths
+
+### `.htaccess` — Redirect to Public Folder
+
+Place a root `.htaccess` that rewrites all requests into the `public/` directory:
+
+```apache
+RewriteEngine On
+RewriteRule ^$ public/ [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.+)$ public/$1 [L]
+```
+
+Expected directory structure:
+
+```
+project/
+├── .htaccess              # Root rewrite (above)
+├── assets/
+│   ├── css/
+│   │   └── style.css
+│   └── js/
+│       └── app.js
+├── public/
+│   └── index.php          # Application entry point
+├── src/
+├── templates/
+└── vendor/
+```
+
+### Asset Paths in Templates
+
+**Always use plain relative paths** for assets — never `../assets/...` or absolute `/assets/...`.
+
+```html
+<!-- Correct -->
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="assets/js/app.js"></script>
+
+<!-- Wrong — breaks when URL is http://localhost/project-name/ -->
+<link rel="stylesheet" href="../assets/css/style.css">
+
+<!-- Wrong — breaks when app is in a subfolder -->
+<link rel="stylesheet" href="/assets/css/style.css">
+```
+
+Why plain relative paths work: `RewriteCond %{REQUEST_FILENAME} !-f` checks if the file exists on disk. Since `assets/css/style.css` exists as a real file, the rewrite is skipped and Apache serves it directly. `../` breaks because the browser resolves it relative to the current URL before the request reaches the server (e.g. `http://localhost/project-name/` + `../assets/...` resolves to `http://localhost/assets/...` which doesn't exist).
+
+---
+
 ## Template Engine
 
 Keep PHP, HTML, CSS, and JS separated.

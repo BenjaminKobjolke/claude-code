@@ -1,5 +1,5 @@
 ---
-description: Setup the release notes system
+description: Setup the release system for this applications
 ---
 
 Check docs/CREATE_NEW_RELEASE.md if it contains infos how creating new release notes work.

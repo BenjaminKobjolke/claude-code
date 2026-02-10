@@ -21,7 +21,18 @@ You also need to find out how to get the current build number, increment the bui
 If not figure out how it works in this application and make a plan to create those files.
 Then save the information about that to docs/CREATE_NEW_RELEASE.md too.
 
-There should also be an automated way to add the release notes to the final build. It would be great if the release_notes folder could be packaged with the application and not just copied to the release folder. And we need a way to view the release notes from within the application. If those two features do not exist create a plan to implement them and suggest that to the user.
+There should also be an automated way to add the release notes to the final build. It would be great if the release_notes folder could be packaged with the application and not just copied to the release folder. If that feature does not exist create a plan to implement it and suggest that to the user.
+
+## In-app release notes view
+
+Each app MUST have a dedicated view/screen to display release notes. Ask the user where in the app they want the release notes view placed (e.g., settings, about screen, main menu, etc.).
+
+If no release notes view exists, create a plan to implement one following these rules:
+- Always show the newest release notes first
+- Provide back/forth navigation to view older release notes
+- Depending on the type of application, consider using a scrollable view that loads older release notes as the user scrolls down (better for mobile/touch apps)
+
+Document the view location in `docs/CREATE_NEW_RELEASE.md`. If the view already exists, document its location as well.
 
 The actual creating of release notes is not part of this task.
 But when you are done you can check [create-release-notes.md](create-release-notes.md) and check if you would be able to create the release notes that way.
@@ -34,3 +45,4 @@ When done $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md should contain:
 - how to increment the version number
 - how to create a new release notes directory and en.json file
 - how to actually build a new release
+- where the in-app release notes view is located and how it works

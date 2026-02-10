@@ -1,0 +1,6 @@
+{
+	"statusLine": {
+		"type": "command",
+		"command": "powershell -NoProfile -Command \"& \\\"$env:USERPROFILE\\.claude\\statusline.ps1\\\"\""
+	}  
+}

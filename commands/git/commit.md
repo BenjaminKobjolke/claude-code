@@ -7,7 +7,15 @@ Create separate commits for fixes, code improvements and new features.
 
 Never commit PLAN.md or HANDOFF.md.
 
+Before committing, check if the project has validators configured in CLAUDE.md.
+If yes, ask the user if they want to run /validate:pre-commit first.
+If the user declines, proceed with the commit.
+
 Also do not confirm GIT commit message in prompt or slash commands.
+
+Commit changes that you didnt do in this session too. Research those files to figure out what changed.
+
+Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files. 
 
 ---
 

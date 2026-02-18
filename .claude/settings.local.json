@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(xargs:*)",
+      "Bash(ls \"D:\\\\GIT\\\\BenjaminKobjolke\\\\claude-code\\\\commands\\\\plan\"\" 2>nul || echo \"Directory empty or does not exist \")",
+      "Bash(ls \"D:\\\\GIT\\\\BenjaminKobjolke\\\\claude-code\\\\commands\\\\handoff\"\" 2>nul || echo \"directory does not exist \")"
+    ]
+  }
+}

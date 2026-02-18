@@ -15,7 +15,32 @@ Also do not confirm GIT commit message in prompt or slash commands.
 
 Commit changes that you didnt do in this session too. Research those files to figure out what changed.
 
-Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files. 
+Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files.
+
+The user has to call this command again for feature commit and push requests.
+Which means to not automatically commit or push no changes the user requested after this commit request.
+
+If you see files showing as modified with only line ending changes (LF vs CRLF), check if the project has a `.gitattributes` file. If not, create one to normalize line endings to LF before committing:
+
+```
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Explicitly mark binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.tar binary
+```
+
+Then run `git add --renormalize .` to fix existing files and commit the `.gitattributes` as a separate GIT commit.
+
+Automatically push at the end.
 
 ---
 

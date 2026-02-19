@@ -33,6 +33,6 @@ Steps:
 
 8. After all implementation steps are complete, run `/validate:pre-commit`. If validation fails, fix the issues and re-run validation until it passes.
 
-9. Ensure `plan/done/` directory exists. Move the plan file from `plan/` to `plan/done/`.
+9. Ensure `plan/done/` directory exists. Move the plan file from `plan/` to `plan/done/`, prefixing the filename with today's date in `YYYYMMDD_` format (e.g., `pdf-viewer.md` becomes `20260219_pdf-viewer.md`).
 
 10. Tell the user the implementation is complete and suggest they review the changes and commit with `/git:commit`. Do NOT auto-commit.

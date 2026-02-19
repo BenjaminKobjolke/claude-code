@@ -2,6 +2,8 @@
 description: Plan a new feature by researching the codebase and storing the plan in the project's plan directory
 ---
 
+IMPORTANT: This is a PLANNING-ONLY command. You MUST NOT edit, create, or modify any project source files. The ONLY file you may create or write to is the plan file inside the `plan/` directory. Do NOT implement any code. Do NOT create any files beyond the plan file. Your job is finished once you present the plan summary.
+
 Research and plan a new feature for the current project without implementing any code changes.
 
 Steps:
@@ -44,4 +46,8 @@ Steps:
    ## Open Questions
    Uncertainties or decisions that need user input before implementation.
 
-7. Present a summary of the plan to the user. Do NOT implement any changes. This command only plans and documents.
+7. Present a brief summary of the plan to the user, then STOP COMPLETELY.
+   - Do NOT proceed to implement any part of the plan.
+   - Do NOT edit, create, or modify any project files besides the plan file.
+   - Do NOT write any code, tests, or configuration changes.
+   - Your task is FINISHED. The user will decide when and how to implement the plan.

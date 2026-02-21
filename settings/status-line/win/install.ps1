@@ -10,9 +10,12 @@ function Pause-Exit($code) {
 
 Write-Host "Installing Claude Code status line..."
 
+# ── Remote fallback URL ──────────────────────────────────────────
+$REMOTE_BASE = 'https://raw.githubusercontent.com/BenjaminKobjolke/claude-code/main/settings/status-line/win'
+
 # ── Paths ───────────────────────────────────────────────────────────
-$scriptDir   = $PSScriptRoot                                          # .../win/
-$sourceRoot  = Split-Path $scriptDir -Parent                          # .../status-line/
+$scriptDir   = $PSScriptRoot                                          # .../win/ (empty when piped)
+$sourceRoot  = if ($scriptDir) { Split-Path $scriptDir -Parent } else { '' }  # .../status-line/
 $claudeDir   = Join-Path $env:USERPROFILE ".claude"
 $settingsDir = Join-Path $claudeDir "settings"
 $targetRoot  = Join-Path $settingsDir "status-line"
@@ -22,13 +25,31 @@ $backupFile  = "$settingsFile.bak"
 # ── Ensure .claude directory exists ─────────────────────────────────
 if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null }
 
-# ── Copy files (skip if already inside .claude) ─────────────────────
-if (-not $sourceRoot.TrimEnd('\','/').StartsWith($claudeDir.TrimEnd('\','/'), [System.StringComparison]::OrdinalIgnoreCase)) {
-    Write-Host "  Copying files to $targetRoot"
-    if (-not (Test-Path $targetRoot)) { New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null }
-    Copy-Item -Path "$sourceRoot\*" -Destination $targetRoot -Recurse -Force
+# ── Copy or download files ───────────────────────────────────────
+$companionFiles = @('status-line.ps1', 'setup.ps1', 'uninstall.ps1', 'settings.json')
+$winTarget = Join-Path $targetRoot "win"
+
+if ($sourceRoot -and (Test-Path $sourceRoot)) {
+    if (-not $sourceRoot.TrimEnd('\','/').StartsWith($claudeDir.TrimEnd('\','/'), [System.StringComparison]::OrdinalIgnoreCase)) {
+        Write-Host "  Copying files to $targetRoot"
+        if (-not (Test-Path $targetRoot)) { New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null }
+        Copy-Item -Path "$sourceRoot\*" -Destination $targetRoot -Recurse -Force
+    } else {
+        Write-Host "  Files already in .claude directory, skipping copy."
+    }
 } else {
-    Write-Host "  Files already in .claude directory, skipping copy."
+    Write-Host "  Downloading files from remote repository..."
+    if (-not (Test-Path $winTarget)) { New-Item -ItemType Directory -Path $winTarget -Force | Out-Null }
+    foreach ($file in $companionFiles) {
+        $url = "$REMOTE_BASE/$file"
+        $dest = Join-Path $winTarget $file
+        try {
+            Invoke-RestMethod -Uri $url -OutFile $dest
+            Write-Host "    Downloaded $file"
+        } catch {
+            Write-Host "    WARNING: Failed to download $file from $url"
+        }
+    }
 }
 
 # ── Resolve target setup.ps1 path (for wizard prompt later) ────────
@@ -36,7 +57,11 @@ $targetSetup = Join-Path $targetRoot "win\setup.ps1"
 
 # ── Read statusLine value from bundled settings.json ────────────────
 $snippetFile = Join-Path $targetRoot "win\settings.json"
-if (-not (Test-Path $snippetFile)) { $snippetFile = Join-Path $scriptDir "settings.json" }
+if (-not (Test-Path $snippetFile) -and $scriptDir) { $snippetFile = Join-Path $scriptDir "settings.json" }
+if (-not (Test-Path $snippetFile)) {
+    Write-Host "  ERROR: settings.json not found locally or from download. Aborting."
+    Pause-Exit 1
+}
 $snippetRaw = [System.IO.File]::ReadAllText($snippetFile, $utf8NoBom)
 try { $snippetObj = $snippetRaw | ConvertFrom-Json } catch {
     Write-Host "  ERROR: settings.json snippet is not valid JSON. Aborting."

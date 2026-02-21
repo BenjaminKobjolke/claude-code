@@ -18,34 +18,15 @@ read -rp "Choose [1]: " layout_choice
 layout_choice=${layout_choice:-1}
 
 case "$layout_choice" in
-    1)
-        format_comment='# Format: {progress bar} {context %} | {tokens used/max} | {cost} | {duration} | {model}'
-        format_example='# Output: ████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6'
-        output_printf_line1="printf '%s %s | %s/%s | %s | %s | %s\n' \\"
-        output_printf_line2='    "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration" "$model_name"'
-        ;;
-    2)
-        format_comment='# Format: {progress bar} {context %} | {tokens used/max} | {cost} | {model}'
-        format_example='# Output: ████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | Opus 4.6'
-        output_printf_line1="printf '%s %s | %s/%s | %s | %s\n' \\"
-        output_printf_line2='    "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$model_name"'
-        ;;
-    3)
-        format_comment='# Format: {model} | {progress bar} {context %} | {tokens used/max} | {cost} | {duration}'
-        format_example='# Output: Opus 4.6 | ████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s'
-        output_printf_line1="printf '%s | %s %s | %s/%s | %s | %s\n' \\"
-        output_printf_line2='    "$model_name" "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration"'
-        ;;
-    4)
-        format_comment='# Format: {progress bar} {context %} | {cost} | {model}'
-        format_example='# Output: ████▌██████████ 26.0% | $1.93 | Opus 4.6'
-        output_printf_line1="printf '%s %s | %s | %s\n' \\"
-        output_printf_line2='    "$progress_bar" "$used_pct_str" "$cost_str" "$model_name"'
-        ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
+    1) cfg_output_body='    printf '"'"'%s %s | %s/%s | %s | %s | %s\n'"'"' \
+        "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration" "$model_name"' ;;
+    2) cfg_output_body='    printf '"'"'%s %s | %s/%s | %s | %s\n'"'"' \
+        "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$model_name"' ;;
+    3) cfg_output_body='    printf '"'"'%s | %s %s | %s/%s | %s | %s\n'"'"' \
+        "$model_name" "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration"' ;;
+    4) cfg_output_body='    printf '"'"'%s %s | %s | %s\n'"'"' \
+        "$progress_bar" "$used_pct_str" "$cost_str" "$model_name"' ;;
+    *) echo "Invalid choice. Exiting." ; exit 1 ;;
 esac
 
 # ── Prompt 2: Bar width ──────────────────────────────────────────────
@@ -62,10 +43,7 @@ case "$width_choice" in
     1) bar_width=10 ;;
     2) bar_width=15 ;;
     3) bar_width=20 ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
+    *) echo "Invalid choice. Exiting." ; exit 1 ;;
 esac
 
 # ── Prompt 3: Bar style ──────────────────────────────────────────────
@@ -79,30 +57,19 @@ read -rp "Choose [1]: " style_choice
 style_choice=${style_choice:-1}
 
 case "$style_choice" in
-    1)
-        # Block style: filled and empty use the same character (█), different colors
-        block_vars="FULL_BLOCK=\$'\\xe2\\x96\\x88'   # U+2588 █
-HALF_BLOCK=\$'\\xe2\\x96\\x8c'   # U+258C ▌"
-        empty_loop_char='$FULL_BLOCK'
-        ;;
-    2)
-        # Shade style
-        block_vars="FULL_BLOCK=\$'\\xe2\\x96\\x93'   # U+2593 ▓
-HALF_BLOCK=\$'\\xe2\\x96\\x92'   # U+2592 ▒
-EMPTY_BLOCK=\$'\\xe2\\x96\\x91'  # U+2591 ░"
-        empty_loop_char='$EMPTY_BLOCK'
-        ;;
-    3)
-        # ASCII style
-        block_vars="FULL_BLOCK='='
-HALF_BLOCK='-'
-EMPTY_BLOCK='-'"
-        empty_loop_char='$EMPTY_BLOCK'
-        ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
+    1) cfg_filled="CFG_FILLED_CHAR=\$'\\xe2\\x96\\x88'   # █"
+       cfg_half="CFG_HALF_CHAR=\$'\\xe2\\x96\\x8c'     # ▌"
+       cfg_empty="CFG_EMPTY_CHAR=\$'\\xe2\\x96\\x88'    # █"
+       style_label="Block" ;;
+    2) cfg_filled="CFG_FILLED_CHAR=\$'\\xe2\\x96\\x93'   # ▓"
+       cfg_half="CFG_HALF_CHAR=\$'\\xe2\\x96\\x92'     # ▒"
+       cfg_empty="CFG_EMPTY_CHAR=\$'\\xe2\\x96\\x91'    # ░"
+       style_label="Shade" ;;
+    3) cfg_filled="CFG_FILLED_CHAR='='                  # ="
+       cfg_half="CFG_HALF_CHAR='-'                    # -"
+       cfg_empty="CFG_EMPTY_CHAR='-'                   # -"
+       style_label="ASCII" ;;
+    *) echo "Invalid choice. Exiting." ; exit 1 ;;
 esac
 
 # ── Prompt 4: Bar color ──────────────────────────────────────────────
@@ -117,15 +84,13 @@ read -rp "Choose [1]: " color_choice
 color_choice=${color_choice:-1}
 
 case "$color_choice" in
-    1) filled_color=32 ; empty_color=90 ; color_label="Green / Dim gray" ; color_adj="green" ;;
-    2) filled_color=36 ; empty_color=90 ; color_label="Cyan / Dim gray" ; color_adj="cyan" ;;
-    3) filled_color=33 ; empty_color=90 ; color_label="Yellow / Dim gray" ; color_adj="yellow" ;;
-    4) filled_color=37 ; empty_color=90 ; color_label="White / Dim gray" ; color_adj="white" ;;
-    *)
-        echo "Invalid choice. Exiting."
-        exit 1
-        ;;
+    1) filled_color=32 ; color_label="Green" ; color_adj="green" ;;
+    2) filled_color=36 ; color_label="Cyan"  ; color_adj="cyan"  ;;
+    3) filled_color=33 ; color_label="Yellow"; color_adj="yellow" ;;
+    4) filled_color=37 ; color_label="White" ; color_adj="white" ;;
+    *) echo "Invalid choice. Exiting." ; exit 1 ;;
 esac
+empty_color=90
 
 # ── Summary ───────────────────────────────────────────────────────────
 
@@ -133,51 +98,46 @@ layout_labels=( "" "Bar + Pct + Tokens + Cost + Duration + Model"
                    "Bar + Pct + Tokens + Cost + Model"
                    "Model + Bar + Pct + Tokens + Cost + Duration"
                    "Bar + Pct + Cost + Model" )
-style_labels=( "" "Block" "Shade" "ASCII" )
 
 echo ""
 echo "── Summary ──────────────────────────────"
 echo "  Layout:    ${layout_labels[$layout_choice]}"
 echo "  Bar width: $bar_width"
-echo "  Bar style: ${style_labels[$style_choice]}"
-echo "  Bar color: $color_label"
+echo "  Bar style: $style_label"
+echo "  Bar color: $color_label / Dim gray"
 echo "  Output:    $OUTPUT"
 echo "────────────────────────────────────────"
 echo ""
 
-# ── Generate status-line.sh ──────────────────────────────────────────
+# ── Generate: config block ────────────────────────────────────────────
 
-# Use a quoted heredoc for everything static (no shell expansion).
-# Then use printf '%s\n' for lines that contain configurable values,
-# to avoid unintended shell expansion of $ characters in the content.
-
-cat > "$OUTPUT" << 'GENEOF'
+cat > "$OUTPUT" << GENEOF
 #!/bin/bash
 # Claude Code custom status line
 # https://code.claude.com/docs/en/statusline
-#
+
+# --- Configuration (edit these, or use generate.sh) ---
+
+CFG_BAR_WIDTH=$bar_width
+CFG_FILLED_COLOR=$filled_color            # ANSI: 32=green, 36=cyan, 33=yellow, 37=white
+CFG_EMPTY_COLOR=$empty_color             # ANSI: 90=dim gray
+$cfg_filled
+$cfg_half
+$cfg_empty
+
+cfg_output() {
+$cfg_output_body
+}
+
+# --- End configuration ---
 GENEOF
 
-# Format comment and example (contain $ in cost, must not be expanded)
-printf '%s\n' "$format_comment" >> "$OUTPUT"
-printf '%s\n' "$format_example" >> "$OUTPUT"
-
-printf '%s\n' "#" >> "$OUTPUT"
-printf '%s\n' "# progressBar  = ${color_adj}/dim unicode block bar showing context usage visually  (persistent across resumes)" >> "$OUTPUT"
+# ── Generate: static body (one heredoc, no substitution) ──────────────
 
 cat >> "$OUTPUT" << 'GENEOF'
-# usedPctStr   = context window usage as percentage                         (persistent across resumes)
-# tokenStr     = current context usage / max context window size            (persistent across resumes)
-# totalCost    = session cost in USD                                        (resets on resume)
-# duration     = total wall-clock time since session started                (resets on resume)
-# modelName    = active model display name                                  (persistent across resumes)
-
-# --- Parse JSON from stdin ---
 
 json=$(cat)
 
-# Helper: extract a JSON value by dot-path (e.g. "model.display_name")
-# Uses python3 for reliable JSON parsing (available by default on macOS)
 jval() {
     printf '%s' "$json" | python3 -c "
 import sys, json
@@ -196,8 +156,6 @@ else:
 " 2>/dev/null
 }
 
-# --- Extract values ---
-
 model_name=$(jval model.display_name)
 used_pct=$(jval context_window.used_percentage)
 total_cost=$(jval cost.total_cost_usd)
@@ -207,8 +165,6 @@ used_pct=${used_pct:-0}
 total_cost=${total_cost:-0}
 max_tokens=${max_tokens:-200000}
 
-# Use exact current_usage fields for token count (input tokens only, matching used_percentage formula)
-# Falls back to deriving from used_percentage when current_usage is null (before first API call)
 read -r used_tokens used_pct <<< "$(printf '%s' "$json" | python3 -c "
 import sys, json, math
 data = json.load(sys.stdin)
@@ -223,8 +179,6 @@ else:
     used = round(max_t * used_pct / 100)
     print(f'{used} {used_pct}')
 " 2>/dev/null)"
-
-# --- Format duration ---
 
 duration_ms=$(jval cost.total_duration_ms)
 duration_ms=${duration_ms:-0}
@@ -242,8 +196,6 @@ else
     duration="${secs}s"
 fi
 
-# --- Format token counts ---
-
 format_tokens() {
     python3 -c "
 n = $1
@@ -259,57 +211,33 @@ else:
 used_str=$(format_tokens "$used_tokens")
 max_str=$(format_tokens "$max_tokens")
 
-# --- Build progress bar ---
-
 ESC=$'\033'
-GENEOF
-
-# Color lines (configurable ANSI codes)
-printf '%s\n' "GREEN=\"\${ESC}[${filled_color}m\"" >> "$OUTPUT"
-printf '%s\n' "DIM=\"\${ESC}[${empty_color}m\"" >> "$OUTPUT"
-printf '%s\n' "RESET=\"\${ESC}[0m\"" >> "$OUTPUT"
-
-# Block character variables (configurable style)
-printf '%s\n' "$block_vars" >> "$OUTPUT"
-
-# Bar width (configurable)
-printf '\n%s\n' "BAR_WIDTH=$bar_width" >> "$OUTPUT"
-
-cat >> "$OUTPUT" << 'GENEOF'
+GREEN="${ESC}[${CFG_FILLED_COLOR}m"
+DIM="${ESC}[${CFG_EMPTY_COLOR}m"
+RESET="${ESC}[0m"
 
 read -r filled_width has_half empty_width <<< "$(python3 -c "
 import math
-exact_fill = ${BAR_WIDTH} * ${used_pct} / 100
+exact_fill = ${CFG_BAR_WIDTH} * ${used_pct} / 100
 filled = int(math.floor(exact_fill))
 has_half = 1 if (exact_fill - filled) >= 0.5 else 0
-empty = ${BAR_WIDTH} - filled - has_half
+empty = ${CFG_BAR_WIDTH} - filled - has_half
 print(f'{filled} {has_half} {empty}')
 ")"
 
 filled=""
-for ((i = 0; i < filled_width; i++)); do filled+="$FULL_BLOCK"; done
+for ((i = 0; i < filled_width; i++)); do filled+="$CFG_FILLED_CHAR"; done
 half=""
-if [ "$has_half" -eq 1 ]; then half="$HALF_BLOCK"; fi
+if [ "$has_half" -eq 1 ]; then half="$CFG_HALF_CHAR"; fi
 empty=""
-GENEOF
-
-# Empty loop line (configurable: uses $FULL_BLOCK for block style, $EMPTY_BLOCK for others)
-printf '%s\n' "for ((i = 0; i < empty_width; i++)); do empty+=\"$empty_loop_char\"; done" >> "$OUTPUT"
-
-cat >> "$OUTPUT" << 'GENEOF'
-
-# --- Output ---
+for ((i = 0; i < empty_width; i++)); do empty+="$CFG_EMPTY_CHAR"; done
 
 progress_bar="${GREEN}${filled}${half}${DIM}${empty}${RESET}"
 used_pct_str=$(python3 -c "print(f'${used_pct:.1f}%')")
 cost_str=$(python3 -c "print(f'\${${total_cost}:.2f}')")
 
+cfg_output
 GENEOF
 
-# Printf statement (configurable layout)
-printf '%s\n' "$output_printf_line1" >> "$OUTPUT"
-printf '%s\n' "$output_printf_line2" >> "$OUTPUT"
-
 chmod +x "$OUTPUT"
-
 echo "Generated: $OUTPUT"

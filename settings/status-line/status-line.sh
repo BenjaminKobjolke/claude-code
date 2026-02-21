@@ -12,12 +12,26 @@
 # duration     = total wall-clock time since session started                (resets on resume)
 # modelName    = active model display name                                  (persistent across resumes)
 
-# --- Parse JSON from stdin ---
+# --- Configuration (edit these, or use generate.sh) ---
+
+CFG_BAR_WIDTH=15
+CFG_FILLED_COLOR=32            # ANSI: 32=green, 36=cyan, 33=yellow, 37=white
+CFG_EMPTY_COLOR=90             # ANSI: 90=dim gray
+CFG_FILLED_CHAR=$'\xe2\x96\x88'   # █  (or $'\xe2\x96\x93' for ▓, or '=')
+CFG_HALF_CHAR=$'\xe2\x96\x8c'     # ▌  (or $'\xe2\x96\x92' for ▒, or '-')
+CFG_EMPTY_CHAR=$'\xe2\x96\x88'    # █  (or $'\xe2\x96\x91' for ░, or '-')
+
+# Output format function — override to change layout
+# Available vars: $progress_bar $used_pct_str $used_str $max_str $cost_str $duration $model_name
+cfg_output() {
+    printf '%s %s | %s/%s | %s | %s | %s\n' \
+        "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration" "$model_name"
+}
+
+# --- End configuration ---
 
 json=$(cat)
 
-# Helper: extract a JSON value by dot-path (e.g. "model.display_name")
-# Uses python3 for reliable JSON parsing (available by default on macOS)
 jval() {
     printf '%s' "$json" | python3 -c "
 import sys, json
@@ -36,8 +50,6 @@ else:
 " 2>/dev/null
 }
 
-# --- Extract values ---
-
 model_name=$(jval model.display_name)
 used_pct=$(jval context_window.used_percentage)
 total_cost=$(jval cost.total_cost_usd)
@@ -47,8 +59,6 @@ used_pct=${used_pct:-0}
 total_cost=${total_cost:-0}
 max_tokens=${max_tokens:-200000}
 
-# Use exact current_usage fields for token count (input tokens only, matching used_percentage formula)
-# Falls back to deriving from used_percentage when current_usage is null (before first API call)
 read -r used_tokens used_pct <<< "$(printf '%s' "$json" | python3 -c "
 import sys, json, math
 data = json.load(sys.stdin)
@@ -63,8 +73,6 @@ else:
     used = round(max_t * used_pct / 100)
     print(f'{used} {used_pct}')
 " 2>/dev/null)"
-
-# --- Format duration ---
 
 duration_ms=$(jval cost.total_duration_ms)
 duration_ms=${duration_ms:-0}
@@ -82,8 +90,6 @@ else
     duration="${secs}s"
 fi
 
-# --- Format token counts ---
-
 format_tokens() {
     python3 -c "
 n = $1
@@ -99,38 +105,29 @@ else:
 used_str=$(format_tokens "$used_tokens")
 max_str=$(format_tokens "$max_tokens")
 
-# --- Build progress bar ---
-
 ESC=$'\033'
-GREEN="${ESC}[32m"
-DIM="${ESC}[90m"
+GREEN="${ESC}[${CFG_FILLED_COLOR}m"
+DIM="${ESC}[${CFG_EMPTY_COLOR}m"
 RESET="${ESC}[0m"
-FULL_BLOCK=$'\xe2\x96\x88'   # U+2588 █
-HALF_BLOCK=$'\xe2\x96\x8c'   # U+258C ▌
-
-BAR_WIDTH=15
 
 read -r filled_width has_half empty_width <<< "$(python3 -c "
 import math
-exact_fill = ${BAR_WIDTH} * ${used_pct} / 100
+exact_fill = ${CFG_BAR_WIDTH} * ${used_pct} / 100
 filled = int(math.floor(exact_fill))
 has_half = 1 if (exact_fill - filled) >= 0.5 else 0
-empty = ${BAR_WIDTH} - filled - has_half
+empty = ${CFG_BAR_WIDTH} - filled - has_half
 print(f'{filled} {has_half} {empty}')
 ")"
 
 filled=""
-for ((i = 0; i < filled_width; i++)); do filled+="$FULL_BLOCK"; done
+for ((i = 0; i < filled_width; i++)); do filled+="$CFG_FILLED_CHAR"; done
 half=""
-if [ "$has_half" -eq 1 ]; then half="$HALF_BLOCK"; fi
+if [ "$has_half" -eq 1 ]; then half="$CFG_HALF_CHAR"; fi
 empty=""
-for ((i = 0; i < empty_width; i++)); do empty+="$FULL_BLOCK"; done
-
-# --- Output ---
+for ((i = 0; i < empty_width; i++)); do empty+="$CFG_EMPTY_CHAR"; done
 
 progress_bar="${GREEN}${filled}${half}${DIM}${empty}${RESET}"
 used_pct_str=$(python3 -c "print(f'${used_pct:.1f}%')")
 cost_str=$(python3 -c "print(f'\${${total_cost}:.2f}')")
 
-printf '%s %s | %s/%s | %s | %s | %s\n' \
-    "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration" "$model_name"
+cfg_output

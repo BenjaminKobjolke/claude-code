@@ -22,10 +22,12 @@ A custom status line that displays real-time session metrics at the bottom of th
 ```
 settings/status-line/
   win/
+    install.ps1       # Automated installer
     status-line.ps1   # PowerShell status line script
     setup.ps1         # Interactive setup wizard
     settings.json     # Claude Code config snippet
   mac/
+    install.sh        # Automated installer
     status-line.sh    # Bash status line script
     setup.sh          # Interactive setup wizard
     settings.json     # Claude Code config snippet
@@ -33,18 +35,36 @@ settings/status-line/
 
 ## Installation
 
-### 1. Copy to settings directory
+### Automated (recommended)
 
-Copy the `status-line/` folder into your Claude Code settings directory:
+Run the install script for your platform. It copies the files into `~/.claude/settings/status-line/`, merges the `statusLine` config into `~/.claude/settings.json`, and optionally launches the customization wizard.
 
-- **Windows:** `%USERPROFILE%/.claude/settings/`
-- **macOS:** `$HOME/.claude/settings/`
+**Windows:**
 
-### 2. Add the config to your settings file
+```powershell
+powershell -NoProfile -File path/to/status-line/win/install.ps1
+```
 
-Merge the contents of the platform-specific `settings.json` into your Claude Code settings file (`~/.claude/settings.json`).
+**macOS:**
 
-**Windows** -- add this to your settings:
+```bash
+bash path/to/status-line/mac/install.sh
+```
+
+The installer will:
+- Skip copying if the files are already inside `~/.claude/`
+- Prompt before overwriting an existing `statusLine` setting
+- Back up `settings.json` to `settings.json.bak` before modifying
+- Validate the output JSON before replacing the original
+
+### Manual
+
+If you prefer to install manually:
+
+1. Copy the `status-line/` folder into `~/.claude/settings/`
+2. Add the platform-specific `statusLine` entry to `~/.claude/settings.json`:
+
+**Windows:**
 
 ```json
 {
@@ -55,7 +75,7 @@ Merge the contents of the platform-specific `settings.json` into your Claude Cod
 }
 ```
 
-**macOS** -- add this to your settings:
+**macOS:**
 
 ```json
 {
@@ -66,9 +86,7 @@ Merge the contents of the platform-specific `settings.json` into your Claude Cod
 }
 ```
 
-### 3. Restart Claude Code
-
-The status line will appear at the bottom of the terminal on the next session.
+3. Restart Claude Code
 
 ## Customization
 
@@ -164,7 +182,7 @@ The `cfg_output()` function controls field order by rearranging the `printf` arg
 ## Requirements
 
 - **Windows:** PowerShell 5.1+ (ships with Windows)
-- **macOS:** Bash + Python 3 (ships with macOS)
+- **macOS:** Bash + Python 3 (via Xcode Command Line Tools or Homebrew)
 
 ## Reference
 

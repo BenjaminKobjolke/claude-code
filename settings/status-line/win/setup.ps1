@@ -1,31 +1,64 @@
 # setup.ps1 - Customize status-line.ps1 via interactive prompts
 # Replaces only the config block between :config-start and :config-end
+param([switch]$FromInstall)
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Prompt-Choice($title, $options, $default) {
     Write-Host ""
-    Write-Host "${title}:"
+    Write-Host "  ${title}:"
     for ($i = 0; $i -lt $options.Count; $i++) {
         $num = $i + 1
         $suffix = if ($num -eq $default) { "  (default)" } else { "" }
-        Write-Host "  ${num}) $($options[$i])${suffix}"
+        Write-Host "    ${num}) $($options[$i])${suffix}"
     }
-    $input = Read-Host "Choose [$default]"
+    $input = Read-Host "  Choose [$default]"
     if ([string]::IsNullOrWhiteSpace($input)) { return $default }
     $parsed = 0
     if ([int]::TryParse($input, [ref]$parsed) -and $parsed -ge 1 -and $parsed -le $options.Count) {
         return $parsed
     }
-    Write-Host "  Invalid choice, using default ($default)."
+    Write-Host "    Invalid choice, using default ($default)."
     return $default
 }
 
+Write-Host "Customizing status line..."
+
+# ── Show current settings when run standalone ─────────────────────
+if (-not $FromInstall) {
+    $targetPath = Join-Path $PSScriptRoot "status-line.ps1"
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    $curBarWidth = 15; $curColor = 32; $curFormat = '{0} {1} | {2} | {3} | {4} | {5}'
+    $curFilledChar = '[char]0x2588'
+    if (Test-Path $targetPath) {
+        $slContent = [System.IO.File]::ReadAllText($targetPath, $utf8NoBom)
+        if ($slContent -match 'CFG_BAR_WIDTH\s*=\s*(\d+)')    { $curBarWidth = $Matches[1] }
+        if ($slContent -match 'CFG_FILLED_COLOR\s*=\s*(\d+)')  { $curColor = $Matches[1] }
+        if ($slContent -match "CFG_FORMAT\s*=\s*'([^']+)'")    { $curFormat = $Matches[1] }
+        if ($slContent -match 'CFG_FILLED_CHAR\s*=\s*(.+)')    { $curFilledChar = $Matches[1].Trim() }
+    }
+    $curColorName = switch ($curColor) { 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $curColor" } }
+    $curStyleName = if ($curFilledChar -match '0x2588') { "Block" } elseif ($curFilledChar -match '0x2593') { "Shade" } elseif ($curFilledChar -match '"="') { "ASCII" } else { "Custom" }
+    $curLayoutName = switch ($curFormat) {
+        '{0} {1} | {2} | {3} | {4} | {5}' { "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model" }
+        '{0} {1} | {2} | {3} | {5}'       { "Context Progress Bar, Context %, Tokens Used, Cost, Model" }
+        '{5} | {0} {1} | {2} | {3} | {4}' { "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" }
+        '{0} {1} | {3} | {5}'             { "Context Progress Bar, Context %, Cost, Model" }
+        default                            { $curFormat }
+    }
+    Write-Host ""
+    Write-Host "  Current settings:"
+    Write-Host "    Layout:    $curLayoutName"
+    Write-Host "    Bar width: $curBarWidth"
+    Write-Host "    Bar style: $curStyleName"
+    Write-Host "    Bar color: $curColorName"
+}
+
 $layoutChoice = Prompt-Choice "Layout" @(
-    "Progress bar, Percentage, Tokens, Cost, Duration, Model"
-    "Progress bar, Percentage, Tokens, Cost, Model"
-    "Model, Progress bar, Percentage, Tokens, Cost, Duration"
-    "Progress bar, Percentage, Cost, Model"
+    "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model"
+    "Context Progress Bar, Context %, Tokens Used, Cost, Model"
+    "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration"
+    "Context Progress Bar, Context %, Cost, Model"
 ) 1
 
 $cfgFormat = @{
@@ -76,4 +109,26 @@ $configBlock = @"
 
 $replaced = $content -replace '(?ms)^# :config-start\r?\n.*?^# :config-end', $configBlock
 [System.IO.File]::WriteAllText($targetPath, $replaced, $utf8NoBom)
-Write-Host "Updated $targetPath"
+
+$colorName = switch ($cfgFilledColor) { 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $cfgFilledColor" } }
+$styleName = switch ($styleChoice) { 1 { "Block" } 2 { "Shade" } 3 { "ASCII" } }
+$layoutName = switch ($cfgFormat) {
+    '{0} {1} | {2} | {3} | {4} | {5}' { "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model" }
+    '{0} {1} | {2} | {3} | {5}'       { "Context Progress Bar, Context %, Tokens Used, Cost, Model" }
+    '{5} | {0} {1} | {2} | {3} | {4}' { "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" }
+    '{0} {1} | {3} | {5}'             { "Context Progress Bar, Context %, Cost, Model" }
+}
+
+Write-Host ""
+Write-Host "  New settings:"
+Write-Host "    Layout:    $layoutName"
+Write-Host "    Bar width: $cfgBarWidth"
+Write-Host "    Bar style: $styleName"
+Write-Host "    Bar color: $colorName"
+
+if (-not $FromInstall) {
+    Write-Host ""
+    Write-Host "Customization complete. Open a new Claude Code session to see changes."
+    Write-Host ""
+    Read-Host "Press Enter to exit"
+}

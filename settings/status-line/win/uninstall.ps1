@@ -42,46 +42,28 @@ Write-Host ""
 # ── Remove statusLine key from settings.json ─────────────────────────
 if ($hasKey) {
     $raw = [System.IO.File]::ReadAllText($settingsFile, $utf8NoBom)
+    $rawObj = $raw | ConvertFrom-Json
 
-    # ── Patch: remove statusLine block (regex, preserves formatting) ──
-    # Regex matches the "statusLine": { ... } block with optional trailing comma
-    $pattern = '[ \t]*"statusLine"\s*:\s*\{[^{}]*\}\s*,?[ \t]*\r?\n?'
-    $m = [regex]::Match($raw, $pattern)
-
-    if ($m.Success) {
-        $before = $raw.Substring(0, $m.Index)
-        $after  = $raw.Substring($m.Index + $m.Length)
-        # If the previous non-whitespace char is a comma and next non-whitespace is '}', remove trailing comma
-        $beforeTrimmed = $before.TrimEnd()
-        $afterTrimmed  = $after.TrimStart("`r", "`n")
-        if ($beforeTrimmed.Length -gt 0 -and $beforeTrimmed[-1] -eq ',' -and $afterTrimmed.Length -gt 0 -and $afterTrimmed[0] -eq '}') {
-            $before = $beforeTrimmed.Substring(0, $beforeTrimmed.Length - 1)
-            $eol = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
-            $patched = $before + $eol + $after.TrimStart("`r", "`n")
-        } else {
-            $patched = $before + $after
-        }
-    } else {
-        $patched = $raw
+    # ── Remove statusLine key ──────────────────────────────────────
+    $mergedHash = [ordered]@{}
+    $rawObj.PSObject.Properties | ForEach-Object {
+        if ($_.Name -ne 'statusLine') { $mergedHash[$_.Name] = $_.Value }
     }
+    $patched = ([PSCustomObject]$mergedHash) | ConvertTo-Json -Depth 10
 
-    # ── Validate patched result ───────────────────────────────────────
-    $patchedObj = $null
-    try { $patchedObj = $patched | ConvertFrom-Json } catch {}
+    # ── Write to temp and validate ─────────────────────────────────
+    $tmpFile = "$settingsFile.tmp"
+    [System.IO.File]::WriteAllText($tmpFile, $patched, $utf8NoBom)
 
-    $origObj = $raw | ConvertFrom-Json
-    $origKeyCount = $origObj.PSObject.Properties.Name.Count
-    $valid = $patchedObj -and
-             $null -eq $patchedObj.statusLine -and
-             $patchedObj.PSObject.Properties.Name.Count -eq ($origKeyCount - 1)
-
-    if (-not $valid) {
-        Write-Host "  Using fallback merge method."
-        $fHash = [ordered]@{}
-        $origObj.PSObject.Properties | ForEach-Object {
-            if ($_.Name -ne 'statusLine') { $fHash[$_.Name] = $_.Value }
-        }
-        $patched = ([PSCustomObject]$fHash) | ConvertTo-Json -Depth 10
+    $tmpRaw = [System.IO.File]::ReadAllText($tmpFile, $utf8NoBom)
+    try { $tmpObj = $tmpRaw | ConvertFrom-Json } catch { $tmpObj = $null }
+    $origKeyCount = $rawObj.PSObject.Properties.Name.Count
+    if (-not $tmpObj -or
+        $null -ne $tmpObj.statusLine -or
+        $tmpObj.PSObject.Properties.Name.Count -ne ($origKeyCount - 1)) {
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
+        Write-Host "  ERROR: validation failed after writing temp file. Aborting."
+        Pause-Exit 1
     }
 
     # ── Show diff ────────────────────────────────────────────────────
@@ -96,13 +78,11 @@ if ($hasKey) {
     Write-Host ""
 
     $tmpOld = [System.IO.Path]::GetTempFileName()
-    $tmpNew = [System.IO.Path]::GetTempFileName()
     [System.IO.File]::WriteAllText($tmpOld, $raw, $utf8NoBom)
-    [System.IO.File]::WriteAllText($tmpNew, $patched, $utf8NoBom)
 
     $diffOutput = $null
     try {
-        $diffOutput = & git diff --no-index --no-color -U2 $tmpOld $tmpNew 2>$null
+        $diffOutput = & git diff --no-index --no-color -w -U2 $tmpOld $tmpFile 2>$null
     } catch {}
 
     if ($diffOutput) {
@@ -123,11 +103,12 @@ if ($hasKey) {
         Write-Host "  Removing statusLine key from settings.json"
     }
 
-    Remove-Item $tmpOld, $tmpNew -Force -ErrorAction SilentlyContinue
+    Remove-Item $tmpOld -Force -ErrorAction SilentlyContinue
 
     Write-Host ""
     $answer = Read-Host "  Remove statusLine from settings.json? [Y/n]"
     if ($answer -match '^[Nn]') {
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
         Write-Host "  Skipped. statusLine key was not removed."
     } else {
         # ── Backup (2-revision rotation) ─────────────────────────────
@@ -138,9 +119,7 @@ if ($hasKey) {
             Write-Host "  Backing up settings.json -> settings.json.bak"
         }
 
-        # ── Write atomically ─────────────────────────────────────────
-        $tmpFile = "$settingsFile.tmp"
-        [System.IO.File]::WriteAllText($tmpFile, $patched, $utf8NoBom)
+        # ── Apply atomically ─────────────────────────────────────────
         Move-Item $tmpFile $settingsFile -Force
         Write-Host "  Removed statusLine from settings.json."
     }

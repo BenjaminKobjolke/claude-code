@@ -5,8 +5,11 @@
 set -euo pipefail
 
 SETTING_NAME="${1:-}"
-REPO_API='https://api.github.com/repos/BenjaminKobjolke/claude-code/contents/settings?ref=main'
-REPO_RAW='https://raw.githubusercontent.com/BenjaminKobjolke/claude-code/main/settings'
+REPO='BenjaminKobjolke/claude-code'
+BRANCH='main'
+DIR='settings'
+REPO_API="https://api.github.com/repos/$REPO/contents/$DIR?ref=$BRANCH"
+REPO_RAW="https://raw.githubusercontent.com/$REPO/$BRANCH/$DIR"
 
 # ── Check dependencies ───────────────────────────────────────────
 if ! command -v curl &>/dev/null; then

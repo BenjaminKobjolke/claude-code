@@ -8,6 +8,18 @@ function Pause-Exit($code) {
     exit $code
 }
 
+# ── Re-launch from temp copy so the install directory is not locked ──
+if (-not $env:_UNINSTALL_RELAUNCHED) {
+    $tmpScript = Join-Path ([System.IO.Path]::GetTempPath()) "uninstall-status-line.ps1"
+    Copy-Item $PSCommandPath $tmpScript -Force
+    $env:_UNINSTALL_RELAUNCHED = "1"
+    & powershell -NoProfile -File $tmpScript
+    Remove-Item $tmpScript -Force -ErrorAction SilentlyContinue
+    $env:_UNINSTALL_RELAUNCHED = $null
+    exit $LASTEXITCODE
+}
+$env:_UNINSTALL_RELAUNCHED = $null
+
 Write-Host "Uninstalling Claude Code status line..."
 
 # ── Paths ───────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 {
     "statusLine": {
         "type": "command",
-        "command": "powershell -NoProfile -File \"$USERPROFILE/.claude/settings/status-line.ps1\""
+        "command": "powershell -NoProfile -File \"$USERPROFILE/.claude/settings/status-line/win/status-line.ps1\""
     }
 }

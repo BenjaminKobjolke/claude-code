@@ -1,4 +1,4 @@
-# generate.ps1 - Customize status-line.ps1 via interactive prompts
+# setup.ps1 - Customize status-line.ps1 via interactive prompts
 # Replaces only the config block between :config-start and :config-end
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8

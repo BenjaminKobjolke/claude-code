@@ -1,5 +1,5 @@
 #!/bin/bash
-# generate.sh - Customize status-line.sh via interactive prompts
+# setup.sh - Customize status-line.sh via interactive prompts
 # Replaces only the config block between :config-start and :config-end
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

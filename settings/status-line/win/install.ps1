@@ -34,7 +34,7 @@ if (-not $sourceRoot.TrimEnd('\','/').StartsWith($claudeDir.TrimEnd('\','/'), [S
 # ── Resolve target setup.ps1 path (for wizard prompt later) ────────
 $targetSetup = Join-Path $targetRoot "win\setup.ps1"
 
-# ── Read statusLine block from bundled settings.json ──────────────
+# ── Read statusLine value from bundled settings.json ────────────────
 $snippetFile = Join-Path $targetRoot "win\settings.json"
 if (-not (Test-Path $snippetFile)) { $snippetFile = Join-Path $scriptDir "settings.json" }
 $snippetRaw = [System.IO.File]::ReadAllText($snippetFile, $utf8NoBom)
@@ -42,84 +42,48 @@ try { $snippetObj = $snippetRaw | ConvertFrom-Json } catch {
     Write-Host "  ERROR: settings.json snippet is not valid JSON. Aborting."
     Pause-Exit 1
 }
-# Extract the raw "statusLine": { ... } text from the snippet file (preserves formatting)
-$snippetClean = $snippetRaw.Replace("`r`n", "`n").TrimEnd()
-$startIdx = $snippetClean.IndexOf('"statusLine"')
-$endIdx   = $snippetClean.LastIndexOf('}', $snippetClean.LastIndexOf('}') - 1)
-$newValue = $snippetClean.Substring($startIdx, $endIdx - $startIdx + 1)
-# Add 2-space indent to match top-level key placement
-$newValue = "  " + ($newValue -replace "`n", "`n  ")
 
 # ── Read or initialize settings.json ────────────────────────────────
 if (Test-Path $settingsFile) {
     $raw = [System.IO.File]::ReadAllText($settingsFile, $utf8NoBom)
-    try { $raw | ConvertFrom-Json | Out-Null } catch {
+    try { $rawObj = $raw | ConvertFrom-Json } catch {
         Write-Host "  ERROR: settings.json is not valid JSON. Aborting."
         Pause-Exit 1
     }
 } else {
     Write-Host "  Creating new settings.json"
-    $raw = "{`n}"
-}
-
-# ── Normalize newValue line endings to match settings.json ────────
-$crlf = "`r`n"; $lf = "`n"
-if ($raw.Contains($crlf)) {
-    $newValue = $newValue.Replace($crlf, $lf).Replace($lf, $crlf)
-} else {
-    $newValue = $newValue.Replace($crlf, $lf)
-}
-
-# ── Patch: replace or insert statusLine block ──────────────────────
-# Regex matches the "statusLine": { ... } block with optional trailing comma
-$pattern = '[ \t]*"statusLine"\s*:\s*\{[^{}]*\}\s*,?[ \t]*\r?\n?'
-$m = [regex]::Match($raw, $pattern)
-
-if ($m.Success) {
-    # Determine trailing comma: needed if content follows that isn't '}'
-    $after = $raw.Substring($m.Index + $m.Length).TrimStart("`r", "`n")
-    $comma = if ($after.Length -gt 0 -and $after[0] -ne '}') { "," } else { "" }
-    $eol = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
-    $patched = $raw.Substring(0, $m.Index) + $newValue + $comma + $eol + $raw.Substring($m.Index + $m.Length)
-} else {
-    # Insert before closing brace
-    $lastBrace = $raw.LastIndexOf('}')
-    $before = $raw.Substring(0, $lastBrace).TrimEnd()
-    if ($before.Length -gt 0 -and $before[-1] -ne ',' -and $before[-1] -ne '{') {
-        $before += ","
-    }
-    $eol = if ($raw.Contains("`r`n")) { "`r`n" } else { "`n" }
-    $patched = $before + $eol + $newValue + $eol + "}"
-}
-
-# ── Validate patched result ───────────────────────────────────────
-$patchedObj = $null
-try { $patchedObj = $patched | ConvertFrom-Json } catch {}
-
-$origKeyCount = ($raw | ConvertFrom-Json).PSObject.Properties.Name.Count
-$valid = $patchedObj -and
-         $patchedObj.statusLine.type -eq $snippetObj.statusLine.type -and
-         $patchedObj.statusLine.command -eq $snippetObj.statusLine.command -and
-         $patchedObj.PSObject.Properties.Name.Count -ge $origKeyCount
-
-if (-not $valid) {
-    Write-Host "  Using fallback merge method."
-    $fallback = $raw | ConvertFrom-Json
-    $fHash = [ordered]@{}
-    $fallback.PSObject.Properties | ForEach-Object {
-        if ($_.Name -ne 'statusLine') { $fHash[$_.Name] = $_.Value }
-    }
-    $fHash['statusLine'] = $snippetObj.statusLine
-    $patched = ([PSCustomObject]$fHash) | ConvertTo-Json -Depth 10
+    $raw = "{}"
+    $rawObj = $raw | ConvertFrom-Json
 }
 
 # ── Check if already up to date ───────────────────────────────────
-$rawObj = $raw | ConvertFrom-Json
 $alreadySet = $rawObj.statusLine.type -eq $snippetObj.statusLine.type -and
               $rawObj.statusLine.command -eq $snippetObj.statusLine.command
 if ($alreadySet) {
     Write-Host "  $settingsFile already up to date."
 } else {
+    # ── Merge: set statusLine key ──────────────────────────────────
+    $mergedHash = [ordered]@{}
+    $rawObj.PSObject.Properties | ForEach-Object {
+        if ($_.Name -ne 'statusLine') { $mergedHash[$_.Name] = $_.Value }
+    }
+    $mergedHash['statusLine'] = $snippetObj.statusLine
+    $patched = ([PSCustomObject]$mergedHash) | ConvertTo-Json -Depth 10
+
+    # ── Write to temp and validate ─────────────────────────────────
+    $tmpFile = "$settingsFile.tmp"
+    [System.IO.File]::WriteAllText($tmpFile, $patched, $utf8NoBom)
+
+    $tmpRaw = [System.IO.File]::ReadAllText($tmpFile, $utf8NoBom)
+    try { $tmpObj = $tmpRaw | ConvertFrom-Json } catch { $tmpObj = $null }
+    if (-not $tmpObj -or
+        $tmpObj.statusLine.type -ne $snippetObj.statusLine.type -or
+        $tmpObj.statusLine.command -ne $snippetObj.statusLine.command) {
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
+        Write-Host "  ERROR: validation failed after writing temp file. Aborting."
+        Pause-Exit 1
+    }
+
     # ── Show diff and confirm ──────────────────────────────────────
     $esc = [char]27
     $red   = "$esc[31m"
@@ -131,16 +95,13 @@ if ($alreadySet) {
     Write-Host "  $dim$settingsFile$reset"
     Write-Host ""
 
-    # Write both to temp files for diff
+    # Write original to temp file for diff comparison
     $tmpOld = [System.IO.Path]::GetTempFileName()
-    $tmpNew = [System.IO.Path]::GetTempFileName()
     [System.IO.File]::WriteAllText($tmpOld, $raw, $utf8NoBom)
-    [System.IO.File]::WriteAllText($tmpNew, $patched, $utf8NoBom)
 
-    # Use git diff if available, otherwise fall back to showing new value
     $diffOutput = $null
     try {
-        $diffOutput = & git diff --no-index --no-color -U2 $tmpOld $tmpNew 2>$null
+        $diffOutput = & git diff --no-index --no-color -w -U2 $tmpOld $tmpFile 2>$null
     } catch {}
 
     if ($diffOutput) {
@@ -158,18 +119,15 @@ if ($alreadySet) {
             }
         }
     } else {
-        # Fallback: show what will be set
-        Write-Host "  Setting statusLine to:"
-        foreach ($line in ($newValue -split "`n")) {
-            Write-Host "  $green+ $($line.TrimEnd("`r"))$reset"
-        }
+        Write-Host "  Setting statusLine in settings.json"
     }
 
-    Remove-Item $tmpOld, $tmpNew -Force -ErrorAction SilentlyContinue
+    Remove-Item $tmpOld -Force -ErrorAction SilentlyContinue
 
     Write-Host ""
     $answer = Read-Host "  Apply changes? [Y/n]"
     if ($answer -match '^[Nn]') {
+        Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
         Write-Host "  Skipped. No changes made to settings.json."
         Pause-Exit 0
     }
@@ -182,9 +140,7 @@ if ($alreadySet) {
         Write-Host "  Backing up settings.json -> settings.json.bak"
     }
 
-    # ── Write atomically ─────────────────────────────────────────────
-    $tmpFile = "$settingsFile.tmp"
-    [System.IO.File]::WriteAllText($tmpFile, $patched, $utf8NoBom)
+    # ── Apply atomically ─────────────────────────────────────────────
     Move-Item $tmpFile $settingsFile -Force
     Write-Host "  Done!"
 }

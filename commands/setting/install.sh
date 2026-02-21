@@ -93,9 +93,12 @@ echo "Installing '$SELECTED'..."
 
 # ── Download installer to temp ───────────────────────────────────
 URL="$REPO_RAW/$SELECTED/mac/install.sh"
-TEMP_FILE="/tmp/claude-setting-install-$SELECTED.sh"
+TEMP_DIR="/tmp/claude-setting-launcher-$SELECTED"
+rm -rf "$TEMP_DIR"
+mkdir -p "$TEMP_DIR"
+TEMP_FILE="$TEMP_DIR/install.sh"
 
-cleanup() { rm -f "$TEMP_FILE"; }
+cleanup() { rm -rf "$TEMP_DIR"; }
 trap cleanup EXIT
 
 curl -fsSL "$URL" -o "$TEMP_FILE" || {

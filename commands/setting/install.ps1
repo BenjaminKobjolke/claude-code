@@ -59,40 +59,6 @@ if ($SettingName) {
 Write-Host ""
 Write-Host "Installing '$selected'..."
 
-# ── Download installer to isolated temp dir ──────────────────────
-# The sub-installer uses $PSScriptRoot to detect local vs remote mode.
-# By placing it inside an isolated temp directory (not next to real
-# setting files), $sourceRoot won't contain win/settings.json and the
-# sub-installer falls through to its remote download branch.
+# ── Pipe and execute the sub-installer ───────────────────────────
 $url = "$REPO_RAW/$selected/win/install.ps1"
-$tempDir = Join-Path $env:TEMP "claude-setting-launcher-$selected"
-if (Test-Path $tempDir) { Remove-Item $tempDir -Recurse -Force }
-New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-$tempFile = Join-Path $tempDir "install.ps1"
-
-try {
-    Invoke-RestMethod -Uri $url -OutFile $tempFile
-} catch {
-    Write-Host "ERROR: Failed to download installer from:"
-    Write-Host "  $url"
-    Write-Host "  $_"
-    Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-    exit 1
-}
-
-if (-not (Test-Path $tempFile) -or (Get-Item $tempFile).Length -eq 0) {
-    Write-Host "ERROR: Downloaded installer is empty or missing."
-    Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-    exit 1
-}
-
-# ── Run interactively ────────────────────────────────────────────
-$exitCode = 1
-try {
-    & powershell -NoProfile -File $tempFile
-    $exitCode = $LASTEXITCODE
-} finally {
-    Remove-Item $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-}
-
-exit $exitCode
+irm $url | iex

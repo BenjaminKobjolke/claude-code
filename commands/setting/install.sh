@@ -91,30 +91,6 @@ fi
 echo ""
 echo "Installing '$SELECTED'..."
 
-# ── Download installer to temp ───────────────────────────────────
+# ── Pipe and execute the sub-installer ───────────────────────────
 URL="$REPO_RAW/$SELECTED/mac/install.sh"
-TEMP_DIR="/tmp/claude-setting-launcher-$SELECTED"
-rm -rf "$TEMP_DIR"
-mkdir -p "$TEMP_DIR"
-TEMP_FILE="$TEMP_DIR/install.sh"
-
-cleanup() { rm -rf "$TEMP_DIR"; }
-trap cleanup EXIT
-
-curl -fsSL "$URL" -o "$TEMP_FILE" || {
-    echo "ERROR: Failed to download installer from:"
-    echo "  $URL"
-    exit 1
-}
-
-if [ ! -s "$TEMP_FILE" ]; then
-    echo "ERROR: Downloaded installer is empty or missing."
-    exit 1
-fi
-
-chmod +x "$TEMP_FILE"
-
-# ── Run interactively ────────────────────────────────────────────
-rc=0
-bash "$TEMP_FILE" || rc=$?
-exit $rc
+curl -fsSL "$URL" | bash

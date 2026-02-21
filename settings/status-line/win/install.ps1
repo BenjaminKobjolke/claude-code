@@ -34,13 +34,21 @@ if (-not $sourceRoot.TrimEnd('\','/').StartsWith($claudeDir.TrimEnd('\','/'), [S
 # ── Resolve target setup.ps1 path (for wizard prompt later) ────────
 $targetSetup = Join-Path $targetRoot "win\setup.ps1"
 
-# ── New statusLine block (raw JSON text, 2-space indent) ──────────
-$newValue = @'
-  "statusLine": {
-    "type": "command",
-    "command": "powershell -NoProfile -File \"$USERPROFILE/.claude/settings/status-line/win/status-line.ps1\""
-  }
-'@
+# ── Read statusLine block from bundled settings.json ──────────────
+$snippetFile = Join-Path $targetRoot "win\settings.json"
+if (-not (Test-Path $snippetFile)) { $snippetFile = Join-Path $scriptDir "settings.json" }
+$snippetRaw = [System.IO.File]::ReadAllText($snippetFile, $utf8NoBom)
+try { $snippetObj = $snippetRaw | ConvertFrom-Json } catch {
+    Write-Host "  ERROR: settings.json snippet is not valid JSON. Aborting."
+    Pause-Exit 1
+}
+# Extract the raw "statusLine": { ... } text from the snippet file (preserves formatting)
+$snippetClean = $snippetRaw.Replace("`r`n", "`n").TrimEnd()
+$startIdx = $snippetClean.IndexOf('"statusLine"')
+$endIdx   = $snippetClean.LastIndexOf('}', $snippetClean.LastIndexOf('}') - 1)
+$newValue = $snippetClean.Substring($startIdx, $endIdx - $startIdx + 1)
+# Add 2-space indent to match top-level key placement
+$newValue = "  " + ($newValue -replace "`n", "`n  ")
 
 # ── Read or initialize settings.json ────────────────────────────────
 if (Test-Path $settingsFile) {
@@ -85,14 +93,13 @@ if ($m.Success) {
 }
 
 # ── Validate patched result ───────────────────────────────────────
-$expectedCmd = 'powershell -NoProfile -File "$USERPROFILE/.claude/settings/status-line/win/status-line.ps1"'
 $patchedObj = $null
 try { $patchedObj = $patched | ConvertFrom-Json } catch {}
 
 $origKeyCount = ($raw | ConvertFrom-Json).PSObject.Properties.Name.Count
 $valid = $patchedObj -and
-         $patchedObj.statusLine.type -eq "command" -and
-         $patchedObj.statusLine.command -eq $expectedCmd -and
+         $patchedObj.statusLine.type -eq $snippetObj.statusLine.type -and
+         $patchedObj.statusLine.command -eq $snippetObj.statusLine.command -and
          $patchedObj.PSObject.Properties.Name.Count -ge $origKeyCount
 
 if (-not $valid) {
@@ -102,13 +109,14 @@ if (-not $valid) {
     $fallback.PSObject.Properties | ForEach-Object {
         if ($_.Name -ne 'statusLine') { $fHash[$_.Name] = $_.Value }
     }
-    $fHash['statusLine'] = [PSCustomObject]@{ type = "command"; command = $expectedCmd }
+    $fHash['statusLine'] = $snippetObj.statusLine
     $patched = ([PSCustomObject]$fHash) | ConvertTo-Json -Depth 10
 }
 
 # ── Check if already up to date ───────────────────────────────────
 $rawObj = $raw | ConvertFrom-Json
-$alreadySet = $rawObj.statusLine.type -eq "command" -and $rawObj.statusLine.command -eq $expectedCmd
+$alreadySet = $rawObj.statusLine.type -eq $snippetObj.statusLine.type -and
+              $rawObj.statusLine.command -eq $snippetObj.statusLine.command
 if ($alreadySet) {
     Write-Host "  $settingsFile already up to date."
 } else {

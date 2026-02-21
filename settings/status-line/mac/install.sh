@@ -10,6 +10,14 @@ pause_exit() {
 
 echo "Installing Claude Code status line..."
 
+# ── Check for python3 ─────────────────────────────────────────────
+if ! command -v python3 &>/dev/null; then
+    echo "  ERROR: python3 is required but not installed."
+    echo "  Install it via Xcode Command Line Tools (xcode-select --install) or Homebrew (brew install python3)."
+    echo "  Alternatively, see the Manual Installation section in the README."
+    pause_exit 1
+fi
+
 # ── Paths ───────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"       # .../mac/
 SOURCE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"        # .../status-line/
@@ -45,11 +53,33 @@ chmod +x "$TARGET_ROOT/mac/status-line.sh" "$TARGET_ROOT/mac/setup.sh" "$TARGET_
 # Resolve target setup.sh path (for wizard prompt later)
 TARGET_SETUP="$TARGET_ROOT/mac/setup.sh"
 
-# ── New statusLine block (raw JSON text, 2-space indent) ──────────
-NEW_VALUE='  "statusLine": {
-    "type": "command",
-    "command": "bash \"$HOME/.claude/settings/status-line/mac/status-line.sh\""
-  }'
+# ── Read statusLine block from bundled settings.json ──────────────
+SNIPPET_FILE="$TARGET_ROOT/mac/settings.json"
+[ -f "$SNIPPET_FILE" ] || SNIPPET_FILE="$SCRIPT_DIR/settings.json"
+if ! python3 -c "import json,sys; json.load(open(sys.argv[1],encoding='utf-8'))" "$SNIPPET_FILE" 2>/dev/null; then
+    echo "  ERROR: settings.json snippet is not valid JSON. Aborting."
+    pause_exit 1
+fi
+# Extract the raw "statusLine": { ... } block preserving formatting
+NEW_VALUE=$(python3 -c "
+import sys, re
+with open(sys.argv[1], encoding='utf-8') as f:
+    raw = f.read().strip()
+start = raw.index('\"statusLine\"')
+# Find the matching closing brace for the statusLine value object
+depth = 0
+end = None
+for i in range(raw.index('{', start), len(raw)):
+    if raw[i] == '{': depth += 1
+    elif raw[i] == '}': depth -= 1
+    if depth == 0:
+        end = i + 1
+        break
+block = raw[start:end]
+# Indent to 2-space top-level key
+lines = block.split('\n')
+print('  ' + '\n  '.join(lines))
+" "$SNIPPET_FILE")
 
 # ── Read or initialize settings.json ────────────────────────────────
 if [ -f "$SETTINGS_FILE" ]; then
@@ -89,11 +119,11 @@ else:
     patched = before + '\n' + new_value + '\n}'
 
 # Build canonical merge via json module for validation
+snippet_path = sys.argv[4]
+with open(snippet_path, encoding='utf-8') as f:
+    snippet = json.load(f)
 data = json.loads(raw)
-data['statusLine'] = {
-    'type': 'command',
-    'command': 'bash \"\$HOME/.claude/settings/status-line/mac/status-line.sh\"'
-}
+data['statusLine'] = snippet['statusLine']
 canonical = json.dumps(data, sort_keys=True)
 
 # Validate regex patch matches canonical semantically
@@ -107,17 +137,19 @@ if patched_canonical != canonical:
 
 with open(tmp_path, 'w', encoding='utf-8') as f:
     f.write(patched)
-" "$SETTINGS_FILE" "$TMP_FILE" "$NEW_VALUE"
+" "$SETTINGS_FILE" "$TMP_FILE" "$NEW_VALUE" "$SNIPPET_FILE"
 
 # ── Check if already up to date ───────────────────────────────────
-EXPECTED_CMD='bash "$HOME/.claude/settings/status-line/mac/status-line.sh"'
 ALREADY_SET=$(python3 -c "
 import json, sys
 with open(sys.argv[1], encoding='utf-8') as f:
     data = json.load(f)
+with open(sys.argv[2], encoding='utf-8') as f:
+    snippet = json.load(f)
 sl = data.get('statusLine', {})
-print('yes' if sl.get('type') == 'command' and sl.get('command') == sys.argv[2] else 'no')
-" "$SETTINGS_FILE" "$EXPECTED_CMD" 2>/dev/null || echo "no")
+expected = snippet.get('statusLine', {})
+print('yes' if sl == expected else 'no')
+" "$SETTINGS_FILE" "$SNIPPET_FILE" 2>/dev/null || echo "no")
 
 if [ "$ALREADY_SET" = "yes" ]; then
     echo "  $SETTINGS_FILE already up to date."

@@ -26,7 +26,7 @@ $backupFile  = "$settingsFile.bak"
 if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null }
 
 # ── Copy or download files ───────────────────────────────────────
-$companionFiles = @('status-line.ps1', 'setup.ps1', 'uninstall.ps1', 'settings.json')
+$companionFiles = @('install.ps1', 'status-line.ps1', 'setup.ps1', 'uninstall.ps1', 'settings.json')
 $winTarget = Join-Path $targetRoot "win"
 
 if ($sourceRoot -and (Test-Path $sourceRoot)) {
@@ -40,6 +40,7 @@ if ($sourceRoot -and (Test-Path $sourceRoot)) {
 } else {
     Write-Host "  Downloading files from remote repository..."
     if (-not (Test-Path $winTarget)) { New-Item -ItemType Directory -Path $winTarget -Force | Out-Null }
+    $failed = @()
     foreach ($file in $companionFiles) {
         $url = "$REMOTE_BASE/$file"
         $dest = Join-Path $winTarget $file
@@ -48,7 +49,12 @@ if ($sourceRoot -and (Test-Path $sourceRoot)) {
             Write-Host "    Downloaded $file"
         } catch {
             Write-Host "    WARNING: Failed to download $file from $url"
+            $failed += $file
         }
+    }
+    if ($failed.Count -gt 0) {
+        Write-Host "  ERROR: Failed to download: $($failed -join ', '). Aborting."
+        Pause-Exit 1
     }
 }
 

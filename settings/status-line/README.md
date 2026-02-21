@@ -59,6 +59,28 @@ The installer will:
 - Back up `settings.json` with rotation (up to 2 revisions) before modifying
 - Validate the output JSON before replacing the original
 
+### Remote (one-liner)
+
+Install directly from GitHub without cloning the repository:
+
+**Windows:**
+
+```powershell
+powershell -NoProfile -Command "irm 'https://raw.githubusercontent.com/BenjaminKobjolke/claude-code/main/settings/status-line/win/install.ps1' | iex"
+```
+
+**macOS:**
+
+```bash
+curl -fsSL 'https://raw.githubusercontent.com/BenjaminKobjolke/claude-code/main/settings/status-line/mac/install.sh' | bash
+```
+
+Or use the Claude Code command:
+
+```
+/setting:install status-line
+```
+
 ### Manual
 
 If you prefer to install manually:

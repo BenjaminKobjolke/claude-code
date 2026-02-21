@@ -53,33 +53,13 @@ chmod +x "$TARGET_ROOT/mac/status-line.sh" "$TARGET_ROOT/mac/setup.sh" "$TARGET_
 # Resolve target setup.sh path (for wizard prompt later)
 TARGET_SETUP="$TARGET_ROOT/mac/setup.sh"
 
-# ── Read statusLine block from bundled settings.json ──────────────
+# ── Read statusLine value from bundled settings.json ────────────────
 SNIPPET_FILE="$TARGET_ROOT/mac/settings.json"
 [ -f "$SNIPPET_FILE" ] || SNIPPET_FILE="$SCRIPT_DIR/settings.json"
 if ! python3 -c "import json,sys; json.load(open(sys.argv[1],encoding='utf-8'))" "$SNIPPET_FILE" 2>/dev/null; then
     echo "  ERROR: settings.json snippet is not valid JSON. Aborting."
     pause_exit 1
 fi
-# Extract the raw "statusLine": { ... } block preserving formatting
-NEW_VALUE=$(python3 -c "
-import sys, re
-with open(sys.argv[1], encoding='utf-8') as f:
-    raw = f.read().strip()
-start = raw.index('\"statusLine\"')
-# Find the matching closing brace for the statusLine value object
-depth = 0
-end = None
-for i in range(raw.index('{', start), len(raw)):
-    if raw[i] == '{': depth += 1
-    elif raw[i] == '}': depth -= 1
-    if depth == 0:
-        end = i + 1
-        break
-block = raw[start:end]
-# Indent to 2-space top-level key
-lines = block.split('\n')
-print('  ' + '\n  '.join(lines))
-" "$SNIPPET_FILE")
 
 # ── Read or initialize settings.json ────────────────────────────────
 if [ -f "$SETTINGS_FILE" ]; then
@@ -91,53 +71,6 @@ else
     echo "  Creating new settings.json"
     printf '{}\n' > "$SETTINGS_FILE"
 fi
-
-# ── Patch: replace or insert statusLine block ──────────────────────
-python3 -c "
-import re, json, sys
-
-settings_path = sys.argv[1]
-tmp_path = sys.argv[2]
-new_value = sys.argv[3]
-
-with open(settings_path, encoding='utf-8') as f:
-    raw = f.read()
-
-# Match existing statusLine block with optional trailing comma
-pattern = r'[ \t]*\"statusLine\"\s*:\s*\{[^{}]*\}\s*,?[ \t]*\n?'
-m = re.search(pattern, raw)
-
-if m:
-    after = raw[m.end():].lstrip('\n')
-    comma = ',' if after and after[0] != '}' else ''
-    patched = raw[:m.start()] + new_value + comma + '\n' + raw[m.end():]
-else:
-    last_brace = raw.rfind('}')
-    before = raw[:last_brace].rstrip()
-    if before and before[-1] not in (',', '{'):
-        before += ','
-    patched = before + '\n' + new_value + '\n}'
-
-# Build canonical merge via json module for validation
-snippet_path = sys.argv[4]
-with open(snippet_path, encoding='utf-8') as f:
-    snippet = json.load(f)
-data = json.loads(raw)
-data['statusLine'] = snippet['statusLine']
-canonical = json.dumps(data, sort_keys=True)
-
-# Validate regex patch matches canonical semantically
-patched_data = json.loads(patched)
-patched_canonical = json.dumps(patched_data, sort_keys=True)
-
-if patched_canonical != canonical:
-    # Regex patch produced wrong result -- fall back to json.dump
-    print('  Using fallback merge method.', file=sys.stderr)
-    patched = json.dumps(data, indent=2) + '\n'
-
-with open(tmp_path, 'w', encoding='utf-8') as f:
-    f.write(patched)
-" "$SETTINGS_FILE" "$TMP_FILE" "$NEW_VALUE" "$SNIPPET_FILE"
 
 # ── Check if already up to date ───────────────────────────────────
 ALREADY_SET=$(python3 -c "
@@ -154,6 +87,43 @@ print('yes' if sl == expected else 'no')
 if [ "$ALREADY_SET" = "yes" ]; then
     echo "  $SETTINGS_FILE already up to date."
 else
+    # ── Merge: set statusLine key ──────────────────────────────────
+    python3 -c "
+import json, sys
+
+settings_path = sys.argv[1]
+tmp_path = sys.argv[2]
+snippet_path = sys.argv[3]
+
+with open(settings_path, encoding='utf-8') as f:
+    data = json.load(f)
+with open(snippet_path, encoding='utf-8') as f:
+    snippet = json.load(f)
+
+data['statusLine'] = snippet['statusLine']
+patched = json.dumps(data, indent=2) + '\n'
+
+with open(tmp_path, 'w', encoding='utf-8') as f:
+    f.write(patched)
+" "$SETTINGS_FILE" "$TMP_FILE" "$SNIPPET_FILE"
+
+    # ── Validate temp file ─────────────────────────────────────────
+    VALID=$(python3 -c "
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as f:
+    data = json.load(f)
+with open(sys.argv[2], encoding='utf-8') as f:
+    snippet = json.load(f)
+sl = data.get('statusLine', {})
+expected = snippet.get('statusLine', {})
+print('yes' if sl == expected else 'no')
+" "$TMP_FILE" "$SNIPPET_FILE" 2>/dev/null || echo "no")
+
+    if [ "$VALID" != "yes" ]; then
+        echo "  ERROR: validation failed after writing temp file. Aborting."
+        pause_exit 1
+    fi
+
     # ── Show diff and confirm ──────────────────────────────────────
     RED=$'\033[31m'
     GREEN=$'\033[32m'
@@ -164,9 +134,8 @@ else
     echo "  ${DIM}${SETTINGS_FILE}${RESET}"
     echo ""
 
-    # Use git diff if available, otherwise fall back to basic diff
     if command -v git &>/dev/null; then
-        git diff --no-index --no-color -U2 "$SETTINGS_FILE" "$TMP_FILE" 2>/dev/null | while IFS= read -r line; do
+        git diff --no-index --no-color -w -U2 "$SETTINGS_FILE" "$TMP_FILE" 2>/dev/null | while IFS= read -r line; do
             case "$line" in
                 ---*|+++*|diff*|index*) continue ;;
                 @@*)  printf '  %s%s%s\n' "$DIM"   "$line" "$RESET" ;;
@@ -176,7 +145,7 @@ else
             esac
         done
     else
-        diff --old-line-format="  ${RED}-%l${RESET}
+        diff -w --old-line-format="  ${RED}-%l${RESET}
 " --new-line-format="  ${GREEN}+%l${RESET}
 " --unchanged-line-format="" "$SETTINGS_FILE" "$TMP_FILE" || true
     fi

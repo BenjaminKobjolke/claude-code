@@ -72,3 +72,4 @@ Like "file explorer and media viewer app".
 ### 5. Important Reminders
 - **Only create en.json** - Do not create translations for other languages. Those will be created by another tool.
 - Focus on changes visible to end users, not internal code refactoring
+- Check the release notes immediately befor ethe current ones so we dont repeat features we might have already mentioned before.

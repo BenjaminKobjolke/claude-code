@@ -59,52 +59,38 @@ echo ""
 
 # ── Remove statusLine key from settings.json ─────────────────────────
 if [ "$HAS_KEY" = "yes" ]; then
-    # Patch: remove statusLine block (regex, preserves formatting) with fallback
+    # ── Remove statusLine key via JSON ─────────────────────────────
     python3 -c "
-import re, json, sys
+import json, sys
 
 settings_path = sys.argv[1]
 tmp_path = sys.argv[2]
 
 with open(settings_path, encoding='utf-8') as f:
-    raw = f.read()
+    data = json.load(f)
 
-# Match existing statusLine block with optional trailing comma
-pattern = r'[ \t]*\"statusLine\"\s*:\s*\{[^{}]*\}\s*,?[ \t]*\n?'
-m = re.search(pattern, raw)
-
-if m:
-    before = raw[:m.start()]
-    after = raw[m.end():]
-    # If previous non-whitespace char is comma and next non-whitespace is }, remove trailing comma
-    before_stripped = before.rstrip()
-    after_stripped = after.lstrip('\n')
-    if before_stripped and before_stripped[-1] == ',' and after_stripped and after_stripped[0] == '}':
-        before = before_stripped[:-1] + '\n'
-        after = after_stripped
-    patched = before + after
-else:
-    patched = raw
-
-# Build canonical version for validation
-data = json.loads(raw)
-expected = {k: v for k, v in data.items() if k != 'statusLine'}
-
-# Validate regex patch
-try:
-    patched_data = json.loads(patched)
-    valid = ('statusLine' not in patched_data and
-             len(patched_data) == len(data) - 1)
-except (json.JSONDecodeError, ValueError):
-    valid = False
-
-if not valid:
-    print('  Using fallback merge method.', file=sys.stderr)
-    patched = json.dumps(expected, indent=2) + '\n'
+orig_count = len(data)
+data.pop('statusLine', None)
+patched = json.dumps(data, indent=2) + '\n'
 
 with open(tmp_path, 'w', encoding='utf-8') as f:
     f.write(patched)
 " "$SETTINGS_FILE" "$TMP_FILE"
+
+    # ── Validate temp file ─────────────────────────────────────────
+    VALID=$(python3 -c "
+import json, sys
+with open(sys.argv[1], encoding='utf-8') as f:
+    data = json.load(f)
+with open(sys.argv[2], encoding='utf-8') as f:
+    orig = json.load(f)
+print('yes' if 'statusLine' not in data and len(data) == len(orig) - 1 else 'no')
+" "$TMP_FILE" "$SETTINGS_FILE" 2>/dev/null || echo "no")
+
+    if [ "$VALID" != "yes" ]; then
+        echo "  ERROR: validation failed after writing temp file. Aborting."
+        pause_exit 1
+    fi
 
     # ── Show diff ────────────────────────────────────────────────────
     RED=$'\033[31m'
@@ -116,7 +102,7 @@ with open(tmp_path, 'w', encoding='utf-8') as f:
     echo ""
 
     if command -v git &>/dev/null; then
-        git diff --no-index --no-color -U2 "$SETTINGS_FILE" "$TMP_FILE" 2>/dev/null | while IFS= read -r line; do
+        git diff --no-index --no-color -w -U2 "$SETTINGS_FILE" "$TMP_FILE" 2>/dev/null | while IFS= read -r line; do
             case "$line" in
                 ---*|+++*|diff*|index*) continue ;;
                 @@*)  printf '  %s%s%s\n' "$DIM"   "$line" "$RESET" ;;
@@ -126,7 +112,7 @@ with open(tmp_path, 'w', encoding='utf-8') as f:
             esac
         done
     else
-        diff --old-line-format="  ${RED}-%l${RESET}
+        diff -w --old-line-format="  ${RED}-%l${RESET}
 " --new-line-format="  ${GREEN}+%l${RESET}
 " --unchanged-line-format="" "$SETTINGS_FILE" "$TMP_FILE" || true
     fi

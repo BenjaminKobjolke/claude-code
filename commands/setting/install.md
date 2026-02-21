@@ -12,7 +12,7 @@ Install a setting from the remote GitHub repository. Auto-discovers available se
 
    First try `gh`:
    ```bash
-   gh api repos/BenjaminKobjolke/claude-code/contents/settings?ref=main --jq '.[].name'
+   gh api repos/BenjaminKobjolke/claude-code/contents/settings?ref=main --jq '[.[] | select(.type == "dir")] | .[].name'
    ```
 
    If `gh` is not available, fall back to `curl`:
@@ -36,6 +36,7 @@ Install a setting from the remote GitHub repository. Auto-discovers available se
 3. **Detect platform** from the runtime environment:
    - `win32` -> Windows (PowerShell)
    - `darwin` -> macOS (Bash)
+   - Any other platform: tell the user that remote installation is not yet supported for their platform and stop.
 
 4. **Run the install script** by streaming it directly to the shell:
 
@@ -51,4 +52,6 @@ Install a setting from the remote GitHub repository. Auto-discovers available se
 
    Replace `<name>` with the selected setting name.
 
-5. **Report the result** to the user.
+   **On failure:** If the install script fails or produces an error, stop and explain what went wrong. Do not retry automatically.
+
+5. **Report the result** to the user, including whether the installation succeeded or failed and any relevant output from the installer.

@@ -29,7 +29,9 @@ if (-not (Test-Path $claudeDir)) { New-Item -ItemType Directory -Path $claudeDir
 $companionFiles = @('install.ps1', 'status-line.ps1', 'setup.ps1', 'uninstall.ps1', 'settings.json')
 $winTarget = Join-Path $targetRoot "win"
 
-if ($sourceRoot -and (Test-Path $sourceRoot)) {
+$isValidSource = $sourceRoot -and (Test-Path $sourceRoot) -and
+                  (Test-Path (Join-Path $sourceRoot "win\settings.json"))
+if ($isValidSource) {
     if (-not $sourceRoot.TrimEnd('\','/').StartsWith($claudeDir.TrimEnd('\','/'), [System.StringComparison]::OrdinalIgnoreCase)) {
         Write-Host "  Copying files to $targetRoot"
         if (-not (Test-Path $targetRoot)) { New-Item -ItemType Directory -Path $targetRoot -Force | Out-Null }

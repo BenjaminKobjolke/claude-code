@@ -48,7 +48,7 @@ trap cleanup EXIT
 COMPANION_FILES="install.sh status-line.sh setup.sh uninstall.sh settings.json"
 MAC_TARGET="$TARGET_ROOT/mac"
 
-if [ -n "$SOURCE_ROOT" ] && [ -d "$SOURCE_ROOT" ]; then
+if [ -n "$SOURCE_ROOT" ] && [ -d "$SOURCE_ROOT" ] && [ -f "$SOURCE_ROOT/mac/settings.json" ]; then
     case "$SOURCE_ROOT" in
         "$CLAUDE_DIR"/*)
             echo "  Files already in .claude directory, skipping copy."

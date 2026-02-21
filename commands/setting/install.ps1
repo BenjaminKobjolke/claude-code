@@ -69,7 +69,13 @@ try {
     exit 1
 }
 
+if (-not (Test-Path $tempFile) -or (Get-Item $tempFile).Length -eq 0) {
+    Write-Host "ERROR: Downloaded installer is empty or missing."
+    exit 1
+}
+
 # ── Run interactively ────────────────────────────────────────────
+$exitCode = 1
 try {
     & powershell -NoProfile -File $tempFile
     $exitCode = $LASTEXITCODE

@@ -10,6 +10,9 @@ pause_exit() {
 
 echo "Installing Claude Code status line..."
 
+# ── Remote fallback URL ──────────────────────────────────────────
+REMOTE_BASE='https://raw.githubusercontent.com/BenjaminKobjolke/claude-code/main/settings/status-line/mac'
+
 # ── Check for python3 ─────────────────────────────────────────────
 if ! command -v python3 &>/dev/null; then
     echo "  ERROR: python3 is required but not installed."
@@ -19,8 +22,11 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # ── Paths ───────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"       # .../mac/
-SOURCE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"        # .../status-line/
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || SCRIPT_DIR=""  # .../mac/ (empty when piped)
+SOURCE_ROOT=""
+if [ -n "$SCRIPT_DIR" ] && [ -d "$SCRIPT_DIR/.." ]; then
+    SOURCE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"    # .../status-line/
+fi
 CLAUDE_DIR="$HOME/.claude"
 SETTINGS_DIR="$CLAUDE_DIR/settings"
 TARGET_ROOT="$SETTINGS_DIR/status-line"
@@ -36,26 +42,53 @@ cleanup() { rm -f "$TMP_FILE"; }
 trap cleanup EXIT
 
 # ── Copy files (skip if already inside .claude) ─────────────────────
-case "$SOURCE_ROOT" in
-    "$CLAUDE_DIR"/*)
-        echo "  Files already in .claude directory, skipping copy."
-        ;;
-    *)
-        echo "  Copying files to $TARGET_ROOT"
-        mkdir -p "$TARGET_ROOT"
-        cp -R "$SOURCE_ROOT/"* "$TARGET_ROOT/"
-        ;;
-esac
+COMPANION_FILES="install.sh status-line.sh setup.sh uninstall.sh settings.json"
+MAC_TARGET="$TARGET_ROOT/mac"
+
+if [ -n "$SOURCE_ROOT" ] && [ -d "$SOURCE_ROOT" ]; then
+    case "$SOURCE_ROOT" in
+        "$CLAUDE_DIR"/*)
+            echo "  Files already in .claude directory, skipping copy."
+            ;;
+        *)
+            echo "  Copying files to $TARGET_ROOT"
+            mkdir -p "$TARGET_ROOT"
+            cp -R "$SOURCE_ROOT/"* "$TARGET_ROOT/"
+            ;;
+    esac
+else
+    echo "  Downloading files from remote repository..."
+    mkdir -p "$MAC_TARGET"
+    failed=""
+    for file in $COMPANION_FILES; do
+        url="$REMOTE_BASE/$file"
+        dest="$MAC_TARGET/$file"
+        if curl -fsSL "$url" -o "$dest" 2>/dev/null; then
+            echo "    Downloaded $file"
+        else
+            echo "    WARNING: Failed to download $file from $url"
+            failed="$failed $file"
+        fi
+    done
+    if [ -n "$failed" ]; then
+        echo "  ERROR: Failed to download:$failed. Aborting."
+        pause_exit 1
+    fi
+fi
 
 # Ensure scripts are executable
-chmod +x "$TARGET_ROOT/mac/status-line.sh" "$TARGET_ROOT/mac/setup.sh" "$TARGET_ROOT/mac/install.sh" "$TARGET_ROOT/mac/uninstall.sh" 2>/dev/null || true
+chmod +x "$MAC_TARGET/status-line.sh" "$MAC_TARGET/setup.sh" "$MAC_TARGET/install.sh" "$MAC_TARGET/uninstall.sh" 2>/dev/null || true
 
 # Resolve target setup.sh path (for wizard prompt later)
 TARGET_SETUP="$TARGET_ROOT/mac/setup.sh"
 
 # ── Read statusLine value from bundled settings.json ────────────────
 SNIPPET_FILE="$TARGET_ROOT/mac/settings.json"
-[ -f "$SNIPPET_FILE" ] || SNIPPET_FILE="$SCRIPT_DIR/settings.json"
+[ -f "$SNIPPET_FILE" ] || { [ -n "$SCRIPT_DIR" ] && SNIPPET_FILE="$SCRIPT_DIR/settings.json"; }
+if [ ! -f "$SNIPPET_FILE" ]; then
+    echo "  ERROR: settings.json not found locally or from download. Aborting."
+    pause_exit 1
+fi
 if ! python3 -c "import json,sys; json.load(open(sys.argv[1],encoding='utf-8'))" "$SNIPPET_FILE" 2>/dev/null; then
     echo "  ERROR: settings.json snippet is not valid JSON. Aborting."
     pause_exit 1

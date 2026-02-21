@@ -3,6 +3,22 @@
 param([switch]$FromInstall)
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
+# ── Resolve target status-line.ps1 ───────────────────────────────
+$installedPath = Join-Path $env:USERPROFILE ".claude\settings\status-line\win\status-line.ps1"
+$localPath = Join-Path $PSScriptRoot "status-line.ps1"
+if (Test-Path $installedPath) {
+    $targetPath = $installedPath
+} elseif (Test-Path $localPath) {
+    $targetPath = $localPath
+    Write-Host "  Warning: editing local copy. Run install.ps1 to install to .claude."
+} else {
+    Write-Host "  ERROR: status-line.ps1 not found."
+    Write-Host ""
+    Read-Host "Press Enter to exit"
+    exit 1
+}
 
 function Prompt-Choice($title, $options, $default) {
     Write-Host ""
@@ -26,8 +42,6 @@ Write-Host "Customizing status line..."
 
 # ── Show current settings when run standalone ─────────────────────
 if (-not $FromInstall) {
-    $targetPath = Join-Path $PSScriptRoot "status-line.ps1"
-    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     $curBarWidth = 15; $curColor = 32; $curFormat = '{0} {1} | {2} | {3} | {4} | {5}'
     $curFilledChar = '[char]0x2588'
     if (Test-Path $targetPath) {
@@ -91,8 +105,6 @@ $cfgFilledColor = @{ 1 = 32; 2 = 36; 3 = 33; 4 = 37 }[(Prompt-Choice "Bar color"
 
 # --- Replace config block ---
 
-$targetPath = Join-Path $PSScriptRoot "status-line.ps1"
-$utf8NoBom = New-Object System.Text.UTF8Encoding $false
 $content = [System.IO.File]::ReadAllText($targetPath, $utf8NoBom)
 
 $configBlock = @"

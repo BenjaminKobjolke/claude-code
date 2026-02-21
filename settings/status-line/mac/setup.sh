@@ -8,7 +8,21 @@ for arg in "$@"; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TARGET="$SCRIPT_DIR/status-line.sh"
+
+# ── Resolve target status-line.sh ────────────────────────────────
+INSTALLED_PATH="$HOME/.claude/settings/status-line/mac/status-line.sh"
+LOCAL_PATH="$SCRIPT_DIR/status-line.sh"
+if [ -f "$INSTALLED_PATH" ]; then
+    TARGET="$INSTALLED_PATH"
+elif [ -f "$LOCAL_PATH" ]; then
+    TARGET="$LOCAL_PATH"
+    echo "  Warning: editing local copy. Run install.sh to install to .claude."
+else
+    echo "  ERROR: status-line.sh not found."
+    echo ""
+    read -rp "Press Enter to exit"
+    exit 1
+fi
 
 echo "Customizing status line..."
 

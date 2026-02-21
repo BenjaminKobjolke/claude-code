@@ -10,8 +10,7 @@
 # duration     = total wall-clock time since session started                (resets on resume)
 # modelName    = active model display name                                  (persistent across resumes)
 
-# --- Configuration (edit these, or use generate.ps1) ---
-
+# :config-start
 $CFG_BAR_WIDTH    = 15
 $CFG_FILLED_COLOR = 32
 $CFG_EMPTY_COLOR  = 90
@@ -19,8 +18,7 @@ $CFG_FILLED_CHAR  = [char]0x2588
 $CFG_HALF_CHAR    = [char]0x258C
 $CFG_EMPTY_CHAR   = [char]0x2588
 $CFG_FORMAT       = '{0} {1} | {2} | {3} | {4} | {5}'
-
-# --- End configuration ---
+# :config-end
 $json = [Console]::In.ReadToEnd() | ConvertFrom-Json
 
 $modelName = $json.model.display_name

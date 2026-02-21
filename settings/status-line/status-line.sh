@@ -12,23 +12,18 @@
 # duration     = total wall-clock time since session started                (resets on resume)
 # modelName    = active model display name                                  (persistent across resumes)
 
-# --- Configuration (edit these, or use generate.sh) ---
-
+# :config-start
 CFG_BAR_WIDTH=15
-CFG_FILLED_COLOR=32            # ANSI: 32=green, 36=cyan, 33=yellow, 37=white
-CFG_EMPTY_COLOR=90             # ANSI: 90=dim gray
-CFG_FILLED_CHAR=$'\xe2\x96\x88'   # █  (or $'\xe2\x96\x93' for ▓, or '=')
-CFG_HALF_CHAR=$'\xe2\x96\x8c'     # ▌  (or $'\xe2\x96\x92' for ▒, or '-')
-CFG_EMPTY_CHAR=$'\xe2\x96\x88'    # █  (or $'\xe2\x96\x91' for ░, or '-')
-
-# Output format function — override to change layout
-# Available vars: $progress_bar $used_pct_str $used_str $max_str $cost_str $duration $model_name
+CFG_FILLED_COLOR=32
+CFG_EMPTY_COLOR=90
+CFG_FILLED_CHAR=$'\xe2\x96\x88'
+CFG_HALF_CHAR=$'\xe2\x96\x8c'
+CFG_EMPTY_CHAR=$'\xe2\x96\x88'
 cfg_output() {
     printf '%s %s | %s/%s | %s | %s | %s\n' \
         "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration" "$model_name"
 }
-
-# --- End configuration ---
+# :config-end
 
 json=$(cat)
 

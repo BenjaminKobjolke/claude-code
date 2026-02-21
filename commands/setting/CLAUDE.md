@@ -8,14 +8,14 @@ Claude's Bash tool does NOT have an interactive stdin. Any script that uses `Rea
 
 Use `Start-Process` (Windows) or `osascript` (macOS) to open the script in a **separate terminal window** where the user can interact with it directly.
 
-**Windows:**
+**Windows (piped from remote):**
 ```bash
-powershell -NoProfile -Command "Start-Process powershell -ArgumentList '-NoProfile -File \"path/to/script.ps1\"'"
+powershell -NoProfile -Command "Start-Process powershell -ArgumentList '-NoProfile -Command \"irm https://raw.githubusercontent.com/.../install.ps1 | iex\"'"
 ```
 
-**macOS:**
+**macOS (piped from remote):**
 ```bash
-osascript -e 'tell app "Terminal" to do script "bash \"path/to/script.sh\""'
+osascript -e 'tell app "Terminal" to do script "curl -fsSL https://raw.githubusercontent.com/.../install.sh | bash"'
 ```
 
 Claude cannot see the output of these scripts. The `.md` command should tell the user to follow the prompts in the new terminal window.
@@ -51,6 +51,22 @@ Do NOT download scripts to temp files just to avoid piping. The download-to-temp
 - Isolated temp subdirectories are needed to work around the `$PSScriptRoot` issue, adding even more complexity.
 
 Piping (`irm | iex`) avoids all of these problems because `$PSScriptRoot` is empty when piped, so the sub-installer correctly falls through to its remote download branch.
+
+### `param()` Does NOT Work When Piped
+
+PowerShell's `param()` block is ignored when a script is executed via `irm | iex`. To pass arguments, use environment variables instead:
+
+```powershell
+# In the script — read from env var instead of param()
+$SettingName = if ($env:SETTING_NAME) { $env:SETTING_NAME } else { '' }
+```
+
+```powershell
+# From the caller — set env var before piping
+$env:SETTING_NAME='status-line'; irm $url | iex
+```
+
+For Bash, `bash -s -- arg1` works correctly with piped scripts.
 
 ## Platform Detection
 

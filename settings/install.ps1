@@ -1,9 +1,11 @@
 # install.ps1 - Interactive setting installer launcher (Windows)
 # Discovers available settings from remote repo, presents selection menu,
 # downloads and runs the chosen setting's installer interactively.
-param([string]$SettingName)
-
+# When piped (irm | iex), param() blocks don't work.
+# Pass setting name via $env:SETTING_NAME or $SettingName variable.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
+$SettingName = if ($env:SETTING_NAME) { $env:SETTING_NAME } else { '' }
 
 $REPO    = 'BenjaminKobjolke/claude-code'
 $BRANCH  = 'main'

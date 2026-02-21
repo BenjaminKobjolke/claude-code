@@ -147,23 +147,25 @@ if ($alreadySet) {
 
 # ── Read current config from status-line.ps1 ─────────────────────
 $statusLineScript = Join-Path $targetRoot "win\status-line.ps1"
-$cfgBarWidth = 15; $cfgColor = 32; $cfgFormat = '{0} {1} | {2} | {3} | {4} | {5}'
+$cfgBarWidth = 10; $cfgColor = 'dynamic'; $cfgFormat = '{0} {1} | {2} | {3} | {4} | {5}'
 $cfgFilledChar = '[char]0x2588'
 if (Test-Path $statusLineScript) {
     $slContent = [System.IO.File]::ReadAllText($statusLineScript, $utf8NoBom)
     if ($slContent -match 'CFG_BAR_WIDTH\s*=\s*(\d+)')    { $cfgBarWidth = $Matches[1] }
-    if ($slContent -match 'CFG_FILLED_COLOR\s*=\s*(\d+)')  { $cfgColor = $Matches[1] }
+    if ($slContent -match "CFG_FILLED_COLOR\s*=\s*'dynamic'") { $cfgColor = 'dynamic' }
+    elseif ($slContent -match 'CFG_FILLED_COLOR\s*=\s*(\d+)')  { $cfgColor = $Matches[1] }
     if ($slContent -match "CFG_FORMAT\s*=\s*'([^']+)'")    { $cfgFormat = $Matches[1] }
     if ($slContent -match 'CFG_FILLED_CHAR\s*=\s*(.+)')    { $cfgFilledChar = $Matches[1].Trim() }
 }
 
-$colorName = switch ($cfgColor) { 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $cfgColor" } }
+$colorName = switch ($cfgColor) { 'dynamic' { "Dynamic (green/yellow/red)" } 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $cfgColor" } }
 $styleName = if ($cfgFilledChar -match '0x2588') { "Block" } elseif ($cfgFilledChar -match '0x2593') { "Shade" } elseif ($cfgFilledChar -match '"="') { "ASCII" } else { "Custom" }
 $layoutName = switch ($cfgFormat) {
     '{0} {1} | {2} | {3} | {4} | {5}' { "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model" }
     '{0} {1} | {2} | {3} | {5}'       { "Context Progress Bar, Context %, Tokens Used, Cost, Model" }
     '{5} | {0} {1} | {2} | {3} | {4}' { "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" }
     '{0} {1} | {3} | {5}'             { "Context Progress Bar, Context %, Cost, Model" }
+    '{0} {1}'                          { "Context Progress Bar, Context %" }
     default                            { $cfgFormat }
 }
 

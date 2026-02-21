@@ -1,9 +1,10 @@
 # Claude Code custom status line
 # https://code.claude.com/docs/en/statusline
 #
-# Output: ████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
+# Output: ██▌███████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
 #
-# progressBar  = green/dim unicode block bar showing context usage visually  (persistent across resumes)
+# progressBar  = dynamic color bar showing context health visually           (persistent across resumes)
+#                  green (<50%) healthy | yellow (50-75%) caution | red (>75%) critical
 # usedPctStr   = context window usage as percentage                         (persistent across resumes)
 # tokenStr     = current context usage / max context window size            (persistent across resumes)
 # totalCost    = session cost in USD                                        (resets on resume)
@@ -11,8 +12,8 @@
 # modelName    = active model display name                                  (persistent across resumes)
 
 # :config-start
-$CFG_BAR_WIDTH    = 15
-$CFG_FILLED_COLOR = 32
+$CFG_BAR_WIDTH    = 10
+$CFG_FILLED_COLOR = 'dynamic'
 $CFG_EMPTY_COLOR  = 90
 $CFG_FILLED_CHAR  = [char]0x2588
 $CFG_HALF_CHAR    = [char]0x258C
@@ -53,7 +54,12 @@ function Format-Tokens($n) {
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $esc   = [char]27
-$green = "$esc[$($CFG_FILLED_COLOR)m"
+if ($CFG_FILLED_COLOR -eq 'dynamic') {
+    $filledColorCode = if ($usedPct -ge 75) { 31 } elseif ($usedPct -ge 50) { 33 } else { 32 }
+} else {
+    $filledColorCode = $CFG_FILLED_COLOR
+}
+$green = "$esc[$($filledColorCode)m"
 $dim   = "$esc[$($CFG_EMPTY_COLOR)m"
 $reset = "$esc[0m"
 

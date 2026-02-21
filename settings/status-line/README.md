@@ -3,14 +3,14 @@
 A custom status line that displays real-time session metrics at the bottom of the Claude Code terminal.
 
 ```
-████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
+██▌███████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
 ```
 
 ## Metrics
 
 | Field | Description | On Resume |
 |---|---|---|
-| Progress bar | Unicode block bar showing context usage visually | Persistent |
+| Progress bar | Dynamic color bar showing context health (green/yellow/red) | Persistent |
 | Percentage | Context window usage as a percentage | Persistent |
 | Tokens | Current context usage / max context window size | Persistent |
 | Cost | Session cost in USD | Resets |
@@ -138,13 +138,14 @@ bash ~/.claude/settings/status-line/mac/setup.sh
 | 2 | Progress bar, Percentage, Tokens, Cost, Model |
 | 3 | Model, Progress bar, Percentage, Tokens, Cost, Duration |
 | 4 | Progress bar, Percentage, Cost, Model |
+| 5 | Progress bar, Percentage |
 
 **Bar width** -- number of characters for the progress bar:
 
 | # | Width |
 |---|---|
-| 1 | 10 |
-| 2 | 15 *(default)* |
+| 1 | 10 *(default)* |
+| 2 | 15 |
 | 3 | 20 |
 
 **Bar style** -- character set used to render the bar:
@@ -155,14 +156,15 @@ bash ~/.claude/settings/status-line/mac/setup.sh
 | 2 | Shade | `▓` filled, `▒` half, `░` empty |
 | 3 | ASCII | `=` filled, `-` half, `-` empty |
 
-**Bar color** -- ANSI color for the filled portion (empty is always dim gray):
+**Bar color** -- color for the filled portion (empty is always dim gray):
 
-| # | Color | ANSI Code |
+| # | Color | Value |
 |---|---|---|
-| 1 | Green *(default)* | 32 |
-| 2 | Cyan | 36 |
-| 3 | Yellow | 33 |
-| 4 | White | 37 |
+| 1 | Dynamic *(default)* | green <50%, yellow 50-75%, red >75% |
+| 2 | Green | ANSI 32 |
+| 3 | Cyan | ANSI 36 |
+| 4 | Yellow | ANSI 33 |
+| 5 | White | ANSI 37 |
 
 ### Manual Configuration
 
@@ -172,8 +174,8 @@ You can also edit the config block directly in the status line script. The confi
 
 ```powershell
 # :config-start
-$CFG_BAR_WIDTH    = 15
-$CFG_FILLED_COLOR = 32
+$CFG_BAR_WIDTH    = 10
+$CFG_FILLED_COLOR = 'dynamic'
 $CFG_EMPTY_COLOR  = 90
 $CFG_FILLED_CHAR  = [char]0x2588
 $CFG_HALF_CHAR    = [char]0x258C
@@ -188,8 +190,8 @@ $CFG_FORMAT       = '{0} {1} | {2} | {3} | {4} | {5}'
 
 ```bash
 # :config-start
-CFG_BAR_WIDTH=15
-CFG_FILLED_COLOR=32
+CFG_BAR_WIDTH=10
+CFG_FILLED_COLOR=dynamic
 CFG_EMPTY_COLOR=90
 CFG_FILLED_CHAR=$'\xe2\x96\x88'
 CFG_HALF_CHAR=$'\xe2\x96\x8c'

@@ -3,9 +3,10 @@
 # https://code.claude.com/docs/en/statusline
 #
 # Format: {progress bar} {context %} | {tokens used/max} | {cost} | {duration} | {model}
-# Output: ████▌██████████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
+# Output: ██▌███████ 26.0% | 52.1k/200.0k | $1.93 | 3m 33s | Opus 4.6
 #
-# progressBar  = green/dim unicode block bar showing context usage visually  (persistent across resumes)
+# progressBar  = dynamic color bar showing context health visually           (persistent across resumes)
+#                  green (<50%) healthy | yellow (50-75%) caution | red (>75%) critical
 # usedPctStr   = context window usage as percentage                         (persistent across resumes)
 # tokenStr     = current context usage / max context window size            (persistent across resumes)
 # totalCost    = session cost in USD                                        (resets on resume)
@@ -13,8 +14,8 @@
 # modelName    = active model display name                                  (persistent across resumes)
 
 # :config-start
-CFG_BAR_WIDTH=15
-CFG_FILLED_COLOR=32
+CFG_BAR_WIDTH=10
+CFG_FILLED_COLOR=dynamic
 CFG_EMPTY_COLOR=90
 CFG_FILLED_CHAR=$'\xe2\x96\x88'
 CFG_HALF_CHAR=$'\xe2\x96\x8c'
@@ -101,7 +102,17 @@ used_str=$(format_tokens "$used_tokens")
 max_str=$(format_tokens "$max_tokens")
 
 ESC=$'\033'
-GREEN="${ESC}[${CFG_FILLED_COLOR}m"
+if [ "$CFG_FILLED_COLOR" = "dynamic" ]; then
+    filled_color_code=$(python3 -c "
+pct = ${used_pct}
+if pct >= 75: print(31)
+elif pct >= 50: print(33)
+else: print(32)
+")
+else
+    filled_color_code=$CFG_FILLED_COLOR
+fi
+GREEN="${ESC}[${filled_color_code}m"
 DIM="${ESC}[${CFG_EMPTY_COLOR}m"
 RESET="${ESC}[0m"
 

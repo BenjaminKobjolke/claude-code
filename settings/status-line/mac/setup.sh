@@ -28,13 +28,13 @@ echo "Customizing status line..."
 
 # ── Show current settings when run standalone ─────────────────────
 if [ "$FROM_INSTALL" = false ] && [ -f "$TARGET" ]; then
-    cur_bar_width=$(grep -oP 'CFG_BAR_WIDTH=\K\d+' "$TARGET" 2>/dev/null || echo 15)
-    cur_color=$(grep -oP 'CFG_FILLED_COLOR=\K\d+' "$TARGET" 2>/dev/null || echo 32)
+    cur_bar_width=$(grep -oP 'CFG_BAR_WIDTH=\K\d+' "$TARGET" 2>/dev/null || echo 10)
+    cur_color=$(grep -oP 'CFG_FILLED_COLOR=\K\S+' "$TARGET" 2>/dev/null || echo 32)
     cur_filled_char=$(grep -oP 'CFG_FILLED_CHAR=\K.*' "$TARGET" 2>/dev/null || echo "")
     cur_output_line=$(sed -n '/^cfg_output()/,/^}/{ /printf/p; }' "$TARGET" 2>/dev/null || echo "")
 
     case "$cur_color" in
-        32) cur_color_name="Green" ;; 36) cur_color_name="Cyan" ;; 33) cur_color_name="Yellow" ;; 37) cur_color_name="White" ;;
+        dynamic) cur_color_name="Dynamic (green/yellow/red)" ;; 32) cur_color_name="Green" ;; 36) cur_color_name="Cyan" ;; 33) cur_color_name="Yellow" ;; 37) cur_color_name="White" ;;
         *)  cur_color_name="ANSI $cur_color" ;;
     esac
     case "$cur_filled_char" in
@@ -51,6 +51,8 @@ if [ "$FROM_INSTALL" = false ] && [ -f "$TARGET" ]; then
         else
             cur_layout_name="Context Progress Bar, Context %, Cost, Model"
         fi
+    elif ! echo "$cur_output_line" | grep -q 'cost_str\|model_name\|duration'; then
+        cur_layout_name="Context Progress Bar, Context %"
     else
         cur_layout_name="Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model"
     fi
@@ -71,6 +73,7 @@ echo "    1) Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model
 echo "    2) Context Progress Bar, Context %, Tokens Used, Cost, Model"
 echo "    3) Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration"
 echo "    4) Context Progress Bar, Context %, Cost, Model"
+echo "    5) Context Progress Bar, Context %"
 read -rp "  Choose [1]: " layout_choice
 layout_choice=${layout_choice:-1}
 
@@ -83,6 +86,8 @@ case "$layout_choice" in
         "$model_name" "$progress_bar" "$used_pct_str" "$used_str" "$max_str" "$cost_str" "$duration"' ;;
     4) cfg_output='    printf '"'"'%s %s | %s | %s\n'"'"' \
         "$progress_bar" "$used_pct_str" "$cost_str" "$model_name"' ;;
+    5) cfg_output='    printf '"'"'%s %s\n'"'"' \
+        "$progress_bar" "$used_pct_str"' ;;
     *) echo "    Invalid choice." ; exit 1 ;;
 esac
 
@@ -90,11 +95,11 @@ esac
 
 echo ""
 echo "  Bar width:"
-echo "    1) 10"
-echo "    2) 15  (default)"
+echo "    1) 10  (default)"
+echo "    2) 15"
 echo "    3) 20"
-read -rp "  Choose [2]: " width_choice
-width_choice=${width_choice:-2}
+read -rp "  Choose [1]: " width_choice
+width_choice=${width_choice:-1}
 
 case "$width_choice" in
     1) bar_width=10 ;; 2) bar_width=15 ;; 3) bar_width=20 ;;
@@ -128,15 +133,16 @@ esac
 
 echo ""
 echo "  Bar color:"
-echo "    1) Green / Dim gray  (default)"
-echo "    2) Cyan / Dim gray"
-echo "    3) Yellow / Dim gray"
-echo "    4) White / Dim gray"
+echo "    1) Dynamic: green/yellow/red by context health  (default)"
+echo "    2) Green / Dim gray"
+echo "    3) Cyan / Dim gray"
+echo "    4) Yellow / Dim gray"
+echo "    5) White / Dim gray"
 read -rp "  Choose [1]: " color_choice
 color_choice=${color_choice:-1}
 
 case "$color_choice" in
-    1) filled_color=32 ;; 2) filled_color=36 ;; 3) filled_color=33 ;; 4) filled_color=37 ;;
+    1) filled_color=dynamic ;; 2) filled_color=32 ;; 3) filled_color=36 ;; 4) filled_color=33 ;; 5) filled_color=37 ;;
     *) echo "    Invalid choice." ; exit 1 ;;
 esac
 
@@ -166,7 +172,7 @@ mv "$tmpfile" "$TARGET"
 chmod +x "$TARGET"
 
 case "$filled_color" in
-    32) color_name="Green" ;; 36) color_name="Cyan" ;; 33) color_name="Yellow" ;; 37) color_name="White" ;;
+    dynamic) color_name="Dynamic (green/yellow/red)" ;; 32) color_name="Green" ;; 36) color_name="Cyan" ;; 33) color_name="Yellow" ;; 37) color_name="White" ;;
     *)  color_name="ANSI $filled_color" ;;
 esac
 case "$style_choice" in
@@ -177,6 +183,7 @@ case "$layout_choice" in
     2) layout_name="Context Progress Bar, Context %, Tokens Used, Cost, Model" ;;
     3) layout_name="Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" ;;
     4) layout_name="Context Progress Bar, Context %, Cost, Model" ;;
+    5) layout_name="Context Progress Bar, Context %" ;;
 esac
 
 echo ""

@@ -42,22 +42,24 @@ Write-Host "Customizing status line..."
 
 # ── Show current settings when run standalone ─────────────────────
 if (-not $FromInstall) {
-    $curBarWidth = 15; $curColor = 32; $curFormat = '{0} {1} | {2} | {3} | {4} | {5}'
+    $curBarWidth = 10; $curColor = 'dynamic'; $curFormat = '{0} {1} | {2} | {3} | {4} | {5}'
     $curFilledChar = '[char]0x2588'
     if (Test-Path $targetPath) {
         $slContent = [System.IO.File]::ReadAllText($targetPath, $utf8NoBom)
         if ($slContent -match 'CFG_BAR_WIDTH\s*=\s*(\d+)')    { $curBarWidth = $Matches[1] }
-        if ($slContent -match 'CFG_FILLED_COLOR\s*=\s*(\d+)')  { $curColor = $Matches[1] }
+        if ($slContent -match "CFG_FILLED_COLOR\s*=\s*'dynamic'") { $curColor = 'dynamic' }
+        elseif ($slContent -match 'CFG_FILLED_COLOR\s*=\s*(\d+)')  { $curColor = $Matches[1] }
         if ($slContent -match "CFG_FORMAT\s*=\s*'([^']+)'")    { $curFormat = $Matches[1] }
         if ($slContent -match 'CFG_FILLED_CHAR\s*=\s*(.+)')    { $curFilledChar = $Matches[1].Trim() }
     }
-    $curColorName = switch ($curColor) { 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $curColor" } }
+    $curColorName = switch ($curColor) { 'dynamic' { "Dynamic (green/yellow/red)" } 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $curColor" } }
     $curStyleName = if ($curFilledChar -match '0x2588') { "Block" } elseif ($curFilledChar -match '0x2593') { "Shade" } elseif ($curFilledChar -match '"="') { "ASCII" } else { "Custom" }
     $curLayoutName = switch ($curFormat) {
         '{0} {1} | {2} | {3} | {4} | {5}' { "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model" }
         '{0} {1} | {2} | {3} | {5}'       { "Context Progress Bar, Context %, Tokens Used, Cost, Model" }
         '{5} | {0} {1} | {2} | {3} | {4}' { "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" }
         '{0} {1} | {3} | {5}'             { "Context Progress Bar, Context %, Cost, Model" }
+        '{0} {1}'                          { "Context Progress Bar, Context %" }
         default                            { $curFormat }
     }
     Write-Host ""
@@ -73,6 +75,7 @@ $layoutChoice = Prompt-Choice "Layout" @(
     "Context Progress Bar, Context %, Tokens Used, Cost, Model"
     "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration"
     "Context Progress Bar, Context %, Cost, Model"
+    "Context Progress Bar, Context %"
 ) 1
 
 $cfgFormat = @{
@@ -80,9 +83,10 @@ $cfgFormat = @{
     2 = '{0} {1} | {2} | {3} | {5}'
     3 = '{5} | {0} {1} | {2} | {3} | {4}'
     4 = '{0} {1} | {3} | {5}'
+    5 = '{0} {1}'
 }[$layoutChoice]
 
-$cfgBarWidth = @{ 1 = 10; 2 = 15; 3 = 20 }[(Prompt-Choice "Bar width" @( "10"; "15"; "20" ) 2)]
+$cfgBarWidth = @{ 1 = 10; 2 = 15; 3 = 20 }[(Prompt-Choice "Bar width" @( "10"; "15"; "20" ) 1)]
 
 $styleChoice = Prompt-Choice "Bar style" @(
     "Block: unicode blocks"
@@ -96,12 +100,14 @@ $style = @{
     3 = @{ filled = '"="';          half = '"-"';          empty = '"-"'          }
 }[$styleChoice]
 
-$cfgFilledColor = @{ 1 = 32; 2 = 36; 3 = 33; 4 = 37 }[(Prompt-Choice "Bar color" @(
+$colorChoice = Prompt-Choice "Bar color" @(
+    "Dynamic: green/yellow/red by context health"
     "Green / Dim gray"
     "Cyan / Dim gray"
     "Yellow / Dim gray"
     "White / Dim gray"
-) 1)]
+) 1
+$cfgFilledColor = @{ 1 = "'dynamic'"; 2 = 32; 3 = 36; 4 = 33; 5 = 37 }[$colorChoice]
 
 # --- Replace config block ---
 
@@ -122,13 +128,14 @@ $configBlock = @"
 $replaced = $content -replace '(?ms)^# :config-start\r?\n.*?^# :config-end', $configBlock
 [System.IO.File]::WriteAllText($targetPath, $replaced, $utf8NoBom)
 
-$colorName = switch ($cfgFilledColor) { 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $cfgFilledColor" } }
+$colorName = switch ($cfgFilledColor) { "'dynamic'" { "Dynamic (green/yellow/red)" } 32 { "Green" } 36 { "Cyan" } 33 { "Yellow" } 37 { "White" } default { "ANSI $cfgFilledColor" } }
 $styleName = switch ($styleChoice) { 1 { "Block" } 2 { "Shade" } 3 { "ASCII" } }
 $layoutName = switch ($cfgFormat) {
     '{0} {1} | {2} | {3} | {4} | {5}' { "Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model" }
     '{0} {1} | {2} | {3} | {5}'       { "Context Progress Bar, Context %, Tokens Used, Cost, Model" }
     '{5} | {0} {1} | {2} | {3} | {4}' { "Model, Context Progress Bar, Context %, Tokens Used, Cost, Duration" }
     '{0} {1} | {3} | {5}'             { "Context Progress Bar, Context %, Cost, Model" }
+    '{0} {1}'                          { "Context Progress Bar, Context %" }
 }
 
 Write-Host ""

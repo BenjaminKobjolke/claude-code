@@ -170,17 +170,17 @@ fi
 
 # ── Read current config from status-line.sh ──────────────────────
 SL_SCRIPT="$TARGET_ROOT/mac/status-line.sh"
-cfg_bar_width=15; cfg_color=32; cfg_filled_char=""
+cfg_bar_width=10; cfg_color=dynamic; cfg_filled_char=""
 cfg_output_line=""
 if [ -f "$SL_SCRIPT" ]; then
-    cfg_bar_width=$(grep -oP 'CFG_BAR_WIDTH=\K\d+' "$SL_SCRIPT" 2>/dev/null || echo 15)
-    cfg_color=$(grep -oP 'CFG_FILLED_COLOR=\K\d+' "$SL_SCRIPT" 2>/dev/null || echo 32)
+    cfg_bar_width=$(grep -oP 'CFG_BAR_WIDTH=\K\d+' "$SL_SCRIPT" 2>/dev/null || echo 10)
+    cfg_color=$(grep -oP 'CFG_FILLED_COLOR=\K\S+' "$SL_SCRIPT" 2>/dev/null || echo dynamic)
     cfg_filled_char=$(grep -oP 'CFG_FILLED_CHAR=\K.*' "$SL_SCRIPT" 2>/dev/null || echo "")
     cfg_output_line=$(sed -n '/^cfg_output()/,/^}/{ /printf/p; }' "$SL_SCRIPT" 2>/dev/null || echo "")
 fi
 
 case "$cfg_color" in
-    32) color_name="Green" ;; 36) color_name="Cyan" ;; 33) color_name="Yellow" ;; 37) color_name="White" ;;
+    dynamic) color_name="Dynamic (green/yellow/red)" ;; 32) color_name="Green" ;; 36) color_name="Cyan" ;; 33) color_name="Yellow" ;; 37) color_name="White" ;;
     *)  color_name="ANSI $cfg_color" ;;
 esac
 
@@ -200,6 +200,8 @@ elif echo "$cfg_output_line" | grep -q 'cost_str.*model_name' && ! echo "$cfg_ou
     else
         layout_name="Context Progress Bar, Context %, Cost, Model"
     fi
+elif ! echo "$cfg_output_line" | grep -q 'cost_str\|model_name\|duration'; then
+    layout_name="Context Progress Bar, Context %"
 else
     layout_name="Context Progress Bar, Context %, Tokens Used, Cost, Duration, Model"
 fi

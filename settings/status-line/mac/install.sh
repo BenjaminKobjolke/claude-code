@@ -22,7 +22,10 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # ── Paths ───────────────────────────────────────────────────────────
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || SCRIPT_DIR=""  # .../mac/ (empty when piped)
+SCRIPT_DIR=""
+if [ -f "$0" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"    # .../mac/
+fi
 SOURCE_ROOT=""
 if [ -n "$SCRIPT_DIR" ] && [ -d "$SCRIPT_DIR/.." ]; then
     SOURCE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"    # .../status-line/
@@ -63,7 +66,7 @@ else
     for file in $COMPANION_FILES; do
         url="$REMOTE_BASE/$file"
         dest="$MAC_TARGET/$file"
-        if curl -fsSL "$url" -o "$dest" 2>/dev/null; then
+        if curl -fsSL "$url" -o "$dest"; then
             echo "    Downloaded $file"
         else
             echo "    WARNING: Failed to download $file from $url"
@@ -71,7 +74,8 @@ else
         fi
     done
     if [ -n "$failed" ]; then
-        echo "  ERROR: Failed to download:$failed. Aborting."
+        echo "  ERROR: Failed to download:${failed}. Aborting."
+        command -v curl &>/dev/null || echo "  HINT: curl does not appear to be installed."
         pause_exit 1
     fi
 fi
@@ -84,7 +88,9 @@ TARGET_SETUP="$TARGET_ROOT/mac/setup.sh"
 
 # ── Read statusLine value from bundled settings.json ────────────────
 SNIPPET_FILE="$TARGET_ROOT/mac/settings.json"
-[ -f "$SNIPPET_FILE" ] || { [ -n "$SCRIPT_DIR" ] && SNIPPET_FILE="$SCRIPT_DIR/settings.json"; }
+if [ ! -f "$SNIPPET_FILE" ] && [ -n "$SCRIPT_DIR" ]; then
+    SNIPPET_FILE="$SCRIPT_DIR/settings.json"
+fi
 if [ ! -f "$SNIPPET_FILE" ]; then
     echo "  ERROR: settings.json not found locally or from download. Aborting."
     pause_exit 1

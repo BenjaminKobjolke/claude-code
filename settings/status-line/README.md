@@ -23,11 +23,13 @@ A custom status line that displays real-time session metrics at the bottom of th
 settings/status-line/
   win/
     install.ps1       # Automated installer
+    uninstall.ps1     # Automated uninstaller
     status-line.ps1   # PowerShell status line script
     setup.ps1         # Interactive setup wizard
     settings.json     # Claude Code config snippet
   mac/
     install.sh        # Automated installer
+    uninstall.sh      # Automated uninstaller
     status-line.sh    # Bash status line script
     setup.sh          # Interactive setup wizard
     settings.json     # Claude Code config snippet
@@ -54,7 +56,7 @@ bash path/to/status-line/mac/install.sh
 The installer will:
 - Skip copying if the files are already inside `~/.claude/`
 - Prompt before overwriting an existing `statusLine` setting
-- Back up `settings.json` to `settings.json.bak` before modifying
+- Back up `settings.json` with rotation (up to 2 revisions) before modifying
 - Validate the output JSON before replacing the original
 
 ### Manual
@@ -87,6 +89,28 @@ If you prefer to install manually:
 ```
 
 3. Restart Claude Code
+
+## Uninstallation
+
+Run the uninstall script for your platform. It removes the `statusLine` key from `~/.claude/settings.json` and optionally deletes the `~/.claude/settings/status-line/` directory.
+
+**Windows:**
+
+```powershell
+powershell -NoProfile -File ~/.claude/settings/status-line/win/uninstall.ps1
+```
+
+**macOS:**
+
+```bash
+bash ~/.claude/settings/status-line/mac/uninstall.sh
+```
+
+The uninstaller will:
+- Show what will be removed before making changes
+- Display a diff preview of settings.json changes
+- Back up `settings.json` with rotation (up to 2 revisions) before modifying
+- Prompt separately for settings.json changes and directory deletion
 
 ## Customization
 

@@ -174,8 +174,10 @@ if ($alreadySet) {
         Pause-Exit 0
     }
 
-    # ── Backup ──────────────────────────────────────────────────────
+    # ── Backup (2-revision rotation) ────────────────────────────────
     if (Test-Path $settingsFile) {
+        if (Test-Path "$backupFile.1") { Remove-Item "$backupFile.1" -Force }
+        if (Test-Path $backupFile) { Rename-Item $backupFile "$backupFile.1" -Force }
         Copy-Item $settingsFile $backupFile -Force
         Write-Host "  Backing up settings.json -> settings.json.bak"
     }

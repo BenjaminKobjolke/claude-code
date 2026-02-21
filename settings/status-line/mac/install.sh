@@ -48,7 +48,7 @@ case "$SOURCE_ROOT" in
 esac
 
 # Ensure scripts are executable
-chmod +x "$TARGET_ROOT/mac/status-line.sh" "$TARGET_ROOT/mac/setup.sh" "$TARGET_ROOT/mac/install.sh" 2>/dev/null || true
+chmod +x "$TARGET_ROOT/mac/status-line.sh" "$TARGET_ROOT/mac/setup.sh" "$TARGET_ROOT/mac/install.sh" "$TARGET_ROOT/mac/uninstall.sh" 2>/dev/null || true
 
 # Resolve target setup.sh path (for wizard prompt later)
 TARGET_SETUP="$TARGET_ROOT/mac/setup.sh"
@@ -188,7 +188,9 @@ else
         pause_exit 0
     fi
 
-    # ── Backup ──────────────────────────────────────────────────────
+    # ── Backup (2-revision rotation) ────────────────────────────────
+    rm -f "$BACKUP_FILE.1"
+    [ -f "$BACKUP_FILE" ] && mv "$BACKUP_FILE" "$BACKUP_FILE.1"
     cp "$SETTINGS_FILE" "$BACKUP_FILE"
     echo "  Backing up settings.json -> settings.json.bak"
 

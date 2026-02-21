@@ -42,8 +42,11 @@ if [ -z "$SETTINGS" ]; then
     exit 1
 fi
 
-# Convert to array
-mapfile -t SETTINGS_ARR <<< "$SETTINGS"
+# Convert to array (compatible with Bash 3.2 on macOS)
+SETTINGS_ARR=()
+while IFS= read -r line; do
+    SETTINGS_ARR+=("$line")
+done <<< "$SETTINGS"
 
 # ── Select setting ───────────────────────────────────────────────
 SELECTED=""
@@ -106,4 +109,6 @@ fi
 chmod +x "$TEMP_FILE"
 
 # ── Run interactively ────────────────────────────────────────────
-bash "$TEMP_FILE"
+rc=0
+bash "$TEMP_FILE" || rc=$?
+exit $rc

@@ -220,11 +220,51 @@ fvm flutter test
 
 Some items in `pub outdated` (like `analyzer`, `_fe_analyzer_shared`, `test_core`) might be transitive.
 
-Rules:
+### Finding parent packages
+
+To identify which direct dependency pulls in a held-back transitive package, use:
+
+```bash
+fvm flutter pub deps --style=compact
+```
+
+This prints every package with its dependencies in brackets, e.g.:
+
+```
+- dart_code_linter 3.2.1 [analyzer analyzer_plugin ...]
+- dartssh2 2.13.0 [asn1lib convert meta pointycastle pinenacl]
+```
+
+To find what pulls in a specific package, search for it inside the `[...]` brackets:
+
+```bash
+fvm flutter pub deps --style=compact 2>/dev/null | grep -E "\[.*<PACKAGE>.*\]"
+```
+
+Example — find what pulls in `pointycastle`:
+
+```bash
+fvm flutter pub deps --style=compact 2>/dev/null | grep -E "\[.*pointycastle.*\]"
+```
+
+Output: `- dartssh2 2.13.0 [asn1lib convert meta pointycastle pinenacl]`
+
+This tells you `dartssh2` is the parent. To unblock `pointycastle`, `dartssh2` needs to release a version that allows the newer `pointycastle`.
+
+For a full overview of all outdated packages and their resolvable versions:
+
+```bash
+fvm flutter pub outdated
+```
+
+The "Resolvable" column shows the best version achievable within current constraints. If "Resolvable" equals "Current", the package is blocked by a parent constraint.
+
+### Rules
 
 * If it’s **directly listed in your `pubspec.yaml`**, upgrade it normally.
 * If it’s **not in `pubspec.yaml`**, it’s transitive:
 
+  * Use `fvm flutter pub deps --style=compact` to find the parent dependency.
   * Prefer upgrading the **direct dependency** that pulls it in (e.g., upgrading `test` may bump `test_core`).
   * Avoid forcing transitive overrides unless necessary.
 

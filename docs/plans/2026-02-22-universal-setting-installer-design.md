@@ -241,6 +241,37 @@ The `status-line` plugin is migrated from the old `win/` + `mac/` structure to t
 - `settings/status-line/win/` — entire directory (flattened)
 - `settings/status-line/mac/` — entire directory (flattened)
 
+## Settings.json Templating
+
+Plugin `settings.json` files may contain platform-specific values (e.g., shell commands that differ between Windows and macOS). The universal installer supports placeholder substitution at merge time:
+
+| Placeholder | Replacement |
+|---|---|
+| `{{PLUGIN_DIR}}` | Resolved local plugin directory path (e.g., `$USERPROFILE/.claude/settings/status-line` on Windows, `$HOME/.claude/settings/status-line` on macOS) |
+| `{{PS1:...}}` / `{{SH:...}}` | Platform-conditional value. On Windows, `{{PS1:powershell -File x.ps1}}` resolves to `powershell -File x.ps1`. On macOS, `{{SH:bash x.sh}}` resolves to `bash x.sh`. The other platform's tag is removed. |
+
+**Example `settings.json`:**
+```json
+{
+    "statusLine": {
+        "type": "command",
+        "command": "{{PS1:powershell -NoProfile -File \"$USERPROFILE/.claude/settings/status-line/status-line.ps1\"}}{{SH:bash \"$HOME/.claude/settings/status-line/status-line.sh\"}}"
+    }
+}
+```
+
+On Windows, after template resolution:
+```json
+{
+    "statusLine": {
+        "type": "command",
+        "command": "powershell -NoProfile -File \"$USERPROFILE/.claude/settings/status-line/status-line.ps1\""
+    }
+}
+```
+
+The installer processes templates **before** merging into the user's settings.json.
+
 ## Technical Notes
 
 - **PowerShell piping:** `irm | iex` does NOT break `Read-Host` — it reads from console, not stdin

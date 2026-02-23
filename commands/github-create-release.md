@@ -6,7 +6,7 @@ Create a new GitHub release for this project.
 
 ## Prerequisites
 
-Read `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_GITHUB_RELEASE.md` first. If it does not exist, tell the user to run `/xida:github-setup` first and stop.
+Read `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_GITHUB_RELEASE.md` first. If it does not exist, tell the user to run `/xida:github-setup` first to create the release documentation and stop.
 
 ## Step-by-Step Workflow
 

@@ -13,6 +13,22 @@ Add the marketplace and install the plugin:
 /plugin install xida@xida
 ```
 
+### Updates
+
+Plugins installed via the marketplace auto-update at startup. No action needed -- Claude Code checks for new versions in the background.
+
+To verify you have the latest version:
+
+```
+/plugin
+```
+
+Check the displayed version against the [plugin.json on GitHub](https://github.com/BenjaminKobjolke/claude-code/blob/main/.claude-plugin/plugin.json). To force an update:
+
+```
+/plugin update xida
+```
+
 ### From a local clone
 
 Clone the repo and point Claude Code at it:

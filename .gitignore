@@ -1,9 +1,7 @@
 validate-code/logs
 validate-code/config.php
 validate-code/vendor
-
 validate-code
-/nul
-
-# User-specific notification config
 notification/notification.conf
+.claude/settings.local.json
+/nul

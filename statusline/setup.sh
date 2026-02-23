@@ -272,15 +272,21 @@ ask_widget() {
     enter_value="$default"
   fi
 
-  local enter_display
-  if [ "$enter_value" = "1" ]; then enter_display="y"; else enter_display="n"; fi
+  local enter_display yn_hint
+  if [ "$enter_value" = "1" ]; then
+    enter_display="Y"
+    yn_hint="Y/n"
+  else
+    enter_display="N"
+    yn_hint="y/N"
+  fi
 
   echo "" >&2
   echo "  $widget_label" >&2
   echo "    current = $(widget_label "$current")" >&2
   echo "    default = $(widget_label "$default")" >&2
   while true; do
-    read -rp "    show? [y/n/q, Enter=$enter_display]: " choice
+    read -rp "    show? [$yn_hint/q, Enter=$enter_display]: " choice
     choice="${choice:-$enter_display}"
     if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
       echo "QUIT"

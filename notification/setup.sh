@@ -196,12 +196,20 @@ ask_flash() {
   else
     enter_value="$default"
   fi
+  local enter_display yn_hint
+  if [ "$enter_value" = "1" ]; then
+    enter_display="Y"
+    yn_hint="Y=on / n=off"
+  else
+    enter_display="N"
+    yn_hint="y=on / N=off"
+  fi
   echo "" >&2
   echo "  $event_label" >&2
   echo "    current = $(flash_label "$current")" >&2
   echo "    default = $(flash_label "$default")" >&2
-  read -rp "    choice [y=on / n=off / q=quit, Enter=$([ "$enter_value" = "1" ] && echo y || echo n)]: " choice
-  choice="${choice:-$([ "$enter_value" = "1" ] && echo y || echo n)}"
+  read -rp "    choice [$yn_hint / q=quit, Enter=$enter_display]: " choice
+  choice="${choice:-$enter_display}"
   if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
     echo "QUIT"
     return

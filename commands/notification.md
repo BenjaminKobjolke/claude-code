@@ -1,5 +1,5 @@
 ---
-description: Setup Claude Code event notification sounds and taskbar flash
+description: Setup Claude Code notification sounds and taskbar flash
 ---
 
 Say "Launching notification setup..." then run the command matching the detected `Platform` environment variable. No other text output.

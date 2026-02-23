@@ -10,7 +10,7 @@ Add the marketplace and install the plugin:
 
 ```
 /plugin marketplace add BenjaminKobjolke/claude-code
-/plugin install xida@xida-tools
+/plugin install xida@xida
 ```
 
 ### From a local clone

@@ -74,7 +74,6 @@ widget_progress() {
   usage=$(jnum '.context_window.current_usage')
 
   if [ "$usage" = "null" ]; then
-    printf '%b%s%b' "$C_DIM" "n/a" "$C_RESET"
     return
   fi
 
@@ -128,7 +127,11 @@ widget_cost() {
   local cost
   cost=$(jval '.cost.total_cost_usd // empty')
 
-  if [ -z "$cost" ] || [ "$cost" = "null" ] || [ "$cost" = "0" ]; then
+  if [ -z "$cost" ] || [ "$cost" = "null" ]; then
+    return
+  fi
+  # Suppress zero cost (handles both "0" and "0.00" formats)
+  if awk "BEGIN{exit(!($cost+0==0))}" 2>/dev/null; then
     return
   fi
 
@@ -155,6 +158,7 @@ widget_ratelimit() {
 
     local color
     local util_int=${util%.*}
+    util_int=${util_int:-0}
     if [ "$util_int" -lt 50 ]; then color="$C_GREEN"
     elif [ "$util_int" -lt 80 ]; then color="$C_YELLOW"
     else color="$C_RED"
@@ -172,6 +176,7 @@ widget_ratelimit() {
 
     local color7
     local util7_int=${util7%.*}
+    util7_int=${util7_int:-0}
     if [ "$util7_int" -lt 50 ]; then color7="$C_GREEN"
     elif [ "$util7_int" -lt 80 ]; then color7="$C_YELLOW"
     else color7="$C_RED"
@@ -254,7 +259,7 @@ get_usage_cached() {
   if [ -f "$CACHE_FILE" ]; then
     local now file_age
     now=$(date +%s)
-    file_age=$(date -r "$CACHE_FILE" +%s 2>/dev/null || stat -c %Y "$CACHE_FILE" 2>/dev/null) || file_age=0
+    file_age=$(stat -c '%Y' "$CACHE_FILE" 2>/dev/null || stat -f '%m' "$CACHE_FILE" 2>/dev/null || date -r "$CACHE_FILE" +%s 2>/dev/null) || file_age=0
     if [ $((now - file_age)) -lt $CACHE_TTL ]; then
       cat "$CACHE_FILE"
       return
@@ -326,7 +331,10 @@ format_countdown() {
 
 parts=()
 parts+=("$(widget_model)")
-parts+=("$(widget_progress)")
+
+prog_out=$(widget_progress)
+[ -n "$prog_out" ] && parts+=("$prog_out")
+
 tok_out=$(widget_tokens)
 [ -n "$tok_out" ] && parts+=("$tok_out")
 

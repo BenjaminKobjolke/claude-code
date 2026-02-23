@@ -4,7 +4,16 @@ A native [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin pr
 
 ## Installation
 
-### Local testing
+### From marketplace (recommended)
+
+Add the marketplace and install the plugin:
+
+```
+/plugin marketplace add BenjaminKobjolke/claude-code
+/plugin install xida@xida-tools
+```
+
+### From a local clone
 
 Clone the repo and point Claude Code at it:
 
@@ -13,13 +22,7 @@ git clone https://github.com/BenjaminKobjolke/claude-code.git
 claude --plugin-dir ./claude-code
 ```
 
-All commands will be available as `/xida:<command-name>` in that session.
-
-> **Caveat — subdirectory commands (Windows):** Placing command files into subdirectories (e.g. `commands/git/commit.md`) causes Claude Code to register them as `/xida:\git:commit` with a stray backslash before the subdirectory name. This is a Windows-specific bug: the command name derivation code uses Node.js `path.dirname()` (which returns backslashes on Windows) but only normalizes forward slashes when constructing the colon-separated command name. There is no configuration workaround. Related issues: [#2422](https://github.com/anthropics/claude-code/issues/2422), [#18527](https://github.com/anthropics/claude-code/issues/18527), [#20015](https://github.com/anthropics/claude-code/issues/20015). Until this is fixed upstream, all commands remain as flat files in `commands/` using the `category-name.md` naming convention.
-
-### From a project directory
-
-If you keep the plugin repo at a fixed location, start Claude Code like this:
+Or if you keep the plugin repo at a fixed location:
 
 ```bash
 claude --plugin-dir /path/to/claude-code
@@ -32,6 +35,8 @@ claude --plugin-dir /path/to/claude-code --plugin-dir /path/to/another-plugin
 ```
 
 > **Note:** Restart Claude Code to pick up changes after editing plugin files.
+
+> **Caveat — subdirectory commands (Windows):** Placing command files into subdirectories (e.g. `commands/git/commit.md`) causes Claude Code to register them as `/xida:\git:commit` with a stray backslash before the subdirectory name. This is a Windows-specific bug. Related issues: [#2422](https://github.com/anthropics/claude-code/issues/2422), [#18527](https://github.com/anthropics/claude-code/issues/18527), [#20015](https://github.com/anthropics/claude-code/issues/20015). Until this is fixed upstream, all commands remain as flat files in `commands/` using the `category-name.md` naming convention.
 
 ## Commands
 
@@ -165,8 +170,9 @@ Project scaffolding scripts (install, update, build, test batch files) for:
 
 ```
 .
-├── .claude-plugin/          # Plugin manifest
-│   └── plugin.json
+├── .claude-plugin/          # Plugin manifest & marketplace
+│   ├── plugin.json
+│   └── marketplace.json
 ├── commands/                # 32 slash commands (see table above)
 ├── resources/
 │   ├── coding-rules/        # Language coding standards

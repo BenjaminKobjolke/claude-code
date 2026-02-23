@@ -1,0 +1,17 @@
+{
+    "name": "xida-tools",
+    "owner": {
+        "name": "XIDA",
+        "email": "info@xida.de"
+    },
+    "metadata": {
+        "description": "XIDA development toolkit: Git workflows, code analysis, testing, debugging, handoffs, and multi-language coding standards"
+    },
+    "plugins": [
+        {
+            "name": "xida",
+            "source": "./",
+            "description": "XIDA development toolkit: Git workflows, code analysis, testing, debugging, handoffs, and multi-language coding standards"
+        }
+    ]
+}

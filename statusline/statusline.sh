@@ -11,6 +11,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONF_FILE="$SCRIPT_DIR/statusline.conf"
 [ -f "$CONF_FILE" ] && source "$CONF_FILE"
 
+# ── Early exit if all widgets disabled ───────────────
+if [ "${SHOW_PROGRESS:-1}" != "1" ] && \
+   [ "${SHOW_TOKENS:-1}" != "1" ] && \
+   [ "${SHOW_COST:-1}" != "1" ] && \
+   [ "${SHOW_RATELIMIT:-1}" != "1" ] && \
+   [ "${SHOW_MODEL:-1}" != "1" ]; then
+  echo ""
+  exit 0
+fi
+
 # ── ANSI colors ──────────────────────────────────────
 # Semantic palette — only these 4 are used throughout.
 

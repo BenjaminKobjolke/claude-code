@@ -1,5 +1,5 @@
 ---
-description: Configure Claude Code status line data and style
+description: Setup Claude Code status line data and style
 ---
 
 Say "Launching status line setup..." then run the command matching the detected `Platform` environment variable. No other text output.

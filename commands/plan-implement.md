@@ -6,7 +6,7 @@ Pick up a plan file from `plan/` and implement it step by step.
 
 Steps:
 
-1. List all `.md` files in the `plan/` directory, excluding any files inside `plan/done/`. If no plan files exist, tell the user there are no plans to implement and suggest they create one with `/xida:plan:feature`.
+1. List all `.md` files in the `plan/` directory, excluding any files inside `plan/done/`. If no plan files exist, tell the user there are no plans to implement and suggest they create one with `/xida:plan-feature`.
 
 2. If `$ARGUMENTS` is provided, filter the list to files whose name contains the argument as a partial match (case-insensitive). If exactly one plan matches, auto-select it. If multiple plans match, list them and ask the user to choose. If none match, show available plans and ask the user to pick one.
 
@@ -28,11 +28,11 @@ Steps:
 7. **On failure**: If any step fails or you encounter an unexpected problem:
    - Stop immediately
    - Explain what went wrong
-   - Ask the user if they want to attempt a fix or create a handoff via `/xida:handoff:create`
+   - Ask the user if they want to attempt a fix or create a handoff via `/xida:handoff-create`
    - Do NOT move the plan to `done/` if implementation is incomplete
 
-8. After all implementation steps are complete, run `/xida:alidate:pre-commit`. If validation fails, fix the issues and re-run validation until it passes.
+8. After all implementation steps are complete, run `/xida:validate-pre-commit`. If validation fails, fix the issues and re-run validation until it passes.
 
 9. Ensure `plan/done/` directory exists. Move the plan file from `plan/` to `plan/done/`, prefixing the filename with today's date in `YYYYMMDD_` format (e.g., `pdf-viewer.md` becomes `20260219_pdf-viewer.md`).
 
-10. Tell the user the implementation is complete and suggest they review the changes and commit with `/xida:git:commit`. Do NOT auto-commit.
+10. Tell the user the implementation is complete and suggest they review the changes and commit with `/xida:git-commit`. Do NOT auto-commit.

@@ -19,8 +19,8 @@ CONF="$SCRIPT_DIR/notification.conf"
 case "$EVENT" in
   stop)           SOUND="${STOP_SOUND:-0}";           FLASH="${STOP_FLASH:-0}" ;;
   notification)   SOUND="${NOTIFICATION_SOUND:-0}";   FLASH="${NOTIFICATION_FLASH:-0}" ;;
-  task_complete)  SOUND="${TASK_COMPLETE_SOUND:-0}";   FLASH="${TASK_COMPLETE_FLASH:-0}" ;;
-  subagent_stop)  SOUND="${SUBAGENT_STOP_SOUND:-0}";   FLASH="${SUBAGENT_STOP_FLASH:-0}" ;;
+  task_complete)  SOUND="${TASK_COMPLETE_SOUND:-0}";   FLASH=0 ;;
+  subagent_stop)  SOUND="${SUBAGENT_STOP_SOUND:-0}";   FLASH=0 ;;
   *)              exit 0 ;;
 esac
 

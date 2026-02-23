@@ -5,7 +5,7 @@ description: Setup bat files that are executed after each new feature to test fo
 Ask the user which bat files in the tools folder are for running tests .
 Usually the files are called: tests.bat, tests_unit_tests.bat, tests_integration_tests.bat.
 
-Aaccording to the rules of how to run bat files down below. Then save to CLAUDE.md that after implementing a new feature, that those test bat files need to be executed and then the errors to be fixed.
+According to the rules of how to run bat files down below. Then save to CLAUDE.md that after implementing a new feature, that those test bat files need to be executed and then the errors to be fixed.
 State the explicit command how to successfully run the bat files.
 
 # Running Batch Files (.bat) in Claude Code

@@ -5,7 +5,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Convert MSYS/Cygwin path to Windows path for display
+case "$OSTYPE" in
+  msys*|cygwin*|MSYS*|CYGWIN*) DISPLAY_DIR="$(cygpath -w "$SCRIPT_DIR")" ;;
+  *)                           DISPLAY_DIR="$SCRIPT_DIR" ;;
+esac
 CONF="$SCRIPT_DIR/notification.conf"
+CONF_DISPLAY="$DISPLAY_DIR\\notification.conf"
 
 # ── Detect platform ─────────────────────────────────
 
@@ -381,6 +387,10 @@ echo "  Configuration saved!"
 echo "========================================"
 echo ""
 show_current
-echo "Notifications are now active. Re-run /xida:notification to change settings."
+echo "You can also edit notification.conf directly:"
+echo "  $CONF_DISPLAY"
+echo "Changes apply on next event — no restart needed."
+echo ""
+echo "Re-run /xida:notification to change settings."
 echo ""
 read -rp "Press Enter to close..."

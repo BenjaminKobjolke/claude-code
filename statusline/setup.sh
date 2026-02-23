@@ -6,9 +6,15 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Convert MSYS/Cygwin path to Windows path for display
+case "$OSTYPE" in
+  msys*|cygwin*|MSYS*|CYGWIN*) DISPLAY_DIR="$(cygpath -w "$SCRIPT_DIR")" ;;
+  *)                           DISPLAY_DIR="$SCRIPT_DIR" ;;
+esac
 SETTINGS="$HOME/.claude/settings.json"
 STATUSLINE_CMD="bash \"$SCRIPT_DIR/statusline.sh\""
 CONF_FILE="$SCRIPT_DIR/statusline.conf"
+CONF_FILE_DISPLAY="$DISPLAY_DIR\\statusline.conf"
 
 # ── Dependency check ─────────────────────────────────
 
@@ -161,7 +167,7 @@ theme_color_hint() {
 show_header() {
   clear 2>/dev/null || true
   echo "========================================"
-  echo "  Claude Code Statusline Setup"
+  echo "  Claude Code Status Line Setup"
   if is_installed; then
     echo "  Status: Installed"
   else
@@ -593,8 +599,8 @@ echo ""
 show_current
 show_preview
 
-echo "  You can also edit statusline.conf directly for"
-echo "  custom colors, thresholds, or fine-tuned values."
+echo "  You can also edit statusline.conf directly:"
+echo "    $CONF_FILE_DISPLAY"
 echo "  Changes apply on next render — no restart needed."
 echo ""
 echo "  Re-run /xida:statusline to update or uninstall."

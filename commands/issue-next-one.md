@@ -1,3 +1,7 @@
+---
+description: Pick the next issue from OPEN_ISSUES.md and create an implementation plan
+---
+
 read issues/OPEN_ISSUES.md
 
 Create one todo out of that document.

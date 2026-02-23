@@ -1,3 +1,7 @@
+---
+description: Generate plain URLs to view commits on the remote hosting platform
+---
+
 Generate plain URLs to view commits on the remote hosting platform.
 
 ## Input

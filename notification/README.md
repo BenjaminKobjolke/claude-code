@@ -4,7 +4,7 @@ Cross-platform notification sounds and taskbar flash for Claude Code events.
 
 ## Quick Start
 
-Run `/xida:notification` inside Claude Code. This opens an interactive setup in a new terminal where you choose sounds and flash settings per event. Notifications are silent until you run setup.
+Run `/xida:notification` inside Claude Code. This opens an interactive setup in a new terminal. On first run you can install (configure sounds and flash per event). On subsequent runs you can update settings or uninstall (removes config, silences all notifications). Notifications are silent until you run setup.
 
 ## How It Works
 
@@ -28,7 +28,7 @@ All hooks run with `async: true` and a 5-second timeout, so they never block Cla
 | File | Purpose |
 |------|---------|
 | `notification.sh` | Main script called by hooks. Detects OS, plays sound, flashes taskbar. |
-| `setup.sh` | Interactive setup. Presents sound choices, writes `notification.conf`. |
+| `setup.sh` | Interactive setup. Install/update/uninstall flow with sound preview, quit support, and sensible first-run defaults. Writes `notification.conf`. |
 | `notification.conf` | User config (gitignored). Created by `setup.sh`. |
 
 ## Platform Support

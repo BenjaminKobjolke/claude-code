@@ -36,7 +36,7 @@ The progress bar uses an autocompact-aware denominator:
 
 - Fetches from `api.anthropic.com/api/oauth/usage`
 - Auth via `~/.claude/.credentials.json` (or macOS Keychain)
-- File-cached in `~/.cache/xida-statusline/` with 60-second TTL
+- File-cached in `~/.cache/xida-statusline/` with 3-minute TTL
 - 7-day limits shown automatically for Max plan users (auto-detected from API response)
 
 ## Files
@@ -45,6 +45,21 @@ The progress bar uses an autocompact-aware denominator:
 |------|---------|
 | `statusline.sh` | Runtime script piped JSON by Claude Code. Widget functions output ANSI text. |
 | `setup.sh` | Interactive setup. Install/uninstall modifies `~/.claude/settings.json` via jq. |
+
+## Configuration
+
+On install, a `statusline.conf` file is created next to `statusline.sh`. Edit it to toggle widgets, change colors, or adjust thresholds. The file is sourced as bash variables — no restart needed, changes apply on next render.
+
+## Performance
+
+Most renders are fast (~460ms) — all widgets use local data. The only network calls are:
+
+| Call | When | Overhead | Cache |
+|------|------|----------|-------|
+| Rate limit API | Every 3 min (cache miss) | ~340ms | `~/.cache/xida-statusline/usage.json` |
+| Exchange rate API | Every 7 days, non-USD locales only | ~200ms (background) | `XIDA_RATE` in `statusline.conf` |
+
+Between cache refreshes, both widgets read local files with negligible overhead. Set `SHOW_RATELIMIT=0` in `statusline.conf` to skip the rate limit API entirely.
 
 ## Dependencies
 

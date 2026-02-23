@@ -362,7 +362,7 @@ calc_effective() {
 
 CACHE_DIR="$HOME/.cache/xida-statusline"
 CACHE_FILE="$CACHE_DIR/usage.json"
-CACHE_TTL=60
+CACHE_TTL=180
 
 get_usage_cached() {
   # Return cached data if fresh enough

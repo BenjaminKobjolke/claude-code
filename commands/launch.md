@@ -42,7 +42,7 @@ Split `$ARGUMENTS` into:
 
 Check if `SCRIPT_PATH` ends with a known script extension: `.ps1`, `.bat`, `.cmd`, `.sh`, `.zsh`, `.bash`.
 
-- **If yes** -- the user specified an exact file. Verify it exists, determine the launcher from the extension (`.ps1` → powershell, `.bat`/`.cmd` → cmd, `.sh`/`.zsh`/`.bash` → shell), and launch it directly. Skip the extension-probing logic in Step 3. If the file does not exist, print an error and stop.
+- **If yes** -- the user specified an exact file. Verify it exists, determine the launcher from the extension (`.ps1` → powershell, `.bat`/`.cmd` → cmd, `.sh`/`.zsh`/`.bash` → shell), and launch it directly. On `win32`, `.sh`/`.zsh`/`.bash` → Git Bash (not the default shell). Skip the extension-probing logic in Step 3. If the file does not exist, print an error and stop.
 - **If no** -- proceed to Step 3 (try extensions automatically).
 
 ## Step 3: Resolve and execute in a single command
@@ -53,7 +53,7 @@ Extension priority per platform:
 
 | Platform   | Try in order             |
 |------------|--------------------------|
-| **win32**  | `.ps1`, `.bat`, `.cmd`   |
+| **win32**  | `.sh`, `.ps1`, `.bat`, `.cmd` |
 | **darwin** | `.sh`, `.zsh`            |
 | **linux**  | `.sh`, `.bash`           |
 
@@ -62,6 +62,21 @@ Extension priority per platform:
 #### With explicit extension
 
 If `SCRIPT_PATH` has a known extension, run one command like this (adapt SCRIPT_PATH, EXT, and SCRIPT_ARGS):
+
+For `.sh`/`.zsh`/`.bash` extensions -- launch via Git Bash:
+
+```bash
+if [ -f "SCRIPT_PATH" ]; then
+  BASH_EXE="${CLAUDE_CODE_GIT_BASH_PATH:-$(cygpath -u 'C:\Program Files\Git\bin\bash.exe')}"
+  powershell -NoProfile -Command "Start-Process '$(cygpath -w "$BASH_EXE")' -ArgumentList '--login', '-i', '\"$(cygpath -w "$(pwd)/SCRIPT_PATH")\"', 'SCRIPT_ARGS'"
+else
+  echo "Error: File not found: SCRIPT_PATH"
+fi
+```
+
+> **Note:** The `CLAUDE_CODE_GIT_BASH_PATH` environment variable overrides the default Git Bash path (`C:\Program Files\Git\bin\bash.exe`). Set it if Git is installed in a non-standard location.
+
+For `.ps1` / `.bat` / `.cmd` extensions:
 
 ```bash
 if [ -f "SCRIPT_PATH" ]; then
@@ -72,19 +87,22 @@ else
 fi
 ```
 
-Use the appropriate launcher based on extension: `powershell` for `.ps1`, `cmd /k` for `.bat`/`.cmd`.
+Use the appropriate launcher based on extension: `powershell` for `.ps1`, `cmd /k` for `.bat`/`.cmd`, Git Bash for `.sh`/`.zsh`/`.bash`.
 
 #### Without extension (auto-probe)
 
 ```bash
-if [ -f "SCRIPT_PATH.ps1" ]; then
+if [ -f "SCRIPT_PATH.sh" ]; then
+  BASH_EXE="${CLAUDE_CODE_GIT_BASH_PATH:-$(cygpath -u 'C:\Program Files\Git\bin\bash.exe')}"
+  powershell -NoProfile -Command "Start-Process '$(cygpath -w "$BASH_EXE")' -ArgumentList '--login', '-i', '\"$(cygpath -w "$(pwd)/SCRIPT_PATH.sh")\"', 'SCRIPT_ARGS'"
+elif [ -f "SCRIPT_PATH.ps1" ]; then
   powershell -NoProfile -Command "Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"$(cygpath -w "$(pwd)/SCRIPT_PATH.ps1")\" SCRIPT_ARGS'"
 elif [ -f "SCRIPT_PATH.bat" ]; then
   powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/k \"$(cygpath -w "$(pwd)/SCRIPT_PATH.bat")\" SCRIPT_ARGS'"
 elif [ -f "SCRIPT_PATH.cmd" ]; then
   powershell -NoProfile -Command "Start-Process cmd -ArgumentList '/k \"$(cygpath -w "$(pwd)/SCRIPT_PATH.cmd")\" SCRIPT_ARGS'"
 else
-  echo "Error: No script found. Tried:"; echo "  SCRIPT_PATH.ps1"; echo "  SCRIPT_PATH.bat"; echo "  SCRIPT_PATH.cmd"
+  echo "Error: No script found. Tried:"; echo "  SCRIPT_PATH.sh"; echo "  SCRIPT_PATH.ps1"; echo "  SCRIPT_PATH.bat"; echo "  SCRIPT_PATH.cmd"
 fi
 ```
 

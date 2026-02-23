@@ -8,4 +8,4 @@ Launch the interactive notification configuration in a new terminal window.
 
 Run this command:
 
-/xida:launch ${CLAUDE_PLUGIN_ROOT}/notification/setup
+`/xida:launch ${CLAUDE_PLUGIN_ROOT}/notification/setup.sh`

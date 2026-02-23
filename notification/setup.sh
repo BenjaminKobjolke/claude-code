@@ -115,6 +115,7 @@ show_sounds() {
   done
   echo ""
   echo "  p: Preview all sounds"
+  echo "  q: Quit without saving"
   echo ""
 }
 
@@ -158,8 +159,12 @@ ask_sound() {
   echo "    current = $(sound_label "$current")" >&2
   echo "    default = $(sound_label "$default")" >&2
   while true; do
-    read -rp "    choice [0-7, p, Enter=$(sound_label "$enter_value")]: " choice
+    read -rp "    choice [0-7, p, q, Enter=$(sound_label "$enter_value")]: " choice
     choice="${choice:-$enter_value}"
+    if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
+      echo "QUIT"
+      return
+    fi
     if [ "$choice" = "p" ]; then
       echo "" >&2
       for i in $(seq 1 ${#SOUND_NAMES[@]}); do
@@ -175,7 +180,7 @@ ask_sound() {
       echo "$choice"
       return
     fi
-    echo "    Invalid choice. Enter 0-7 or p." >&2
+    echo "    Invalid choice. Enter 0-7, p, or q." >&2
   done
 }
 
@@ -195,12 +200,27 @@ ask_flash() {
   echo "  $event_label" >&2
   echo "    current = $(flash_label "$current")" >&2
   echo "    default = $(flash_label "$default")" >&2
-  read -rp "    choice [y=on / n=off, Enter=$([ "$enter_value" = "1" ] && echo y || echo n)]: " choice
+  read -rp "    choice [y=on / n=off / q=quit, Enter=$([ "$enter_value" = "1" ] && echo y || echo n)]: " choice
   choice="${choice:-$([ "$enter_value" = "1" ] && echo y || echo n)}"
+  if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
+    echo "QUIT"
+    return
+  fi
   case "$choice" in
     y|Y|yes|YES) echo "1" ;;
     *)           echo "0" ;;
   esac
+}
+
+quit_if_asked() {
+  if [ "$1" = "QUIT" ]; then
+    echo ""
+    echo "Quit without saving."
+    echo ""
+    show_current
+    read -rp "Press Enter to close..."
+    exit 0
+  fi
 }
 
 # ── Load existing config ─────────────────────────────
@@ -233,9 +253,13 @@ else
   echo "  (0=off, 1-7=sound, Enter=use default)"
 fi
 STOP_SOUND=$(ask_sound "Stop (Claude finished)" "$STOP_SOUND" "$DEFAULT_STOP_SOUND")
+quit_if_asked "$STOP_SOUND"
 NOTIFICATION_SOUND=$(ask_sound "Notification (needs attention)" "$NOTIFICATION_SOUND" "$DEFAULT_NOTIFICATION_SOUND")
+quit_if_asked "$NOTIFICATION_SOUND"
 TASK_COMPLETE_SOUND=$(ask_sound "Task Complete" "$TASK_COMPLETE_SOUND" "$DEFAULT_TASK_COMPLETE_SOUND")
+quit_if_asked "$TASK_COMPLETE_SOUND"
 SUBAGENT_STOP_SOUND=$(ask_sound "Subagent Stop" "$SUBAGENT_STOP_SOUND" "$DEFAULT_SUBAGENT_STOP_SOUND")
+quit_if_asked "$SUBAGENT_STOP_SOUND"
 
 if [ "$PLATFORM" = "windows" ]; then
   echo ""
@@ -246,7 +270,9 @@ if [ "$PLATFORM" = "windows" ]; then
     echo "  (Enter=use default)"
   fi
   STOP_FLASH=$(ask_flash "Stop" "$STOP_FLASH" "$DEFAULT_STOP_FLASH")
+  quit_if_asked "$STOP_FLASH"
   NOTIFICATION_FLASH=$(ask_flash "Notification" "$NOTIFICATION_FLASH" "$DEFAULT_NOTIFICATION_FLASH")
+  quit_if_asked "$NOTIFICATION_FLASH"
 fi
 
 # ── Write config ─────────────────────────────────────

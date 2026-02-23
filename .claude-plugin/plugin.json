@@ -1,0 +1,12 @@
+{
+  "name": "xida",
+  "version": "1.0.1",
+  "description": "XIDA development toolkit: Git workflows, code analysis, testing, debugging, handoffs, and multi-language coding standards",
+  "author": {
+    "name": "Benjamin Kobjolke"
+  },
+  "homepage": "https://github.com/BenjaminKobjolke/claude-code",
+  "repository": "https://github.com/BenjaminKobjolke/claude-code",
+  "license": "MIT",
+  "keywords": ["git", "analysis", "testing", "flutter", "php", "python", "csharp", "coding-standards", "handoff", "debugging"]
+}

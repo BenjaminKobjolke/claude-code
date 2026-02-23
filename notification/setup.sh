@@ -250,20 +250,20 @@ ask_action() {
     echo "     Change sound and flash preferences" >&2
     echo "     for each notification event." >&2
     echo "" >&2
-    echo "  2: Uninstall" >&2
+    echo "  u: Uninstall" >&2
     echo "     Remove configuration file and silence" >&2
     echo "     all notification sounds and flashes." >&2
     echo "" >&2
     echo "  q: Quit without changes" >&2
     echo "" >&2
     while true; do
-      read -rp "  choice [1, 2, q, Enter=update]: " action
+      read -rp "  choice [1, u, q, Enter=update]: " action
       action="${action:-1}"
       case "$action" in
         1) echo "update"; return ;;
-        2) echo "uninstall"; return ;;
+        u|U) echo "uninstall"; return ;;
         q|Q) echo "quit"; return ;;
-        *) echo "  Invalid choice. Enter 1, 2, or q." >&2 ;;
+        *) echo "  Invalid choice. Enter 1, u, or q." >&2 ;;
       esac
     done
   else

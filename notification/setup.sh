@@ -97,24 +97,24 @@ show_header() {
 
 sound_label() {
   local idx="$1"
-  if [ "$idx" = "0" ]; then echo "0) Off"
-  else echo "$idx) ${SOUND_NAMES[$((idx - 1))]}"
+  if [ "$idx" = "0" ]; then echo "0: Off"
+  else echo "$idx: ${SOUND_NAMES[$((idx - 1))]}"
   fi
 }
 
 flash_label() {
-  if [ "$1" = "1" ]; then echo "on"; else echo "off"; fi
+  if [ "$1" = "1" ]; then echo "y: on"; else echo "n: off"; fi
 }
 
 show_sounds() {
   echo "Available sounds:"
   echo ""
-  echo "  0) Off (no sound)"
+  echo "  0: Off (no sound)"
   for i in "${!SOUND_NAMES[@]}"; do
-    echo "  $((i + 1))) ${SOUND_NAMES[$i]}"
+    echo "  $((i + 1)): ${SOUND_NAMES[$i]}"
   done
   echo ""
-  echo "  p) Preview all sounds"
+  echo "  p: Preview all sounds"
   echo ""
 }
 
@@ -146,17 +146,24 @@ ask_sound() {
   local current="$2"
   local default="$3"
   local choice
+  # First run: Enter uses default; subsequent runs: Enter uses current
+  local enter_value
+  if [ "$HAS_CONFIG" = "1" ]; then
+    enter_value="$current"
+  else
+    enter_value="$default"
+  fi
   echo "" >&2
   echo "  $event_label" >&2
-  echo "    current: $(sound_label "$current")" >&2
-  echo "    default: $(sound_label "$default")" >&2
+  echo "    current = $(sound_label "$current")" >&2
+  echo "    default = $(sound_label "$default")" >&2
   while true; do
-    read -rp "    choice [0-7, p, Enter=keep]: " choice
-    choice="${choice:-$current}"
+    read -rp "    choice [0-7, p, Enter=$(sound_label "$enter_value")]: " choice
+    choice="${choice:-$enter_value}"
     if [ "$choice" = "p" ]; then
       echo "" >&2
       for i in $(seq 1 ${#SOUND_NAMES[@]}); do
-        printf "      %d) %s " "$i" "${SOUND_NAMES[$((i - 1))]}" >&2
+        printf "      %d: %s " "$i" "${SOUND_NAMES[$((i - 1))]}" >&2
         play_preview "$i"
         sleep 0.3
         echo "" >&2
@@ -177,12 +184,19 @@ ask_flash() {
   local current="$2"
   local default="$3"
   local choice
+  # First run: Enter uses default; subsequent runs: Enter uses current
+  local enter_value
+  if [ "$HAS_CONFIG" = "1" ]; then
+    enter_value="$current"
+  else
+    enter_value="$default"
+  fi
   echo "" >&2
   echo "  $event_label" >&2
-  echo "    current: $(flash_label "$current")" >&2
-  echo "    default: $(flash_label "$default")" >&2
-  read -rp "    choice [y/n, Enter=keep]: " choice
-  choice="${choice:-$([ "$current" = "1" ] && echo y || echo n)}"
+  echo "    current = $(flash_label "$current")" >&2
+  echo "    default = $(flash_label "$default")" >&2
+  read -rp "    choice [y=on / n=off, Enter=$([ "$enter_value" = "1" ] && echo y || echo n)]: " choice
+  choice="${choice:-$([ "$enter_value" = "1" ] && echo y || echo n)}"
   case "$choice" in
     y|Y|yes|YES) echo "1" ;;
     *)           echo "0" ;;
@@ -191,14 +205,18 @@ ask_flash() {
 
 # ── Load existing config ─────────────────────────────
 
-STOP_SOUND=$DEFAULT_STOP_SOUND
-NOTIFICATION_SOUND=$DEFAULT_NOTIFICATION_SOUND
-TASK_COMPLETE_SOUND=$DEFAULT_TASK_COMPLETE_SOUND
-SUBAGENT_STOP_SOUND=$DEFAULT_SUBAGENT_STOP_SOUND
-STOP_FLASH=$DEFAULT_STOP_FLASH
-NOTIFICATION_FLASH=$DEFAULT_NOTIFICATION_FLASH
+# Fresh install: all values start at 0 (unconfigured)
+STOP_SOUND=0
+NOTIFICATION_SOUND=0
+TASK_COMPLETE_SOUND=0
+SUBAGENT_STOP_SOUND=0
+STOP_FLASH=0
+NOTIFICATION_FLASH=0
 
+# Track whether a config file exists (first run vs subsequent)
+HAS_CONFIG=0
 if [ -f "$CONF" ]; then
+  HAS_CONFIG=1
   . "$CONF"
 fi
 
@@ -209,7 +227,11 @@ show_current
 show_sounds
 
 echo "── Sound per event ──────────────────────"
-echo "  (0=off, 1-7=sound, Enter=keep current)"
+if [ "$HAS_CONFIG" = "1" ]; then
+  echo "  (0=off, 1-7=sound, Enter=keep current)"
+else
+  echo "  (0=off, 1-7=sound, Enter=use default)"
+fi
 STOP_SOUND=$(ask_sound "Stop (Claude finished)" "$STOP_SOUND" "$DEFAULT_STOP_SOUND")
 NOTIFICATION_SOUND=$(ask_sound "Notification (needs attention)" "$NOTIFICATION_SOUND" "$DEFAULT_NOTIFICATION_SOUND")
 TASK_COMPLETE_SOUND=$(ask_sound "Task Complete" "$TASK_COMPLETE_SOUND" "$DEFAULT_TASK_COMPLETE_SOUND")
@@ -218,7 +240,11 @@ SUBAGENT_STOP_SOUND=$(ask_sound "Subagent Stop" "$SUBAGENT_STOP_SOUND" "$DEFAULT
 if [ "$PLATFORM" = "windows" ]; then
   echo ""
   echo "── Taskbar flash per event ────────────"
-  echo "  (Enter=keep current)"
+  if [ "$HAS_CONFIG" = "1" ]; then
+    echo "  (Enter=keep current)"
+  else
+    echo "  (Enter=use default)"
+  fi
   STOP_FLASH=$(ask_flash "Stop" "$STOP_FLASH" "$DEFAULT_STOP_FLASH")
   NOTIFICATION_FLASH=$(ask_flash "Notification" "$NOTIFICATION_FLASH" "$DEFAULT_NOTIFICATION_FLASH")
 fi
@@ -241,9 +267,9 @@ EOF
 echo ""
 echo "========================================"
 echo "  Configuration saved!"
-echo "  File: $CONF"
 echo "========================================"
 echo ""
+show_current
 echo "Notifications are now active. Re-run /xida:notification to change settings."
 echo ""
 read -rp "Press Enter to close..."

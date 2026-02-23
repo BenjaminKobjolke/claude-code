@@ -10,7 +10,7 @@ There must be documentation about that in $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RE
 ### 1. Get the Next Build Number
 
 ### 2. Check if there are release notes for that
-If not ask the user if you should run /xida:release-create-release-notes
+If not ask the user if you should run /xida:elease:create-release-notes
 
 ### 3. Increment build number
 

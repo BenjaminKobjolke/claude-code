@@ -33,7 +33,7 @@ Steps:
 5. Execute the migration incrementally:
    - Migrate one dependency at a time
    - After each dependency: run import/build checks
-   - After each successful migration: commit if tests pass (following /xida:git-commit pattern)
+   - After each successful migration: commit if tests pass (following /xida:git:commit pattern)
    - If a dependency fails: stop, report the error, ask user how to proceed
 
 6. After all dependencies are migrated:

@@ -8,7 +8,7 @@ Create separate commits for fixes, code improvements and new features.
 Never commit PLAN.md or HANDOFF.md.
 
 Before committing, check if the project has validators configured in CLAUDE.md.
-If yes, ask the user if they want to run /xida:validate-pre-commit first.
+If yes, ask the user if they want to run /xida:alidate:pre-commit first.
 If the user declines, proceed with the commit.
 
 Also do not confirm GIT commit message in prompt or slash commands.

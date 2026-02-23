@@ -6,13 +6,13 @@ Create a new GitHub release for this project.
 
 ## Prerequisites
 
-Read `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_GITHUB_RELEASE.md` first. If it does not exist, tell the user to run `/xida:github-setup` first and stop.
+Read `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_GITHUB_RELEASE.md` first. If it does not exist, tell the user to run `/xida:github:setup` first and stop.
 
 ## Step-by-Step Workflow
 
 ### 1. Determine version
 
-- If `$ARGUMENTS` contains a version string, use that (e.g. `/xida:github-create-release 1.2.0`)
+- If `$ARGUMENTS` contains a version string, use that (e.g. `/xida:github:create-release 1.2.0`)
 - Otherwise, read the `VERSION` file in the project root
 - If neither exists, check existing git tags to find the latest release version and suggest the next one
 - Ask the user to confirm the version before proceeding

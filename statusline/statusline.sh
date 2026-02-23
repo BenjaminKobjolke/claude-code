@@ -30,6 +30,39 @@ RATE_DANGER_PCT=80
 COST_WARN_USD=5
 COST_DANGER_USD=10
 
+# ── Locale ─────────────────────────────────────────
+# Detect once, reuse everywhere.  Falls back to en_US defaults.
+
+L_RADIX=$(locale decimal_point 2>/dev/null) || L_RADIX="."
+L_THOUSANDS=$(locale thousands_sep 2>/dev/null) || L_THOUSANDS=","
+
+_curr_raw=$(locale int_curr_symbol 2>/dev/null) || _curr_raw=""
+_curr_raw="${_curr_raw%% *}"
+case "$_curr_raw" in
+  EUR) L_CURRENCY="€"; L_CURRENCY_POS="suffix" ;;
+  GBP) L_CURRENCY="£"; L_CURRENCY_POS="prefix" ;;
+  JPY) L_CURRENCY="¥"; L_CURRENCY_POS="prefix" ;;
+  CHF) L_CURRENCY="CHF "; L_CURRENCY_POS="prefix" ;;
+  *)   L_CURRENCY="\$"; L_CURRENCY_POS="prefix" ;;
+esac
+unset _curr_raw
+
+# Format a number with locale thousands separator (integer only).
+# Usage: fmt_thousands 47000  →  "47.000" (de) or "47,000" (en)
+fmt_thousands() {
+  local n="$1" sign="" result="" count=0
+  [ "$n" -lt 0 ] 2>/dev/null && { sign="-"; n="${n#-}"; }
+  while [ "$n" -gt 0 ]; do
+    if [ "$count" -gt 0 ] && [ $((count % 3)) -eq 0 ]; then
+      result="${L_THOUSANDS}${result}"
+    fi
+    result="$((n % 10))${result}"
+    n=$((n / 10))
+    count=$((count + 1))
+  done
+  echo "${sign}${result:-0}"
+}
+
 # ── JSON helpers ─────────────────────────────────────
 
 jval() { echo "$INPUT" | jq -r "$1"; }
@@ -141,7 +174,9 @@ widget_tokens() {
   else color="$C_DANGER"
   fi
 
-  printf '%b%sK%b%b/%sK%b' "$color" "$((current_tokens / 1000))" "$C_RESET" "$C_DIM" "$((context_size / 1000))" "$C_RESET"
+  local cur_k; cur_k=$(fmt_thousands "$((current_tokens / 1000))")
+  local max_k; max_k=$(fmt_thousands "$((context_size / 1000))")
+  printf '%b%sK%b%b/%sK%b' "$color" "$cur_k" "$C_RESET" "$C_DIM" "$max_k" "$C_RESET"
 }
 
 # ── Widget: Cost ─────────────────────────────────────
@@ -159,27 +194,19 @@ widget_cost() {
     return
   fi
 
-  # Round to 2 decimal places
+  # Round to 2 decimal places, localize decimal separator
   local formatted
   formatted=$(awk "BEGIN{printf \"%.2f\", $cost + 0}")
-
-  # Localize: replace decimal separator using locale's radix character
-  local radix
-  radix=$(locale decimal_point 2>/dev/null) || radix="."
-  if [ "$radix" != "." ]; then
-    formatted="${formatted/./$radix}"
+  if [ "$L_RADIX" != "." ]; then
+    formatted="${formatted/./$L_RADIX}"
   fi
 
-  # Localize: currency symbol (default USD $)
-  local currency
-  currency=$(locale int_curr_symbol 2>/dev/null) || currency=""
-  currency="${currency%% *}"  # strip trailing spaces
-  case "$currency" in
-    EUR) formatted="${formatted}€" ;;
-    GBP) formatted="£${formatted}" ;;
-    JPY) formatted="¥${formatted}" ;;
-    *)   formatted="\$${formatted}" ;;
-  esac
+  # Apply locale currency symbol
+  if [ "$L_CURRENCY_POS" = "suffix" ]; then
+    formatted="${formatted}${L_CURRENCY}"
+  else
+    formatted="${L_CURRENCY}${formatted}"
+  fi
 
   local color
   if awk "BEGIN{exit(!($cost+0 < $COST_WARN_USD+0))}" 2>/dev/null; then color="$C_ACCENT"

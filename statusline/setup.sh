@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Interactive statusline setup for Claude Code xida plugin.
 # Installs/uninstalls statusline by modifying ~/.claude/settings.json.
-# Configures widgets, color themes, and thresholds interactively.
+# Configures widgets and color themes interactively.
 
 set -euo pipefail
 
@@ -35,15 +35,6 @@ DEFAULT_C_ACCENT='\033[36m'
 DEFAULT_C_WARN='\033[33m'
 DEFAULT_C_DANGER='\033[31m'
 DEFAULT_C_DIM='\033[38;5;245m'
-
-DEFAULT_CONTEXT_WARN_PCT=60
-DEFAULT_CONTEXT_DANGER_PCT=80
-DEFAULT_DURATION_WARN_MIN=30
-DEFAULT_DURATION_DANGER_MIN=60
-DEFAULT_RATE_WARN_PCT=50
-DEFAULT_RATE_DANGER_PCT=80
-DEFAULT_COST_WARN_USD=5
-DEFAULT_COST_DANGER_USD=10
 
 # ── Theme definitions ────────────────────────────────
 
@@ -208,12 +199,6 @@ show_current() {
   fi
   printf '\n'
   echo ""
-  echo "  Thresholds:"
-  printf "    %-16s warn=%d%%  danger=%d%%\n" "Context:" "$CONTEXT_WARN_PCT" "$CONTEXT_DANGER_PCT"
-  printf "    %-16s warn=%dm  danger=%dm\n" "Duration:" "$DURATION_WARN_MIN" "$DURATION_DANGER_MIN"
-  printf "    %-16s warn=%d%%  danger=%d%%\n" "Rate Limit:" "$RATE_WARN_PCT" "$RATE_DANGER_PCT"
-  printf "    %-16s warn=\$%s  danger=\$%s\n" "Cost:" "$COST_WARN_USD" "$COST_DANGER_USD"
-  echo ""
 }
 
 quit_if_asked() {
@@ -234,7 +219,7 @@ ask_action() {
   echo "" >&2
   if is_installed; then
     echo "  1: Update settings" >&2
-    echo "     Change widgets, theme, and thresholds." >&2
+    echo "     Change widgets and theme." >&2
     echo "" >&2
     echo "  u: Uninstall" >&2
     echo "     Remove statusline from settings.json" >&2
@@ -255,8 +240,8 @@ ask_action() {
   else
     echo "  1: Install" >&2
     echo "     Configure the xida statusline as your" >&2
-    echo "     Claude Code status bar. Choose widgets," >&2
-    echo "     color theme, and alert thresholds." >&2
+    echo "     Claude Code status bar. Choose widgets" >&2
+    echo "     and color theme." >&2
     echo "" >&2
     echo "  q: Quit without changes" >&2
     echo "" >&2
@@ -386,105 +371,6 @@ ask_theme() {
       return
     fi
     echo "  Invalid choice. Enter 1-5 or q." >&2
-  done
-}
-
-# ── Threshold prompts ────────────────────────────────
-
-ask_threshold_pct() {
-  local label="$1"
-  local current="$2"
-  local default="$3"
-  local choice
-
-  local enter_value
-  if [ "$HAS_CONFIG" = "1" ]; then
-    enter_value="$current"
-  else
-    enter_value="$default"
-  fi
-
-  echo "" >&2
-  echo "  $label" >&2
-  echo "    current = ${current}%" >&2
-  echo "    default = ${default}%" >&2
-  while true; do
-    read -rp "    value [0-100, q, Enter=${enter_value}%]: " choice
-    choice="${choice:-$enter_value}"
-    if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
-      echo "QUIT"
-      return
-    fi
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 0 ] && [ "$choice" -le 100 ]; then
-      echo "$choice"
-      return
-    fi
-    echo "    Invalid. Enter a number 0-100 or q." >&2
-  done
-}
-
-ask_threshold_usd() {
-  local label="$1"
-  local current="$2"
-  local default="$3"
-  local choice
-
-  local enter_value
-  if [ "$HAS_CONFIG" = "1" ]; then
-    enter_value="$current"
-  else
-    enter_value="$default"
-  fi
-
-  echo "" >&2
-  echo "  $label" >&2
-  echo "    current = \$$current" >&2
-  echo "    default = \$$default" >&2
-  while true; do
-    read -rp "    value [\$amount, q, Enter=\$$enter_value]: " choice
-    choice="${choice:-$enter_value}"
-    if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
-      echo "QUIT"
-      return
-    fi
-    # Validate: positive number, decimals ok
-    if [[ "$choice" =~ ^[0-9]+\.?[0-9]*$ ]] && [ "$(echo "$choice > 0" | bc -l 2>/dev/null || awk "BEGIN{print ($choice+0 > 0)}")" = "1" ]; then
-      echo "$choice"
-      return
-    fi
-    echo "    Invalid. Enter a positive number or q." >&2
-  done
-}
-
-ask_threshold_min() {
-  local label="$1"
-  local current="$2"
-  local default="$3"
-  local choice
-
-  local enter_value
-  if [ "$HAS_CONFIG" = "1" ]; then
-    enter_value="$current"
-  else
-    enter_value="$default"
-  fi
-
-  echo "" >&2
-  echo "  $label" >&2
-  echo "    current = ${current}m" >&2
-  echo "    default = ${default}m" >&2
-  while true; do
-    read -rp "    value [minutes, q, Enter=${enter_value}m]: " choice
-    choice="${choice:-$enter_value}"
-    if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
-      echo "QUIT"
-      return
-    fi
-    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -gt 0 ]; then
-      echo "$choice"
-      return
-    fi
-    echo "    Invalid. Enter a positive number or q." >&2
   done
 }
 
@@ -650,6 +536,16 @@ case "$ACTION" in
     ;;
 esac
 
+# ── Color theme ──────────────────────────────────────
+
+CHOSEN_THEME=$(ask_theme)
+quit_if_asked "$CHOSEN_THEME"
+
+C_ACCENT="${THEME_ACCENT[$CHOSEN_THEME]}"
+C_WARN="${THEME_WARN[$CHOSEN_THEME]}"
+C_DANGER="${THEME_DANGER[$CHOSEN_THEME]}"
+C_DIM="${THEME_DIM[$CHOSEN_THEME]}"
+
 # ── Configure widgets ────────────────────────────────
 
 echo ""
@@ -678,82 +574,6 @@ quit_if_asked "$SHOW_COST"
 SHOW_MODEL=$(ask_widget "Model name" "$SHOW_MODEL" "$DEFAULT_SHOW_MODEL")
 quit_if_asked "$SHOW_MODEL"
 
-# ── Color theme ──────────────────────────────────────
-
-CHOSEN_THEME=$(ask_theme)
-quit_if_asked "$CHOSEN_THEME"
-
-C_ACCENT="${THEME_ACCENT[$CHOSEN_THEME]}"
-C_WARN="${THEME_WARN[$CHOSEN_THEME]}"
-C_DANGER="${THEME_DANGER[$CHOSEN_THEME]}"
-C_DIM="${THEME_DIM[$CHOSEN_THEME]}"
-
-# ── Thresholds ───────────────────────────────────────
-
-echo ""
-echo "── Thresholds ───────────────────────────"
-if [ "$HAS_CONFIG" = "1" ]; then
-  echo "  (Enter=keep current)"
-else
-  echo "  (Enter=use default)"
-fi
-
-CONTEXT_WARN_PCT=$(ask_threshold_pct "Context warn %" "$CONTEXT_WARN_PCT" "$DEFAULT_CONTEXT_WARN_PCT")
-quit_if_asked "$CONTEXT_WARN_PCT"
-
-CONTEXT_DANGER_PCT=$(ask_threshold_pct "Context danger %" "$CONTEXT_DANGER_PCT" "$DEFAULT_CONTEXT_DANGER_PCT")
-quit_if_asked "$CONTEXT_DANGER_PCT"
-
-# Auto-swap if warn > danger
-if [ "$CONTEXT_WARN_PCT" -gt "$CONTEXT_DANGER_PCT" ]; then
-  echo "    (swapped: warn=$CONTEXT_DANGER_PCT%, danger=$CONTEXT_WARN_PCT%)" >&2
-  tmp_val="$CONTEXT_WARN_PCT"
-  CONTEXT_WARN_PCT="$CONTEXT_DANGER_PCT"
-  CONTEXT_DANGER_PCT="$tmp_val"
-fi
-
-DURATION_WARN_MIN=$(ask_threshold_min "Duration warn (minutes)" "$DURATION_WARN_MIN" "$DEFAULT_DURATION_WARN_MIN")
-quit_if_asked "$DURATION_WARN_MIN"
-
-DURATION_DANGER_MIN=$(ask_threshold_min "Duration danger (minutes)" "$DURATION_DANGER_MIN" "$DEFAULT_DURATION_DANGER_MIN")
-quit_if_asked "$DURATION_DANGER_MIN"
-
-# Auto-swap if warn > danger
-if [ "$DURATION_WARN_MIN" -gt "$DURATION_DANGER_MIN" ]; then
-  echo "    (swapped: warn=${DURATION_DANGER_MIN}m, danger=${DURATION_WARN_MIN}m)" >&2
-  tmp_val="$DURATION_WARN_MIN"
-  DURATION_WARN_MIN="$DURATION_DANGER_MIN"
-  DURATION_DANGER_MIN="$tmp_val"
-fi
-
-RATE_WARN_PCT=$(ask_threshold_pct "Rate limit warn %" "$RATE_WARN_PCT" "$DEFAULT_RATE_WARN_PCT")
-quit_if_asked "$RATE_WARN_PCT"
-
-RATE_DANGER_PCT=$(ask_threshold_pct "Rate limit danger %" "$RATE_DANGER_PCT" "$DEFAULT_RATE_DANGER_PCT")
-quit_if_asked "$RATE_DANGER_PCT"
-
-# Auto-swap if warn > danger
-if [ "$RATE_WARN_PCT" -gt "$RATE_DANGER_PCT" ]; then
-  echo "    (swapped: warn=$RATE_DANGER_PCT%, danger=$RATE_WARN_PCT%)" >&2
-  tmp_val="$RATE_WARN_PCT"
-  RATE_WARN_PCT="$RATE_DANGER_PCT"
-  RATE_DANGER_PCT="$tmp_val"
-fi
-
-COST_WARN_USD=$(ask_threshold_usd "Cost warn \$" "$COST_WARN_USD" "$DEFAULT_COST_WARN_USD")
-quit_if_asked "$COST_WARN_USD"
-
-COST_DANGER_USD=$(ask_threshold_usd "Cost danger \$" "$COST_DANGER_USD" "$DEFAULT_COST_DANGER_USD")
-quit_if_asked "$COST_DANGER_USD"
-
-# Auto-swap if warn > danger
-if awk "BEGIN{exit(!($COST_WARN_USD+0 > $COST_DANGER_USD+0))}" 2>/dev/null; then
-  echo "    (swapped: warn=\$$COST_DANGER_USD, danger=\$$COST_WARN_USD)" >&2
-  tmp_val="$COST_WARN_USD"
-  COST_WARN_USD="$COST_DANGER_USD"
-  COST_DANGER_USD="$tmp_val"
-fi
-
 # ── Write config and install ─────────────────────────
 
 write_conf
@@ -768,8 +588,8 @@ show_current
 show_preview
 
 echo "  You can also edit statusline.conf directly for"
-echo "  custom colors or fine-tuned values. Changes"
-echo "  apply on next render — no restart needed."
+echo "  custom colors, thresholds, or fine-tuned values."
+echo "  Changes apply on next render — no restart needed."
 echo ""
 echo "  Re-run /xida:statusline to update or uninstall."
 echo ""

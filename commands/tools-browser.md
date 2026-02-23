@@ -9,7 +9,7 @@ allowed-tools: Bash(agent-browser:*)
 ## Setup
 
 1. **Install**: `npm install -g agent-browser` then `agent-browser install`
-2. **Windows patch**: Run `${CLAUDE_PLUGIN_ROOT}\scripts\agent-browser-fix\patch.bat` to fix daemon auto-start on Windows. Re-run after each `npm update -g agent-browser`.
+2. **Windows patch**: Run `${CLAUDE_PLUGIN_ROOT}/scripts/agent-browser-fix/patch.bat` to fix daemon auto-start on Windows. Re-run after each `npm update -g agent-browser`.
    - Required until upstream PR #362 is merged.
 
 ## Core Workflow

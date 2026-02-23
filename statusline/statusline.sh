@@ -128,7 +128,7 @@ widget_cost() {
   local cost
   cost=$(jval '.cost.total_cost_usd // empty')
 
-  if [ -z "$cost" ] || [ "$cost" = "null" ]; then
+  if [ -z "$cost" ] || [ "$cost" = "null" ] || [ "$cost" = "0" ]; then
     return
   fi
 
@@ -327,7 +327,8 @@ format_countdown() {
 parts=()
 parts+=("$(widget_model)")
 parts+=("$(widget_progress)")
-parts+=("$(widget_tokens)")
+tok_out=$(widget_tokens)
+[ -n "$tok_out" ] && parts+=("$tok_out")
 
 cost_out=$(widget_cost)
 [ -n "$cost_out" ] && parts+=("$cost_out")

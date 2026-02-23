@@ -4,3 +4,6 @@ validate-code/vendor
 
 validate-code
 /nul
+
+# User-specific notification config
+notification/notification.conf

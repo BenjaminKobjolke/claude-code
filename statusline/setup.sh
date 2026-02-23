@@ -414,11 +414,11 @@ RATE_WARN_PCT=$RATE_WARN_PCT
 RATE_DANGER_PCT=$RATE_DANGER_PCT
 COST_WARN_USD=$COST_WARN_USD
 COST_DANGER_USD=$COST_DANGER_USD
-
-# ── Auto-managed (do not edit) ───────────────────
-XIDA_RATE=$XIDA_RATE
-XIDA_RATE_EPOCH=$XIDA_RATE_EPOCH
 EOF
+
+  # Write exchange rate to separate cache file (avoids race with background refresh)
+  local rate_cache="$SCRIPT_DIR/.exchange_rate_cache"
+  printf 'XIDA_RATE=%s\nXIDA_RATE_EPOCH=%s\n' "$XIDA_RATE" "$XIDA_RATE_EPOCH" > "$rate_cache"
 }
 
 # ── Install / Uninstall ──────────────────────────────

@@ -85,19 +85,20 @@ fmt_thousands() {
 }
 
 # ── Currency conversion ───────────────────────────────
-# Fetch exchange rate from API, update conf file cache.
+# Fetch exchange rate from API, write to separate cache file to avoid
+# racing with the main script reading statusline.conf.
+RATE_CACHE_FILE="$SCRIPT_DIR/.exchange_rate_cache"
+
 refresh_exchange_rate() {
   local resp rate
   resp=$(curl -s --max-time 5 "https://open.er-api.com/v6/latest/USD" 2>/dev/null) || return
   rate=$(echo "$resp" | jq -r ".rates.$L_CURRENCY_CODE // empty" 2>/dev/null) || return
   [ -z "$rate" ] && return
-  if [ -f "$CONF_FILE" ]; then
-    sed -i "s/^XIDA_RATE=.*/XIDA_RATE=$rate/" "$CONF_FILE"
-    sed -i "s/^XIDA_RATE_EPOCH=.*/XIDA_RATE_EPOCH=$(date +%s)/" "$CONF_FILE"
-  fi
+  printf 'XIDA_RATE=%s\nXIDA_RATE_EPOCH=%s\n' "$rate" "$(date +%s)" > "$RATE_CACHE_FILE"
 }
 
-# Load exchange rate; lazy-refresh if stale (>7 days).
+# Load exchange rate from cache file; lazy-refresh if stale (>7 days).
+[ -f "$RATE_CACHE_FILE" ] && source "$RATE_CACHE_FILE"
 L_RATE=1
 if [ "$L_CURRENCY_CODE" != "USD" ]; then
   L_RATE="${XIDA_RATE:-1}"

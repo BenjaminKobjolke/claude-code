@@ -5,3 +5,4 @@ validate-code
 notification/notification.conf
 .claude/settings.local.json
 /nul
+*.stackdump

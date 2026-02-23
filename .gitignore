@@ -4,6 +4,7 @@ validate-code/vendor
 validate-code
 notification/notification.conf
 statusline/statusline.conf
+statusline/.exchange_rate_cache
 .claude/settings.local.json
 /nul
 *.stackdump

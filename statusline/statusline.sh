@@ -85,19 +85,20 @@ fmt_thousands() {
 }
 
 # ── Currency conversion ───────────────────────────────
-# Fetch exchange rate from API, update conf file cache.
+# Fetch exchange rate from API, write to separate cache file to avoid
+# racing with the main script reading statusline.conf.
+RATE_CACHE_FILE="$SCRIPT_DIR/.exchange_rate_cache"
+
 refresh_exchange_rate() {
   local resp rate
   resp=$(curl -s --max-time 5 "https://open.er-api.com/v6/latest/USD" 2>/dev/null) || return
   rate=$(echo "$resp" | jq -r ".rates.$L_CURRENCY_CODE // empty" 2>/dev/null) || return
   [ -z "$rate" ] && return
-  if [ -f "$CONF_FILE" ]; then
-    sed -i "s/^XIDA_RATE=.*/XIDA_RATE=$rate/" "$CONF_FILE"
-    sed -i "s/^XIDA_RATE_EPOCH=.*/XIDA_RATE_EPOCH=$(date +%s)/" "$CONF_FILE"
-  fi
+  printf 'XIDA_RATE=%s\nXIDA_RATE_EPOCH=%s\n' "$rate" "$(date +%s)" > "$RATE_CACHE_FILE"
 }
 
-# Load exchange rate; lazy-refresh if stale (>7 days).
+# Load exchange rate from cache file; lazy-refresh if stale (>7 days).
+[ -f "$RATE_CACHE_FILE" ] && source "$RATE_CACHE_FILE"
 L_RATE=1
 if [ "$L_CURRENCY_CODE" != "USD" ]; then
   L_RATE="${XIDA_RATE:-1}"
@@ -107,23 +108,60 @@ if [ "$L_CURRENCY_CODE" != "USD" ]; then
   fi
 fi
 
-# ── JSON helpers ─────────────────────────────────────
+# ── Batch JSON parse ─────────────────────────────────
+# Extract all needed values from stdin JSON in a single jq call
+# to avoid forking jq ~12 times per render.
 
-jval() { echo "$INPUT" | jq -r "$1"; }
-jnum() { echo "$INPUT" | jq "$1"; }
+eval "$(echo "$INPUT" | jq -r '
+  def esc: gsub("'\''"; "'\''\\'\'''\''");
+  @sh "J_MODEL_ID=\(.model.id // "")",
+  @sh "J_DISPLAY_NAME=\(.model.display_name // "")",
+  @sh "J_CONTEXT_SIZE=\(.context_window.context_window_size // 0)",
+  "J_CURRENT_TOKENS=\(
+    if .context_window.current_usage != null then
+      (.context_window.current_usage.input_tokens // 0)
+      + (.context_window.current_usage.cache_creation_input_tokens // 0)
+      + (.context_window.current_usage.cache_read_input_tokens // 0)
+    else 0 end
+  )",
+  @sh "J_COST=\(.cost.total_cost_usd // "")",
+  "J_DURATION_MS=\(.cost.total_duration_ms // 0)"
+')"
+
+# ── Cache autocompact setting ─────────────────────────
+# Read ~/.claude.json once; calc_effective uses the cached value.
+
+_AUTOCOMPACT=1
+if [ -n "${DISABLE_COMPACT:-}" ] && [ "$DISABLE_COMPACT" != "0" ] && [ "$DISABLE_COMPACT" != "false" ]; then
+  _AUTOCOMPACT=0
+fi
+if [ -n "${DISABLE_AUTO_COMPACT:-}" ] && [ "$DISABLE_AUTO_COMPACT" != "0" ] && [ "$DISABLE_AUTO_COMPACT" != "false" ]; then
+  _AUTOCOMPACT=0
+fi
+_claude_config="$HOME/.claude.json"
+if [ "$_AUTOCOMPACT" = "1" ] && [ -f "$_claude_config" ]; then
+  _config_val=$(jq -r 'if has("autoCompactEnabled") then .autoCompactEnabled else true end' "$_claude_config" 2>/dev/null) || _config_val="true"
+  if [ "$_config_val" = "false" ]; then
+    _AUTOCOMPACT=0
+  fi
+fi
+
+# Cache effort level (used by widget_model)
+_EFFORT="${CLAUDE_CODE_EFFORT_LEVEL:-}"
+if [ -z "$_EFFORT" ]; then
+  _settings="$HOME/.claude/settings.json"
+  if [ -f "$_settings" ]; then
+    _EFFORT=$(jq -r '.effortLevel // empty' "$_settings" 2>/dev/null) || _EFFORT=""
+  fi
+fi
 
 # ── Widget: Model ────────────────────────────────────
 # Shows versioned model name (e.g., "Opus 4.6") + effort level suffix
 
 widget_model() {
-  local model_id
-  model_id=$(jval '.model.id')
-  local display_name
-  display_name=$(jval '.model.display_name')
-
   # Parse model.id to short versioned name
   local name
-  case "$model_id" in
+  case "$J_MODEL_ID" in
     *opus-4-6*)   name="Opus 4.6" ;;
     *opus-4-5*)   name="Opus 4.5" ;;
     *opus-4*)     name="Opus 4" ;;
@@ -132,20 +170,11 @@ widget_model() {
     *sonnet-4*)   name="Sonnet 4" ;;
     *haiku-4-5*)  name="Haiku 4.5" ;;
     *haiku-4*)    name="Haiku 4" ;;
-    *)            name="$display_name" ;;
+    *)            name="$J_DISPLAY_NAME" ;;
   esac
 
-  # Effort level: env var takes precedence, then settings.json
-  local effort="${CLAUDE_CODE_EFFORT_LEVEL:-}"
-  if [ -z "$effort" ]; then
-    local settings="$HOME/.claude/settings.json"
-    if [ -f "$settings" ]; then
-      effort=$(jq -r '.effortLevel // empty' "$settings" 2>/dev/null) || effort=""
-    fi
-  fi
-
   local suffix=""
-  case "$effort" in
+  case "$_EFFORT" in
     high) suffix="(H)" ;;
     medium) suffix="(M)" ;;
     low) suffix="(L)" ;;
@@ -160,19 +189,11 @@ widget_model() {
 # Shows colored 10-char progress bar + percentage
 
 widget_progress() {
-  local context_size current_tokens=0 percent=0 effective
-  context_size=$(jnum '.context_window.context_window_size')
-  local usage
-  usage=$(jnum '.context_window.current_usage')
-
-  if [ "$usage" != "null" ]; then
-    current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
-  fi
-
-  # Calculate effective window (autocompact-aware)
-  effective=$(calc_effective "$context_size")
+  local percent=0
+  local effective
+  effective=$(calc_effective "$J_CONTEXT_SIZE")
   if [ "$effective" -gt 0 ]; then
-    percent=$((current_tokens * 100 / effective))
+    percent=$((J_CURRENT_TOKENS * 100 / effective))
     [ "$percent" -gt 100 ] && percent=100
   fi
 
@@ -197,18 +218,11 @@ widget_progress() {
 # Current value colored by context utilization; max stays dim.
 
 widget_tokens() {
-  local context_size current_tokens=0 percent=0 effective
-  context_size=$(jnum '.context_window.context_window_size')
-  local usage
-  usage=$(jnum '.context_window.current_usage')
-
-  if [ "$usage" != "null" ]; then
-    current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
-  fi
-
-  effective=$(calc_effective "$context_size")
+  local percent=0
+  local effective
+  effective=$(calc_effective "$J_CONTEXT_SIZE")
   if [ "$effective" -gt 0 ]; then
-    percent=$((current_tokens * 100 / effective))
+    percent=$((J_CURRENT_TOKENS * 100 / effective))
     [ "$percent" -gt 100 ] && percent=100
   fi
 
@@ -218,8 +232,8 @@ widget_tokens() {
   else color="$C_DANGER"
   fi
 
-  local cur_k; cur_k=$(fmt_thousands "$((current_tokens / 1000))")
-  local max_k; max_k=$(fmt_thousands "$((context_size / 1000))")
+  local cur_k; cur_k=$(fmt_thousands "$((J_CURRENT_TOKENS / 1000))")
+  local max_k; max_k=$(fmt_thousands "$((J_CONTEXT_SIZE / 1000))")
   printf '%b%sK%b%b/%sK%b' "$color" "$cur_k" "$C_RESET" "$C_DIM" "$max_k" "$C_RESET"
 }
 
@@ -227,20 +241,17 @@ widget_tokens() {
 # Shows session cost, localized to system locale
 
 widget_cost() {
-  local cost
-  cost=$(jval '.cost.total_cost_usd // empty')
-
-  if [ -z "$cost" ] || [ "$cost" = "null" ]; then
+  if [ -z "$J_COST" ] || [ "$J_COST" = "null" ]; then
     return
   fi
   # Suppress zero cost (handles both "0" and "0.00" formats)
-  if awk "BEGIN{exit(!($cost+0==0))}" 2>/dev/null; then
+  if awk "BEGIN{exit(!($J_COST+0==0))}" 2>/dev/null; then
     return
   fi
 
   # Convert to local currency and round to 2 decimal places
   local display_cost
-  display_cost=$(awk "BEGIN{printf \"%.2f\", $cost * $L_RATE}")
+  display_cost=$(awk "BEGIN{printf \"%.2f\", $J_COST * $L_RATE}")
   local formatted="$display_cost"
   if [ "$L_RADIX" != "." ]; then
     formatted="${formatted/./$L_RADIX}"
@@ -254,8 +265,8 @@ widget_cost() {
   fi
 
   local color
-  if awk "BEGIN{exit(!($cost+0 < $COST_WARN_USD+0))}" 2>/dev/null; then color="$C_ACCENT"
-  elif awk "BEGIN{exit(!($cost+0 < $COST_DANGER_USD+0))}" 2>/dev/null; then color="$C_WARN"
+  if awk "BEGIN{exit(!($J_COST+0 < $COST_WARN_USD+0))}" 2>/dev/null; then color="$C_ACCENT"
+  elif awk "BEGIN{exit(!($J_COST+0 < $COST_DANGER_USD+0))}" 2>/dev/null; then color="$C_WARN"
   else color="$C_DANGER"
   fi
 
@@ -266,14 +277,11 @@ widget_cost() {
 # Shows session wall-clock time with color thresholds
 
 widget_duration() {
-  local ms
-  ms=$(jnum '.cost.total_duration_ms')
-
-  if [ "$ms" = "null" ] || [ "$ms" = "0" ]; then
+  if [ "$J_DURATION_MS" = "null" ] || [ "$J_DURATION_MS" = "0" ]; then
     return
   fi
 
-  local total_secs=$((ms / 1000))
+  local total_secs=$((J_DURATION_MS / 1000))
   local days=$((total_secs / 86400))
   local hours=$(( (total_secs % 86400) / 3600 ))
   local mins=$(( (total_secs % 3600) / 60 ))
@@ -354,12 +362,10 @@ widget_ratelimit() {
 
 calc_effective() {
   local context_size="$1"
-  local model_id
-  model_id=$(jval '.model.id')
 
   # Max output tokens per model (CC caps at 20000 internally)
   local model_max
-  case "$model_id" in
+  case "$J_MODEL_ID" in
     *opus-4-6*)                     model_max=128000 ;;
     *opus-4-5*|*sonnet-4*|*haiku-4*) model_max=64000 ;;
     *opus-4*)                       model_max=32000 ;;
@@ -377,25 +383,7 @@ calc_effective() {
   # EHA = available context after output reservation
   local eha=$((context_size - max_output))
 
-  # Check autocompact settings
-  local autocompact=1
-  if [ -n "${DISABLE_COMPACT:-}" ] && [ "$DISABLE_COMPACT" != "0" ] && [ "$DISABLE_COMPACT" != "false" ]; then
-    autocompact=0
-  fi
-  if [ -n "${DISABLE_AUTO_COMPACT:-}" ] && [ "$DISABLE_AUTO_COMPACT" != "0" ] && [ "$DISABLE_AUTO_COMPACT" != "false" ]; then
-    autocompact=0
-  fi
-
-  local config_file="$HOME/.claude.json"
-  if [ -f "$config_file" ]; then
-    local config_val
-    config_val=$(jq -r 'if has("autoCompactEnabled") then .autoCompactEnabled else true end' "$config_file" 2>/dev/null) || config_val="true"
-    if [ "$config_val" = "false" ]; then
-      autocompact=0
-    fi
-  fi
-
-  if [ "$autocompact" = "1" ]; then
+  if [ "$_AUTOCOMPACT" = "1" ]; then
     # Threshold = EHA - 13000 (or pct override)
     local threshold
     if [ -n "${CLAUDE_AUTOCOMPACT_PCT_OVERRIDE:-}" ]; then
@@ -414,17 +402,17 @@ calc_effective() {
 # ── Rate limit API (cached) ─────────────────────────
 
 CACHE_DIR="$HOME/.cache/xida-statusline"
-CACHE_FILE="$CACHE_DIR/usage.json"
+CACHE_FILE_USAGE="$CACHE_DIR/usage.json"
 CACHE_TTL=180
 
 get_usage_cached() {
   # Return cached data if fresh enough
-  if [ -f "$CACHE_FILE" ]; then
+  if [ -f "$CACHE_FILE_USAGE" ]; then
     local now file_age
     now=$(date +%s)
-    file_age=$(stat -c '%Y' "$CACHE_FILE" 2>/dev/null || stat -f '%m' "$CACHE_FILE" 2>/dev/null || date -r "$CACHE_FILE" +%s 2>/dev/null) || file_age=0
+    file_age=$(stat -c '%Y' "$CACHE_FILE_USAGE" 2>/dev/null || stat -f '%m' "$CACHE_FILE_USAGE" 2>/dev/null || date -r "$CACHE_FILE_USAGE" +%s 2>/dev/null) || file_age=0
     if [ $((now - file_age)) -lt $CACHE_TTL ]; then
-      cat "$CACHE_FILE"
+      cat "$CACHE_FILE_USAGE"
       return
     fi
   fi
@@ -446,7 +434,7 @@ get_usage_cached() {
 
   # Validate response has expected fields
   if echo "$response" | jq -e '.five_hour' &>/dev/null; then
-    echo "$response" > "$CACHE_FILE"
+    echo "$response" > "$CACHE_FILE_USAGE"
     echo "$response"
   fi
 }

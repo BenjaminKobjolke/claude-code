@@ -1,5 +1,5 @@
 {
-  "name": "xida-tools",
+  "name": "xida",
   "version": "1.0.0",
   "description": "XIDA development toolkit: Git workflows, code analysis, testing, debugging, handoffs, and multi-language coding standards",
   "author": {

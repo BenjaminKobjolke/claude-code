@@ -66,4 +66,4 @@ Write `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_GITHUB_RELEASE.md` containing:
 
 - Confirm the batch script exists and is syntactically valid
 - Confirm the docs file is complete
-- Tell the user they can now run `/xida-tools:github-create-release <version>` to create releases
+- Tell the user they can now run `/xida:github-create-release <version>` to create releases

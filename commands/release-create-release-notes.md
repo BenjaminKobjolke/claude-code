@@ -5,7 +5,7 @@ description: create release notes based on docs/CREATE_NEW_RELEASE.md
 Can you create a new release.
 There must be documentation bout that in $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md
 
-If not ask the user to run /xida-tools:release-setup
+If not ask the user to run /xida:release-setup
 
 ## Step-by-Step Workflow
 

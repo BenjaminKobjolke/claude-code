@@ -35,6 +35,6 @@ Steps:
 
    **Risk Assessment**: Identify the riskiest steps and mitigation strategies
 
-   **Session Boundaries**: Note where /xida-tools:handoff-create should be used if the refactoring spans multiple sessions
+   **Session Boundaries**: Note where /xida:handoff-create should be used if the refactoring spans multiple sessions
 
-5. Present the plan to the user. Do NOT implement any changes. This command only plans, similar to how /xida-tools:bugs-collect only documents.
+5. Present the plan to the user. Do NOT implement any changes. This command only plans, similar to how /xida:bugs-collect only documents.

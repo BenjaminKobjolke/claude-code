@@ -23,13 +23,13 @@ Claude Code pipes JSON to the statusLine command on each render. The script pars
 | Progress | `████░░░░░░ 45%` | Colored progress bar (green/yellow/red). Always shown. |
 | Tokens | `90K/200K` | Current / total context tokens. Always shown. |
 | Cost | `$0.50` | Session cost, locale-aware (currency + decimal). Hidden when zero. |
-| Rate Limit | `5h: 23% (2h) 7d: 5% (4d)` | API usage with reset countdown. Color by health. |
+| Rate Limit | `5h: 23% (2h30m) 7d: 5% (3d12h)` | API usage with reset countdown. Color by health. |
 | Model | `Opus 4.6(H)` | Versioned model name + effort level (H/M/L) |
 
 ## Output Example
 
 ```
-████░░░░░░ 45% │ 90K/200K │ $0.50 │ 5h: 23% (2h) 7d: 5% (4d) │ Opus 4.6(H)
+████░░░░░░ 45% │ 90K/200K │ $0.50 │ 5h: 23% (2h30m) 7d: 5% (3d12h) │ Opus 4.6(H)
 ```
 
 ## Color Themes

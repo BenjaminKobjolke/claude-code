@@ -438,12 +438,18 @@ format_countdown() {
   diff=$((reset_epoch - now))
   [ "$diff" -le 0 ] && return
 
-  if [ "$diff" -ge 86400 ]; then
-    printf '%dd' "$((diff / 86400))"
-  elif [ "$diff" -ge 3600 ]; then
-    printf '%dh' "$((diff / 3600))"
+  local days=$((diff / 86400))
+  local hours=$(( (diff % 86400) / 3600 ))
+  local minutes=$(( (diff % 3600) / 60 ))
+
+  if [ "$days" -gt 0 ]; then
+    printf '%dd%dh' "$days" "$hours"
+  elif [ "$hours" -gt 0 ]; then
+    printf '%dh%dm' "$hours" "$minutes"
+  elif [ "$minutes" -gt 0 ]; then
+    printf '%dm' "$minutes"
   else
-    printf '%dm' "$((diff / 60))"
+    printf '%ds' "$diff"
   fi
 }
 

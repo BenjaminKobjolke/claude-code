@@ -7,15 +7,28 @@ set -euo pipefail
 INPUT=$(cat)
 
 # ── ANSI colors ──────────────────────────────────────
+# Semantic palette — only these 4 are used throughout.
 
 C_RESET='\033[0m'
-C_BOLD='\033[1m'
-C_DIM='\033[2m'
-C_GREEN='\033[32m'
-C_YELLOW='\033[33m'
-C_RED='\033[31m'
-C_CYAN='\033[36m'
-C_WHITE='\033[37m'
+C_DIM='\033[38;5;245m'     # gray   — separators, labels, secondary text
+C_ACCENT='\033[36m'        # cyan   — healthy state, base values
+C_WARN='\033[33m'          # yellow — moderate usage, attention needed
+C_DANGER='\033[31m'        # red    — high usage, degradation likely
+
+# ── Thresholds ──────────────────────────────────────
+
+# Context: 60% = "lost in the middle" onset, 80% = consensus exit point
+CONTEXT_WARN_PCT=60
+CONTEXT_DANGER_PCT=80
+
+# Rate limits: 50% = half quota burned, 80% = throttling imminent
+RATE_WARN_PCT=50
+RATE_DANGER_PCT=80
+
+# Cost (USD): per-session thresholds assuming Opus 4.6 in a 200K context window.
+# Light session ≈ $1–2, full context ≈ $5–10, ceiling ≈ $10–15.
+COST_WARN_USD=5
+COST_DANGER_USD=10
 
 # ── JSON helpers ─────────────────────────────────────
 
@@ -61,34 +74,35 @@ widget_model() {
     low) suffix="(L)" ;;
   esac
 
-  printf '%b%b%s%s%b' "$C_BOLD" "$C_CYAN" "$name" "$suffix" "$C_RESET"
+  printf '%b%s%b' "$C_ACCENT" "$name" "$C_RESET"
+  [ -n "$suffix" ] && printf '%b%s%b' "$C_DIM" "$suffix" "$C_RESET"
+  :
 }
 
 # ── Widget: Progress ─────────────────────────────────
 # Shows colored 10-char progress bar + percentage
 
 widget_progress() {
-  local context_size current_tokens percent effective
+  local context_size current_tokens=0 percent=0 effective
   context_size=$(jnum '.context_window.context_window_size')
   local usage
   usage=$(jnum '.context_window.current_usage')
 
-  if [ "$usage" = "null" ]; then
-    return
+  if [ "$usage" != "null" ]; then
+    current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
   fi
-
-  current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
 
   # Calculate effective window (autocompact-aware)
   effective=$(calc_effective "$context_size")
-  percent=$((current_tokens * 100 / effective))
-  [ "$percent" -gt 100 ] && percent=100
+  if [ "$effective" -gt 0 ]; then
+    percent=$((current_tokens * 100 / effective))
+    [ "$percent" -gt 100 ] && percent=100
+  fi
 
-  # Color based on percentage
   local color
-  if [ "$percent" -lt 50 ]; then color="$C_GREEN"
-  elif [ "$percent" -lt 80 ]; then color="$C_YELLOW"
-  else color="$C_RED"
+  if [ "$percent" -lt "$CONTEXT_WARN_PCT" ]; then color="$C_ACCENT"
+  elif [ "$percent" -lt "$CONTEXT_DANGER_PCT" ]; then color="$C_WARN"
+  else color="$C_DANGER"
   fi
 
   # Build 10-char bar
@@ -103,25 +117,35 @@ widget_progress() {
 
 # ── Widget: Tokens ───────────────────────────────────
 # Shows token ratio in K format (e.g., "90K/200K")
+# Current value colored by context utilization; max stays dim.
 
 widget_tokens() {
-  local context_size
+  local context_size current_tokens=0 percent=0 effective
   context_size=$(jnum '.context_window.context_window_size')
   local usage
   usage=$(jnum '.context_window.current_usage')
 
-  if [ "$usage" = "null" ]; then
-    return
+  if [ "$usage" != "null" ]; then
+    current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
   fi
 
-  local current_tokens
-  current_tokens=$(echo "$usage" | jq '.input_tokens + .cache_creation_input_tokens + .cache_read_input_tokens')
+  effective=$(calc_effective "$context_size")
+  if [ "$effective" -gt 0 ]; then
+    percent=$((current_tokens * 100 / effective))
+    [ "$percent" -gt 100 ] && percent=100
+  fi
 
-  printf '%b%sK/%sK%b' "$C_DIM" "$((current_tokens / 1000))" "$((context_size / 1000))" "$C_RESET"
+  local color
+  if [ "$percent" -lt "$CONTEXT_WARN_PCT" ]; then color="$C_ACCENT"
+  elif [ "$percent" -lt "$CONTEXT_DANGER_PCT" ]; then color="$C_WARN"
+  else color="$C_DANGER"
+  fi
+
+  printf '%b%sK%b%b/%sK%b' "$color" "$((current_tokens / 1000))" "$C_RESET" "$C_DIM" "$((context_size / 1000))" "$C_RESET"
 }
 
 # ── Widget: Cost ─────────────────────────────────────
-# Shows session cost in USD
+# Shows session cost, localized to system locale
 
 widget_cost() {
   local cost
@@ -135,7 +159,35 @@ widget_cost() {
     return
   fi
 
-  printf '%b$%s%b' "$C_WHITE" "$cost" "$C_RESET"
+  # Round to 2 decimal places
+  local formatted
+  formatted=$(awk "BEGIN{printf \"%.2f\", $cost + 0}")
+
+  # Localize: replace decimal separator using locale's radix character
+  local radix
+  radix=$(locale decimal_point 2>/dev/null) || radix="."
+  if [ "$radix" != "." ]; then
+    formatted="${formatted/./$radix}"
+  fi
+
+  # Localize: currency symbol (default USD $)
+  local currency
+  currency=$(locale int_curr_symbol 2>/dev/null) || currency=""
+  currency="${currency%% *}"  # strip trailing spaces
+  case "$currency" in
+    EUR) formatted="${formatted}€" ;;
+    GBP) formatted="£${formatted}" ;;
+    JPY) formatted="¥${formatted}" ;;
+    *)   formatted="\$${formatted}" ;;
+  esac
+
+  local color
+  if awk "BEGIN{exit(!($cost+0 < $COST_WARN_USD+0))}" 2>/dev/null; then color="$C_ACCENT"
+  elif awk "BEGIN{exit(!($cost+0 < $COST_DANGER_USD+0))}" 2>/dev/null; then color="$C_WARN"
+  else color="$C_DANGER"
+  fi
+
+  printf '%b%s%b' "$color" "$formatted" "$C_RESET"
 }
 
 # ── Widget: Rate Limit ───────────────────────────────
@@ -159,12 +211,12 @@ widget_ratelimit() {
     local color
     local util_int=${util%.*}
     util_int=${util_int:-0}
-    if [ "$util_int" -lt 50 ]; then color="$C_GREEN"
-    elif [ "$util_int" -lt 80 ]; then color="$C_YELLOW"
-    else color="$C_RED"
+    if [ "$util_int" -lt "$RATE_WARN_PCT" ]; then color="$C_ACCENT"
+    elif [ "$util_int" -lt "$RATE_DANGER_PCT" ]; then color="$C_WARN"
+    else color="$C_DANGER"
     fi
 
-    printf '%b5h:%s%%%b' "$color" "$util_int" "$C_RESET"
+    printf '%b5h: %b%b%s%% %b' "$C_DIM" "$C_RESET" "$color" "$util_int" "$C_RESET"
     [ -n "$countdown" ] && printf '%b(%s)%b' "$C_DIM" "$countdown" "$C_RESET"
   fi
 
@@ -177,14 +229,15 @@ widget_ratelimit() {
     local color7
     local util7_int=${util7%.*}
     util7_int=${util7_int:-0}
-    if [ "$util7_int" -lt 50 ]; then color7="$C_GREEN"
-    elif [ "$util7_int" -lt 80 ]; then color7="$C_YELLOW"
-    else color7="$C_RED"
+    if [ "$util7_int" -lt "$RATE_WARN_PCT" ]; then color7="$C_ACCENT"
+    elif [ "$util7_int" -lt "$RATE_DANGER_PCT" ]; then color7="$C_WARN"
+    else color7="$C_DANGER"
     fi
 
-    printf ' %b7d:%s%%%b' "$color7" "$util7_int" "$C_RESET"
+    printf ' %b7d: %b%b%s%% %b' "$C_DIM" "$C_RESET" "$color7" "$util7_int" "$C_RESET"
     [ -n "$countdown7" ] && printf '%b(%s)%b' "$C_DIM" "$countdown7" "$C_RESET"
   fi
+  :
 }
 
 # ── Autocompact calculation ──────────────────────────
@@ -330,19 +383,17 @@ format_countdown() {
 # ── Main ─────────────────────────────────────────────
 
 parts=()
-parts+=("$(widget_model)")
 
-prog_out=$(widget_progress)
-[ -n "$prog_out" ] && parts+=("$prog_out")
-
-tok_out=$(widget_tokens)
-[ -n "$tok_out" ] && parts+=("$tok_out")
+parts+=("$(widget_progress)")
+parts+=("$(widget_tokens)")
 
 cost_out=$(widget_cost)
 [ -n "$cost_out" ] && parts+=("$cost_out")
 
 rl_out=$(widget_ratelimit)
 [ -n "$rl_out" ] && parts+=("$rl_out")
+
+parts+=("$(widget_model)")
 
 # Join with dim separator
 SEP=$(printf ' %b│%b ' "$C_DIM" "$C_RESET")

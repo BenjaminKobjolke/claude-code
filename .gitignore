@@ -3,6 +3,7 @@ validate-code/config.php
 validate-code/vendor
 validate-code
 notification/notification.conf
+statusline/statusline.conf
 .claude/settings.local.json
 /nul
 *.stackdump

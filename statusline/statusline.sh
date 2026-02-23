@@ -6,29 +6,34 @@ set -euo pipefail
 
 INPUT=$(cat)
 
+# ── Config file ──────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONF_FILE="$SCRIPT_DIR/statusline.conf"
+[ -f "$CONF_FILE" ] && source "$CONF_FILE"
+
 # ── ANSI colors ──────────────────────────────────────
 # Semantic palette — only these 4 are used throughout.
 
 C_RESET='\033[0m'
-C_DIM='\033[38;5;245m'     # gray   — separators, labels, secondary text
-C_ACCENT='\033[36m'        # cyan   — healthy state, base values
-C_WARN='\033[33m'          # yellow — moderate usage, attention needed
-C_DANGER='\033[31m'        # red    — high usage, degradation likely
+C_DIM="${C_DIM:-\033[38;5;245m}"       # gray   — separators, labels, secondary text
+C_ACCENT="${C_ACCENT:-\033[36m}"       # cyan   — healthy state, base values
+C_WARN="${C_WARN:-\033[33m}"           # yellow — moderate usage, attention needed
+C_DANGER="${C_DANGER:-\033[31m}"       # red    — high usage, degradation likely
 
 # ── Thresholds ──────────────────────────────────────
 
 # Context: 60% = "lost in the middle" onset, 80% = consensus exit point
-CONTEXT_WARN_PCT=60
-CONTEXT_DANGER_PCT=80
+CONTEXT_WARN_PCT="${CONTEXT_WARN_PCT:-60}"
+CONTEXT_DANGER_PCT="${CONTEXT_DANGER_PCT:-80}"
 
 # Rate limits: 50% = half quota burned, 80% = throttling imminent
-RATE_WARN_PCT=50
-RATE_DANGER_PCT=80
+RATE_WARN_PCT="${RATE_WARN_PCT:-50}"
+RATE_DANGER_PCT="${RATE_DANGER_PCT:-80}"
 
 # Cost (USD): per-session thresholds assuming Opus 4.6 in a 200K context window.
 # Light session ≈ $1–2, full context ≈ $5–10, ceiling ≈ $10–15.
-COST_WARN_USD=5
-COST_DANGER_USD=10
+COST_WARN_USD="${COST_WARN_USD:-5}"
+COST_DANGER_USD="${COST_DANGER_USD:-10}"
 
 # ── Locale ─────────────────────────────────────────
 # Detect once, reuse everywhere.  Falls back to en_US defaults.
@@ -38,12 +43,13 @@ L_THOUSANDS=$(locale thousands_sep 2>/dev/null) || L_THOUSANDS=","
 
 _curr_raw=$(locale int_curr_symbol 2>/dev/null) || _curr_raw=""
 _curr_raw="${_curr_raw%% *}"
+L_CURRENCY_CODE="${_curr_raw:-USD}"
 case "$_curr_raw" in
   EUR) L_CURRENCY="€"; L_CURRENCY_POS="suffix" ;;
   GBP) L_CURRENCY="£"; L_CURRENCY_POS="prefix" ;;
   JPY) L_CURRENCY="¥"; L_CURRENCY_POS="prefix" ;;
   CHF) L_CURRENCY="CHF "; L_CURRENCY_POS="prefix" ;;
-  *)   L_CURRENCY="\$"; L_CURRENCY_POS="prefix" ;;
+  *)   L_CURRENCY="\$"; L_CURRENCY_POS="prefix"; L_CURRENCY_CODE="USD" ;;
 esac
 unset _curr_raw
 
@@ -62,6 +68,29 @@ fmt_thousands() {
   done
   echo "${sign}${result:-0}"
 }
+
+# ── Currency conversion ───────────────────────────────
+# Fetch exchange rate from API, update conf file cache.
+refresh_exchange_rate() {
+  local resp rate
+  resp=$(curl -s --max-time 5 "https://open.er-api.com/v6/latest/USD" 2>/dev/null) || return
+  rate=$(echo "$resp" | jq -r ".rates.$L_CURRENCY_CODE // empty" 2>/dev/null) || return
+  [ -z "$rate" ] && return
+  if [ -f "$CONF_FILE" ]; then
+    sed -i "s/^XIDA_RATE=.*/XIDA_RATE=$rate/" "$CONF_FILE"
+    sed -i "s/^XIDA_RATE_EPOCH=.*/XIDA_RATE_EPOCH=$(date +%s)/" "$CONF_FILE"
+  fi
+}
+
+# Load exchange rate; lazy-refresh if stale (>7 days).
+L_RATE=1
+if [ "$L_CURRENCY_CODE" != "USD" ]; then
+  L_RATE="${XIDA_RATE:-1}"
+  now=$(date +%s)
+  if [ $(( now - ${XIDA_RATE_EPOCH:-0} )) -ge 604800 ]; then
+    refresh_exchange_rate &
+  fi
+fi
 
 # ── JSON helpers ─────────────────────────────────────
 
@@ -194,9 +223,10 @@ widget_cost() {
     return
   fi
 
-  # Round to 2 decimal places, localize decimal separator
-  local formatted
-  formatted=$(awk "BEGIN{printf \"%.2f\", $cost + 0}")
+  # Convert to local currency and round to 2 decimal places
+  local display_cost
+  display_cost=$(awk "BEGIN{printf \"%.2f\", $cost * $L_RATE}")
+  local formatted="$display_cost"
   if [ "$L_RADIX" != "." ]; then
     formatted="${formatted/./$L_RADIX}"
   fi
@@ -411,16 +441,20 @@ format_countdown() {
 
 parts=()
 
-parts+=("$(widget_progress)")
-parts+=("$(widget_tokens)")
+[ "${SHOW_PROGRESS:-1}" = "1" ] && parts+=("$(widget_progress)")
+[ "${SHOW_TOKENS:-1}" = "1" ] && parts+=("$(widget_tokens)")
 
-cost_out=$(widget_cost)
-[ -n "$cost_out" ] && parts+=("$cost_out")
+if [ "${SHOW_COST:-1}" = "1" ]; then
+  cost_out=$(widget_cost)
+  [ -n "$cost_out" ] && parts+=("$cost_out")
+fi
 
-rl_out=$(widget_ratelimit)
-[ -n "$rl_out" ] && parts+=("$rl_out")
+if [ "${SHOW_RATELIMIT:-1}" = "1" ]; then
+  rl_out=$(widget_ratelimit)
+  [ -n "$rl_out" ] && parts+=("$rl_out")
+fi
 
-parts+=("$(widget_model)")
+[ "${SHOW_MODEL:-1}" = "1" ] && parts+=("$(widget_model)")
 
 # Join with dim separator
 SEP=$(printf ' %b│%b ' "$C_DIM" "$C_RESET")

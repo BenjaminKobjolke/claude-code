@@ -7,6 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SETTINGS="$HOME/.claude/settings.json"
 STATUSLINE_CMD="bash \"$SCRIPT_DIR/statusline.sh\""
+CONF_FILE="$SCRIPT_DIR/statusline.conf"
 
 # ── Dependency check ─────────────────────────────────
 
@@ -17,6 +18,39 @@ for cmd in jq curl; do
     exit 1
   fi
 done
+
+# ── Config file generation ───────────────────────────
+
+generate_default_conf() {
+  [ -f "$CONF_FILE" ] && return
+  cat > "$CONF_FILE" << 'EOF'
+# ── User preferences (edit these) ────────────────
+# Widgets to display (1=on, 0=off)
+SHOW_PROGRESS=1
+SHOW_TOKENS=1
+SHOW_COST=1
+SHOW_RATELIMIT=1
+SHOW_MODEL=1
+
+# Colors (ANSI escape codes)
+C_ACCENT='\033[36m'
+C_WARN='\033[33m'
+C_DANGER='\033[31m'
+C_DIM='\033[38;5;245m'
+
+# Thresholds (ordered to match widget display order)
+CONTEXT_WARN_PCT=60
+CONTEXT_DANGER_PCT=80
+COST_WARN_USD=5
+COST_DANGER_USD=10
+RATE_WARN_PCT=50
+RATE_DANGER_PCT=80
+
+# ── Auto-managed (do not edit) ───────────────────
+XIDA_RATE=1
+XIDA_RATE_EPOCH=0
+EOF
+}
 
 # ── Detect install state ─────────────────────────────
 
@@ -71,6 +105,9 @@ do_install() {
     esac
     echo ""
   fi
+
+  # Generate default config file if missing
+  generate_default_conf
 
   # Ensure settings.json exists
   if [ ! -f "$SETTINGS" ]; then

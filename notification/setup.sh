@@ -240,10 +240,87 @@ if [ -f "$CONF" ]; then
   . "$CONF"
 fi
 
+# ── Action prompt ─────────────────────────────────────
+
+ask_action() {
+  echo "── What would you like to do? ───────────" >&2
+  echo "" >&2
+  if [ "$HAS_CONFIG" = "1" ]; then
+    echo "  1: Update settings" >&2
+    echo "     Change sound and flash preferences" >&2
+    echo "     for each notification event." >&2
+    echo "" >&2
+    echo "  2: Uninstall" >&2
+    echo "     Remove configuration file and silence" >&2
+    echo "     all notification sounds and flashes." >&2
+    echo "" >&2
+    echo "  q: Quit without changes" >&2
+    echo "" >&2
+    while true; do
+      read -rp "  choice [1, 2, q, Enter=update]: " action
+      action="${action:-1}"
+      case "$action" in
+        1) echo "update"; return ;;
+        2) echo "uninstall"; return ;;
+        q|Q) echo "quit"; return ;;
+        *) echo "  Invalid choice. Enter 1, 2, or q." >&2 ;;
+      esac
+    done
+  else
+    echo "  1: Install" >&2
+    echo "     Configure notification sounds and" >&2
+    echo "     taskbar flash for Claude Code events." >&2
+    echo "     (Stop, Notification, Task Complete," >&2
+    echo "      Subagent Stop)" >&2
+    echo "" >&2
+    echo "  q: Quit without changes" >&2
+    echo "" >&2
+    while true; do
+      read -rp "  choice [1, q, Enter=install]: " action
+      action="${action:-1}"
+      case "$action" in
+        1) echo "install"; return ;;
+        q|Q) echo "quit"; return ;;
+        *) echo "  Invalid choice. Enter 1 or q." >&2 ;;
+      esac
+    done
+  fi
+}
+
+do_uninstall() {
+  rm -f "$CONF"
+  echo ""
+  echo "========================================"
+  echo "  Notifications uninstalled"
+  echo "========================================"
+  echo ""
+  echo "Config removed. Notification hooks will now exit silently."
+  echo "Re-run /xida:notification to set up again."
+  echo ""
+  read -rp "Press Enter to close..."
+  exit 0
+}
+
 # ── Main flow ────────────────────────────────────────
 
 show_header
 show_current
+
+ACTION=$(ask_action)
+case "$ACTION" in
+  quit)
+    echo ""
+    echo "Quit."
+    read -rp "Press Enter to close..."
+    exit 0
+    ;;
+  uninstall)
+    do_uninstall
+    ;;
+esac
+
+# ── Configure sounds ──────────────────────────────────
+
 show_sounds
 
 echo "── Sound per event ──────────────────────"

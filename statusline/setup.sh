@@ -24,8 +24,9 @@ done
 
 DEFAULT_SHOW_PROGRESS=1
 DEFAULT_SHOW_TOKENS=1
-DEFAULT_SHOW_COST=1
+DEFAULT_SHOW_DURATION=1
 DEFAULT_SHOW_RATELIMIT=1
+DEFAULT_SHOW_COST=1
 DEFAULT_SHOW_MODEL=1
 
 DEFAULT_THEME="default"
@@ -37,10 +38,12 @@ DEFAULT_C_DIM='\033[38;5;245m'
 
 DEFAULT_CONTEXT_WARN_PCT=60
 DEFAULT_CONTEXT_DANGER_PCT=80
-DEFAULT_COST_WARN_USD=5
-DEFAULT_COST_DANGER_USD=10
+DEFAULT_DURATION_WARN_MIN=30
+DEFAULT_DURATION_DANGER_MIN=60
 DEFAULT_RATE_WARN_PCT=50
 DEFAULT_RATE_DANGER_PCT=80
+DEFAULT_COST_WARN_USD=5
+DEFAULT_COST_DANGER_USD=10
 
 # ── Theme definitions ────────────────────────────────
 
@@ -79,8 +82,9 @@ declare -a THEME_KEYS=("default" "blue" "green" "purple" "monochrome")
 
 SHOW_PROGRESS=1
 SHOW_TOKENS=1
-SHOW_COST=1
+SHOW_DURATION=1
 SHOW_RATELIMIT=1
+SHOW_COST=1
 SHOW_MODEL=1
 
 C_ACCENT='\033[36m'
@@ -90,10 +94,12 @@ C_DIM='\033[38;5;245m'
 
 CONTEXT_WARN_PCT=60
 CONTEXT_DANGER_PCT=80
-COST_WARN_USD=5
-COST_DANGER_USD=10
+DURATION_WARN_MIN=30
+DURATION_DANGER_MIN=60
 RATE_WARN_PCT=50
 RATE_DANGER_PCT=80
+COST_WARN_USD=5
+COST_DANGER_USD=10
 
 XIDA_RATE=1
 XIDA_RATE_EPOCH=0
@@ -188,8 +194,9 @@ show_current() {
   echo "  Widgets:"
   printf "    %-16s %s\n" "Progress:" "$(widget_label "$SHOW_PROGRESS")"
   printf "    %-16s %s\n" "Tokens:" "$(widget_label "$SHOW_TOKENS")"
-  printf "    %-16s %s\n" "Cost:" "$(widget_label "$SHOW_COST")"
+  printf "    %-16s %s\n" "Duration:" "$(widget_label "$SHOW_DURATION")"
   printf "    %-16s %s\n" "Rate Limit:" "$(widget_label "$SHOW_RATELIMIT")"
+  printf "    %-16s %s\n" "Cost:" "$(widget_label "$SHOW_COST")"
   printf "    %-16s %s\n" "Model:" "$(widget_label "$SHOW_MODEL")"
   echo ""
   echo "  Theme:"
@@ -203,8 +210,9 @@ show_current() {
   echo ""
   echo "  Thresholds:"
   printf "    %-16s warn=%d%%  danger=%d%%\n" "Context:" "$CONTEXT_WARN_PCT" "$CONTEXT_DANGER_PCT"
-  printf "    %-16s warn=\$%s  danger=\$%s\n" "Cost:" "$COST_WARN_USD" "$COST_DANGER_USD"
+  printf "    %-16s warn=%dm  danger=%dm\n" "Duration:" "$DURATION_WARN_MIN" "$DURATION_DANGER_MIN"
   printf "    %-16s warn=%d%%  danger=%d%%\n" "Rate Limit:" "$RATE_WARN_PCT" "$RATE_DANGER_PCT"
+  printf "    %-16s warn=\$%s  danger=\$%s\n" "Cost:" "$COST_WARN_USD" "$COST_DANGER_USD"
   echo ""
 }
 
@@ -311,11 +319,15 @@ show_theme_preview() {
   local dim="${THEME_DIM[$key]}"
   local reset='\033[0m'
 
-  # Sample statusline: progress bar at 45%, tokens, cost, model
+  # Sample statusline with all widgets
   printf '      '
   printf '%b████░░░░░░ 45%%%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
   printf '%b90K%b%b/200K%b' "$accent" "$reset" "$dim" "$reset"
+  printf ' %b│%b ' "$dim" "$reset"
+  printf '%b3m 33s%b' "$accent" "$reset"
+  printf ' %b│%b ' "$dim" "$reset"
+  printf '%b5h: %b%b23%%%b %b(2h)%b' "$dim" "$reset" "$accent" "$reset" "$dim" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
   printf '%b$3.50%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
@@ -444,6 +456,38 @@ ask_threshold_usd() {
   done
 }
 
+ask_threshold_min() {
+  local label="$1"
+  local current="$2"
+  local default="$3"
+  local choice
+
+  local enter_value
+  if [ "$HAS_CONFIG" = "1" ]; then
+    enter_value="$current"
+  else
+    enter_value="$default"
+  fi
+
+  echo "" >&2
+  echo "  $label" >&2
+  echo "    current = ${current}m" >&2
+  echo "    default = ${default}m" >&2
+  while true; do
+    read -rp "    value [minutes, q, Enter=${enter_value}m]: " choice
+    choice="${choice:-$enter_value}"
+    if [ "$choice" = "q" ] || [ "$choice" = "Q" ]; then
+      echo "QUIT"
+      return
+    fi
+    if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -gt 0 ]; then
+      echo "$choice"
+      return
+    fi
+    echo "    Invalid. Enter a positive number or q." >&2
+  done
+}
+
 # ── Write config ─────────────────────────────────────
 
 write_conf() {
@@ -452,8 +496,9 @@ write_conf() {
 # Widgets to display (1=on, 0=off)
 SHOW_PROGRESS=$SHOW_PROGRESS
 SHOW_TOKENS=$SHOW_TOKENS
-SHOW_COST=$SHOW_COST
+SHOW_DURATION=$SHOW_DURATION
 SHOW_RATELIMIT=$SHOW_RATELIMIT
+SHOW_COST=$SHOW_COST
 SHOW_MODEL=$SHOW_MODEL
 
 # Colors (ANSI escape codes)
@@ -465,10 +510,12 @@ C_DIM='$C_DIM'
 # Thresholds (ordered to match widget display order)
 CONTEXT_WARN_PCT=$CONTEXT_WARN_PCT
 CONTEXT_DANGER_PCT=$CONTEXT_DANGER_PCT
-COST_WARN_USD=$COST_WARN_USD
-COST_DANGER_USD=$COST_DANGER_USD
+DURATION_WARN_MIN=$DURATION_WARN_MIN
+DURATION_DANGER_MIN=$DURATION_DANGER_MIN
 RATE_WARN_PCT=$RATE_WARN_PCT
 RATE_DANGER_PCT=$RATE_DANGER_PCT
+COST_WARN_USD=$COST_WARN_USD
+COST_DANGER_USD=$COST_DANGER_USD
 
 # ── Auto-managed (do not edit) ───────────────────
 XIDA_RATE=$XIDA_RATE
@@ -552,12 +599,16 @@ show_preview() {
     parts+=("$(printf '%b90K%b%b/200K%b' "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
   fi
 
-  if [ "$SHOW_COST" = "1" ]; then
-    parts+=("$(printf '%b$3.50%b' "$C_ACCENT" "$C_RESET")")
+  if [ "$SHOW_DURATION" = "1" ]; then
+    parts+=("$(printf '%b3m 33s%b' "$C_ACCENT" "$C_RESET")")
   fi
 
   if [ "$SHOW_RATELIMIT" = "1" ]; then
     parts+=("$(printf '%b5h: %b%b23%%%b %b(2h)%b' "$C_DIM" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
+  fi
+
+  if [ "$SHOW_COST" = "1" ]; then
+    parts+=("$(printf '%b$3.50%b' "$C_ACCENT" "$C_RESET")")
   fi
 
   if [ "$SHOW_MODEL" = "1" ]; then
@@ -615,11 +666,14 @@ quit_if_asked "$SHOW_PROGRESS"
 SHOW_TOKENS=$(ask_widget "Token count (current/max)" "$SHOW_TOKENS" "$DEFAULT_SHOW_TOKENS")
 quit_if_asked "$SHOW_TOKENS"
 
-SHOW_COST=$(ask_widget "Session cost" "$SHOW_COST" "$DEFAULT_SHOW_COST")
-quit_if_asked "$SHOW_COST"
+SHOW_DURATION=$(ask_widget "Session duration" "$SHOW_DURATION" "$DEFAULT_SHOW_DURATION")
+quit_if_asked "$SHOW_DURATION"
 
 SHOW_RATELIMIT=$(ask_widget "Rate limit (5h/7d usage)" "$SHOW_RATELIMIT" "$DEFAULT_SHOW_RATELIMIT")
 quit_if_asked "$SHOW_RATELIMIT"
+
+SHOW_COST=$(ask_widget "Session cost" "$SHOW_COST" "$DEFAULT_SHOW_COST")
+quit_if_asked "$SHOW_COST"
 
 SHOW_MODEL=$(ask_widget "Model name" "$SHOW_MODEL" "$DEFAULT_SHOW_MODEL")
 quit_if_asked "$SHOW_MODEL"
@@ -658,18 +712,18 @@ if [ "$CONTEXT_WARN_PCT" -gt "$CONTEXT_DANGER_PCT" ]; then
   CONTEXT_DANGER_PCT="$tmp_val"
 fi
 
-COST_WARN_USD=$(ask_threshold_usd "Cost warn \$" "$COST_WARN_USD" "$DEFAULT_COST_WARN_USD")
-quit_if_asked "$COST_WARN_USD"
+DURATION_WARN_MIN=$(ask_threshold_min "Duration warn (minutes)" "$DURATION_WARN_MIN" "$DEFAULT_DURATION_WARN_MIN")
+quit_if_asked "$DURATION_WARN_MIN"
 
-COST_DANGER_USD=$(ask_threshold_usd "Cost danger \$" "$COST_DANGER_USD" "$DEFAULT_COST_DANGER_USD")
-quit_if_asked "$COST_DANGER_USD"
+DURATION_DANGER_MIN=$(ask_threshold_min "Duration danger (minutes)" "$DURATION_DANGER_MIN" "$DEFAULT_DURATION_DANGER_MIN")
+quit_if_asked "$DURATION_DANGER_MIN"
 
 # Auto-swap if warn > danger
-if awk "BEGIN{exit(!($COST_WARN_USD+0 > $COST_DANGER_USD+0))}" 2>/dev/null; then
-  echo "    (swapped: warn=\$$COST_DANGER_USD, danger=\$$COST_WARN_USD)" >&2
-  tmp_val="$COST_WARN_USD"
-  COST_WARN_USD="$COST_DANGER_USD"
-  COST_DANGER_USD="$tmp_val"
+if [ "$DURATION_WARN_MIN" -gt "$DURATION_DANGER_MIN" ]; then
+  echo "    (swapped: warn=${DURATION_DANGER_MIN}m, danger=${DURATION_WARN_MIN}m)" >&2
+  tmp_val="$DURATION_WARN_MIN"
+  DURATION_WARN_MIN="$DURATION_DANGER_MIN"
+  DURATION_DANGER_MIN="$tmp_val"
 fi
 
 RATE_WARN_PCT=$(ask_threshold_pct "Rate limit warn %" "$RATE_WARN_PCT" "$DEFAULT_RATE_WARN_PCT")
@@ -684,6 +738,20 @@ if [ "$RATE_WARN_PCT" -gt "$RATE_DANGER_PCT" ]; then
   tmp_val="$RATE_WARN_PCT"
   RATE_WARN_PCT="$RATE_DANGER_PCT"
   RATE_DANGER_PCT="$tmp_val"
+fi
+
+COST_WARN_USD=$(ask_threshold_usd "Cost warn \$" "$COST_WARN_USD" "$DEFAULT_COST_WARN_USD")
+quit_if_asked "$COST_WARN_USD"
+
+COST_DANGER_USD=$(ask_threshold_usd "Cost danger \$" "$COST_DANGER_USD" "$DEFAULT_COST_DANGER_USD")
+quit_if_asked "$COST_DANGER_USD"
+
+# Auto-swap if warn > danger
+if awk "BEGIN{exit(!($COST_WARN_USD+0 > $COST_DANGER_USD+0))}" 2>/dev/null; then
+  echo "    (swapped: warn=\$$COST_DANGER_USD, danger=\$$COST_WARN_USD)" >&2
+  tmp_val="$COST_WARN_USD"
+  COST_WARN_USD="$COST_DANGER_USD"
+  COST_DANGER_USD="$tmp_val"
 fi
 
 # ── Write config and install ─────────────────────────

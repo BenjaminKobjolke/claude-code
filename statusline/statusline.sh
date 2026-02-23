@@ -14,8 +14,9 @@ CONF_FILE="$SCRIPT_DIR/statusline.conf"
 # ── Early exit if all widgets disabled ───────────────
 if [ "${SHOW_PROGRESS:-1}" != "1" ] && \
    [ "${SHOW_TOKENS:-1}" != "1" ] && \
-   [ "${SHOW_COST:-1}" != "1" ] && \
+   [ "${SHOW_DURATION:-1}" != "1" ] && \
    [ "${SHOW_RATELIMIT:-1}" != "1" ] && \
+   [ "${SHOW_COST:-1}" != "1" ] && \
    [ "${SHOW_MODEL:-1}" != "1" ]; then
   echo ""
   exit 0
@@ -35,6 +36,10 @@ C_DANGER="${C_DANGER:-\033[31m}"       # red    — high usage, degradation like
 # Context: 60% = "lost in the middle" onset, 80% = consensus exit point
 CONTEXT_WARN_PCT="${CONTEXT_WARN_PCT:-60}"
 CONTEXT_DANGER_PCT="${CONTEXT_DANGER_PCT:-80}"
+
+# Duration (minutes): typical sessions run 15–30 min, long sessions 45–60+.
+DURATION_WARN_MIN="${DURATION_WARN_MIN:-30}"
+DURATION_DANGER_MIN="${DURATION_DANGER_MIN:-60}"
 
 # Rate limits: 50% = half quota burned, 80% = throttling imminent
 RATE_WARN_PCT="${RATE_WARN_PCT:-50}"
@@ -257,6 +262,44 @@ widget_cost() {
   printf '%b%s%b' "$color" "$formatted" "$C_RESET"
 }
 
+# ── Widget: Duration ─────────────────────────────────
+# Shows session wall-clock time with color thresholds
+
+widget_duration() {
+  local ms
+  ms=$(jnum '.cost.total_duration_ms')
+
+  if [ "$ms" = "null" ] || [ "$ms" = "0" ]; then
+    return
+  fi
+
+  local total_secs=$((ms / 1000))
+  local days=$((total_secs / 86400))
+  local hours=$(( (total_secs % 86400) / 3600 ))
+  local mins=$(( (total_secs % 3600) / 60 ))
+  local secs=$((total_secs % 60))
+
+  local display
+  if [ "$days" -gt 0 ]; then
+    display="${days}d ${hours}h"
+  elif [ "$hours" -gt 0 ]; then
+    display="${hours}h ${mins}m"
+  elif [ "$mins" -gt 0 ]; then
+    display="${mins}m ${secs}s"
+  else
+    display="${secs}s"
+  fi
+
+  local color
+  local total_mins=$((total_secs / 60))
+  if [ "$total_mins" -lt "$DURATION_WARN_MIN" ]; then color="$C_ACCENT"
+  elif [ "$total_mins" -lt "$DURATION_DANGER_MIN" ]; then color="$C_WARN"
+  else color="$C_DANGER"
+  fi
+
+  printf '%b%s%b' "$color" "$display" "$C_RESET"
+}
+
 # ── Widget: Rate Limit ───────────────────────────────
 # Shows 5h and optionally 7d usage with reset countdown
 
@@ -460,14 +503,19 @@ parts=()
 [ "${SHOW_PROGRESS:-1}" = "1" ] && parts+=("$(widget_progress)")
 [ "${SHOW_TOKENS:-1}" = "1" ] && parts+=("$(widget_tokens)")
 
-if [ "${SHOW_COST:-1}" = "1" ]; then
-  cost_out=$(widget_cost)
-  [ -n "$cost_out" ] && parts+=("$cost_out")
+if [ "${SHOW_DURATION:-1}" = "1" ]; then
+  dur_out=$(widget_duration)
+  [ -n "$dur_out" ] && parts+=("$dur_out")
 fi
 
 if [ "${SHOW_RATELIMIT:-1}" = "1" ]; then
   rl_out=$(widget_ratelimit)
   [ -n "$rl_out" ] && parts+=("$rl_out")
+fi
+
+if [ "${SHOW_COST:-1}" = "1" ]; then
+  cost_out=$(widget_cost)
+  [ -n "$cost_out" ] && parts+=("$cost_out")
 fi
 
 [ "${SHOW_MODEL:-1}" = "1" ] && parts+=("$(widget_model)")

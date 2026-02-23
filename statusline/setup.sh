@@ -224,7 +224,7 @@ quit_if_asked() {
 ask_action() {
   echo "── What would you like to do? ───────────" >&2
   echo "" >&2
-  if [ "$HAS_CONFIG" = "1" ] || is_installed; then
+  if is_installed; then
     echo "  1: Update settings" >&2
     echo "     Change widgets, theme, and thresholds." >&2
     echo "" >&2
@@ -532,7 +532,6 @@ do_uninstall() {
   echo ""
   echo "  statusLine removed from settings.json."
   echo "  Config file deleted."
-  echo "  Restart Claude Code for changes to take effect."
   echo "  Re-run /xida:statusline to install again."
   echo ""
   read -rp "  Press Enter to close..."
@@ -704,7 +703,6 @@ echo "  You can also edit statusline.conf directly for"
 echo "  custom colors or fine-tuned values. Changes"
 echo "  apply on next render — no restart needed."
 echo ""
-echo "  Restart Claude Code for changes to take effect."
 echo "  Re-run /xida:statusline to update or uninstall."
 echo ""
 read -rp "  Press Enter to close..."

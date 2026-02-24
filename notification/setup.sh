@@ -13,6 +13,16 @@ esac
 CONF="$SCRIPT_DIR/notification.conf"
 CONF_DISPLAY="$DISPLAY_DIR\\notification.conf"
 
+# Build a clickable OSC 8 hyperlink for terminals that support it
+# Uses BEL (\a) as String Terminator — avoids backslash collision with Windows paths
+case "$OSTYPE" in
+  msys*|cygwin*|MSYS*|CYGWIN*)
+    CONF_URI="file:///$(cygpath -w "$CONF" | sed 's|\\|/|g')" ;;
+  *)
+    CONF_URI="file://$CONF" ;;
+esac
+CONF_LINK=$'\033]8;;'"$CONF_URI"$'\a'"$CONF_DISPLAY"$'\033]8;;\a'
+
 # ── Detect platform ─────────────────────────────────
 
 case "$OSTYPE" in
@@ -388,7 +398,7 @@ echo "========================================"
 echo ""
 show_current
 echo "You can also edit notification.conf directly:"
-echo "  $CONF_DISPLAY"
+printf '  %s\n' "$CONF_LINK"
 echo "Changes apply on next event — no restart needed."
 echo ""
 echo "Re-run /xida:notification to change settings."

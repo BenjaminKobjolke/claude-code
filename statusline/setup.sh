@@ -16,6 +16,16 @@ STATUSLINE_CMD="bash \"$SCRIPT_DIR/statusline.sh\""
 CONF_FILE="$SCRIPT_DIR/statusline.conf"
 CONF_FILE_DISPLAY="$DISPLAY_DIR\\statusline.conf"
 
+# Build a clickable OSC 8 hyperlink for terminals that support it
+# Uses BEL (\a) as String Terminator — avoids backslash collision with Windows paths
+case "$OSTYPE" in
+  msys*|cygwin*|MSYS*|CYGWIN*)
+    CONF_FILE_URI="file:///$(cygpath -w "$CONF_FILE" | sed 's|\\|/|g')" ;;
+  *)
+    CONF_FILE_URI="file://$CONF_FILE" ;;
+esac
+CONF_FILE_LINK=$'\033]8;;'"$CONF_FILE_URI"$'\a'"$CONF_FILE_DISPLAY"$'\033]8;;\a'
+
 # ── Dependency check ─────────────────────────────────
 
 for cmd in jq curl; do
@@ -323,10 +333,10 @@ show_theme_preview() {
   printf '      '
   printf '%b████░░░░░░ 45%%%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
-  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📋 '
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📦 '
   printf '%b90K%b%b/200K%b' "$accent" "$reset" "$dim" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
-  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⏱️ '
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '🕐 '
   printf '%b3m 33s%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
   [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⚡ '
@@ -503,12 +513,12 @@ show_preview() {
   fi
 
   if [ "$SHOW_TOKENS" = "1" ]; then
-    local ep_tokens=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_tokens="📋 "
+    local ep_tokens=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_tokens="📦 "
     parts+=("$(printf '%s%b90K%b%b/200K%b' "$ep_tokens" "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
   fi
 
   if [ "$SHOW_DURATION" = "1" ]; then
-    local ep_duration=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_duration="⏱️ "
+    local ep_duration=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_duration="🕐 "
     parts+=("$(printf '%s%b3m 33s%b' "$ep_duration" "$C_ACCENT" "$C_RESET")")
   fi
 
@@ -600,7 +610,7 @@ quit_if_asked "$SHOW_COST"
 SHOW_MODEL=$(ask_widget "Model name" "$SHOW_MODEL" "$DEFAULT_SHOW_MODEL")
 quit_if_asked "$SHOW_MODEL"
 
-SHOW_EMOJIS=$(ask_widget "Emoji prefixes (📋⏱️⚡💰🤖)" "$SHOW_EMOJIS" "$DEFAULT_SHOW_EMOJIS")
+SHOW_EMOJIS=$(ask_widget "Emoji prefixes (📦🕐⚡💰🤖)" "$SHOW_EMOJIS" "$DEFAULT_SHOW_EMOJIS")
 quit_if_asked "$SHOW_EMOJIS"
 
 # ── Write config and install ─────────────────────────
@@ -617,7 +627,7 @@ show_current
 show_preview
 
 echo "  You can also edit statusline.conf directly:"
-echo "    $CONF_FILE_DISPLAY"
+printf '    %s\n' "$CONF_FILE_LINK"
 echo "  Changes apply on next render — no restart needed."
 echo ""
 echo "  Re-run /xida:statusline to update or uninstall."

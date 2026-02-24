@@ -233,7 +233,7 @@ widget_tokens() {
 
   local cur_k; cur_k=$(fmt_thousands "$((J_CURRENT_TOKENS / 1000))")
   local max_k; max_k=$(fmt_thousands "$((J_CONTEXT_SIZE / 1000))")
-  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📋 '
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📦 '
   printf '%b%sK%b%b/%sK%b' "$color" "$cur_k" "$C_RESET" "$C_DIM" "$max_k" "$C_RESET"
 }
 
@@ -306,7 +306,7 @@ widget_duration() {
   else color="$C_DANGER"
   fi
 
-  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⏱️ '
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '🕐 '
   printf '%b%s%b' "$color" "$display" "$C_RESET"
 }
 

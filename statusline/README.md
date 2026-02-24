@@ -38,8 +38,8 @@ Each widget can display an emoji prefix for quick visual identification. Toggle 
 
 | Widget | Emoji |
 |--------|-------|
-| Tokens | 📋 |
-| Duration | ⏱️ |
+| Tokens | 📦 |
+| Duration | 🕐 |
 | Rate Limit | ⚡ |
 | Cost | 💰 |
 | Model | 🤖 |

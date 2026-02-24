@@ -153,6 +153,18 @@ if [ -z "$_EFFORT" ]; then
   fi
 fi
 
+# ── Widget: Version ──────────────────────────────────
+# Shows the plugin version derived from the parent directory path.
+# Path layout: .../xida/<version>/statusline/statusline.sh
+
+widget_version() {
+  local ver
+  ver="$(basename "$(dirname "$SCRIPT_DIR")")"
+  # Only show if it looks like a version number
+  [[ "$ver" =~ ^[0-9] ]] || return
+  printf '%bv%s%b' "$C_DIM" "$ver" "$C_RESET"
+}
+
 # ── Widget: Model ────────────────────────────────────
 # Shows versioned model name (e.g., "Opus 4.6") + effort level suffix
 
@@ -510,6 +522,9 @@ if [ "${SHOW_COST:-1}" = "1" ]; then
 fi
 
 [ "${SHOW_MODEL:-1}" = "1" ] && parts+=("$(widget_model)")
+
+ver_out=$(widget_version)
+[ -n "$ver_out" ] && parts+=("$ver_out")
 
 # Join with dim separator
 SEP=$(printf ' %b│%b ' "$C_DIM" "$C_RESET")

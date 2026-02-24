@@ -6,36 +6,23 @@ A native [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin pr
 
 ### From marketplace (recommended)
 
-Add the marketplace and install the plugin:
+**Add the marketplace:**
 
-```
-/plugin marketplace add BenjaminKobjolke/claude-code
-/plugin install xida@xida
-```
+- `/plugin marketplace add BenjaminKobjolke/claude-code#feature/native-plugin`
+- Or: `/plugin` > **Marketplaces** > **+ Add Marketplace** > enter `BenjaminKobjolke/claude-code#feature/native-plugin`
 
-To install from a specific branch (e.g. before it has been merged to main), append `#branch-name`:
+**Enable auto-update:**
 
-```
-/plugin marketplace add BenjaminKobjolke/claude-code#feature/native-plugin
-```
+- `/plugin` > **Marketplaces** > **xida** > **Enable auto-update**
 
-This clones the repo via HTTPS, checks out the specified branch, locates `.claude-plugin/marketplace.json`, and registers the plugin.
+> Auto-updates run at startup in the background. After an update, open a **new terminal window** for the new version to take effect.
 
-### Updates
+**Install the plugin:**
 
-Plugins installed via the marketplace auto-update at startup. No action needed -- Claude Code checks for new versions in the background.
+- `/plugin install xida@xida`
+- Or: `/plugin` > **Marketplaces** > **xida** > **Browse plugins** > **xida** > **Install for you (user scope)**
 
-To verify you have the latest version:
-
-```
-/plugin
-```
-
-Check the displayed version against the [plugin.json on GitHub](https://github.com/BenjaminKobjolke/claude-code/blob/main/.claude-plugin/plugin.json). To force an update:
-
-```
-/plugin update xida
-```
+To verify or force an update: `/plugin` > **Installed** > **xida** > **Update now**
 
 ### From a local clone
 
@@ -68,105 +55,105 @@ All commands are invoked with the `/xida:` prefix.
 
 ### Git
 
-| Command | Description |
-|---------|-------------|
-| `/xida:git-commit` | Commit and push changes following XIDA commit standards |
-| `/xida:git-url` | Generate plain URLs to view commits on the remote hosting platform |
+| Command            | Description                                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| `/xida:git-commit` | Commit and push changes following XIDA commit standards            |
+| `/xida:git-url`    | Generate plain URLs to view commits on the remote hosting platform |
 
 ### Code Analysis
 
-| Command | Description |
-|---------|-------------|
-| `/xida:analyze-setup` | Set up code analysis scripts for the project |
-| `/xida:analyze-run-and-fix` | Run code analysis, then fix the issues |
-| `/xida:analyze-fix-only` | Fix analysis issues without re-running analyzers |
-| `/xida:analyze-check-analyzers` | Check if all available analyzers are configured |
+| Command                         | Description                                      |
+| ------------------------------- | ------------------------------------------------ |
+| `/xida:analyze-setup`           | Set up code analysis scripts for the project     |
+| `/xida:analyze-run-and-fix`     | Run code analysis, then fix the issues           |
+| `/xida:analyze-fix-only`        | Fix analysis issues without re-running analyzers |
+| `/xida:analyze-check-analyzers` | Check if all available analyzers are configured  |
 
 ### Testing
 
-| Command | Description |
-|---------|-------------|
-| `/xida:testing-setup` | Set up test scripts for the project |
-| `/xida:testing-run` | Run tests and fix errors |
+| Command                     | Description                                     |
+| --------------------------- | ----------------------------------------------- |
+| `/xida:testing-setup`       | Set up test scripts for the project             |
+| `/xida:testing-run`         | Run tests and fix errors                        |
 | `/xida:validate-pre-commit` | Run all configured validators before committing |
 
 ### Planning & Implementation
 
-| Command | Description |
-|---------|-------------|
-| `/xida:plan-feature` | Plan a new feature and store the plan in the project's `plan/` directory |
-| `/xida:plan-implement` | Pick up and implement a plan from the `plan/` directory |
-| `/xida:refactor-plan` | Create a phased refactoring plan in `PLAN.md` |
+| Command                | Description                                                              |
+| ---------------------- | ------------------------------------------------------------------------ |
+| `/xida:plan-feature`   | Plan a new feature and store the plan in the project's `plan/` directory |
+| `/xida:plan-implement` | Pick up and implement a plan from the `plan/` directory                  |
+| `/xida:refactor-plan`  | Create a phased refactoring plan in `PLAN.md`                            |
 
 ### Handoffs
 
-| Command | Description |
-|---------|-------------|
-| `/xida:handoff-create` | Write `HANDOFF.md` when running out of context |
-| `/xida:handoff-create-low-context` | Write `HANDOFF.md` with minimal context usage |
-| `/xida:handoff-continue` | Continue working from a previously created `HANDOFF.md` |
-| `/xida:handoff-plan` | Create a handoff for a planned but not yet implemented feature |
+| Command                            | Description                                                    |
+| ---------------------------------- | -------------------------------------------------------------- |
+| `/xida:handoff-create`             | Write `HANDOFF.md` when running out of context                 |
+| `/xida:handoff-create-low-context` | Write `HANDOFF.md` with minimal context usage                  |
+| `/xida:handoff-continue`           | Continue working from a previously created `HANDOFF.md`        |
+| `/xida:handoff-plan`               | Create a handoff for a planned but not yet implemented feature |
 
 ### GitHub Releases
 
-| Command | Description |
-|---------|-------------|
-| `/xida:github-setup` | Set up the GitHub release workflow for a project |
-| `/xida:github-create-release` | Create a new GitHub release |
+| Command                       | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `/xida:github-setup`          | Set up the GitHub release workflow for a project |
+| `/xida:github-create-release` | Create a new GitHub release                      |
 
 ### Releases (App Store / Build)
 
-| Command | Description |
-|---------|-------------|
-| `/xida:release-setup` | Set up the release system for the application |
-| `/xida:release-create-release` | Create a new release build |
-| `/xida:release-create-release-notes` | Generate release notes from recent changes |
+| Command                              | Description                                   |
+| ------------------------------------ | --------------------------------------------- |
+| `/xida:release-setup`                | Set up the release system for the application |
+| `/xida:release-create-release`       | Create a new release build                    |
+| `/xida:release-create-release-notes` | Generate release notes from recent changes    |
 
 ### Debugging
 
-| Command | Description |
-|---------|-------------|
-| `/xida:debug-setup` | Set up the process to build a debug version |
-| `/xida:debug-create-debug` | Create a new debug version |
+| Command                    | Description                                 |
+| -------------------------- | ------------------------------------------- |
+| `/xida:debug-setup`        | Set up the process to build a debug version |
+| `/xida:debug-create-debug` | Create a new debug version                  |
 
 ### Coding Rules
 
-| Command | Description |
-|---------|-------------|
+| Command                            | Description                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------- |
 | `/xida:coding-rules-add-or-update` | Add or update common and language-specific coding rules in `CLAUDE.md` |
 
 ### Flutter
 
-| Command | Description |
-|---------|-------------|
-| `/xida:flutter-update-packages` | Update Flutter packages via FVM, one by one |
+| Command                                  | Description                                                |
+| ---------------------------------------- | ---------------------------------------------------------- |
+| `/xida:flutter-update-packages`          | Update Flutter packages via FVM, one by one                |
 | `/xida:flutter-check-local-dependencies` | Check if local path dependencies have outdated constraints |
 
 ### Documentation & Insights
 
-| Command | Description |
-|---------|-------------|
-| `/xida:docs-generate` | Generate project documentation in markdown |
+| Command                         | Description                                                    |
+| ------------------------------- | -------------------------------------------------------------- |
+| `/xida:docs-generate`           | Generate project documentation in markdown                     |
 | `/xida:insights-analyze-report` | Analyze a usage report and generate a command improvement plan |
-| `/xida:bugs-collect` | Collect bugs in `BUGS.md` |
-| `/xida:issue-next-one` | Pick up the next open issue |
+| `/xida:bugs-collect`            | Collect bugs in `BUGS.md`                                      |
+| `/xida:issue-next-one`          | Pick up the next open issue                                    |
 
 ### Migration
 
-| Command | Description |
-|---------|-------------|
+| Command                      | Description                                          |
+| ---------------------------- | ---------------------------------------------------- |
 | `/xida:migrate-dependencies` | Plan and execute dependency migrations incrementally |
 
 ### Browser Automation
 
-| Command | Description |
-|---------|-------------|
+| Command               | Description                              |
+| --------------------- | ---------------------------------------- |
 | `/xida:tools-browser` | Browser automation via agent-browser CLI |
 
 ### Notification
 
-| Command | Description |
-|---------|-------------|
+| Command              | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
 | `/xida:notification` | Configure notification sounds and taskbar flash for Claude Code events |
 
 ## Bundled Resources

@@ -13,6 +13,14 @@ Add the marketplace and install the plugin:
 /plugin install xida@xida
 ```
 
+To install from a specific branch (e.g. before it has been merged to main), append `#branch-name`:
+
+```
+/plugin marketplace add BenjaminKobjolke/claude-code#feature/native-plugin
+```
+
+This clones the repo via HTTPS, checks out the specified branch, locates `.claude-plugin/marketplace.json`, and registers the plugin.
+
 ### Updates
 
 Plugins installed via the marketplace auto-update at startup. No action needed -- Claude Code checks for new versions in the background.
@@ -35,7 +43,7 @@ Clone the repo and point Claude Code at it:
 
 ```bash
 git clone https://github.com/BenjaminKobjolke/claude-code.git
-claude --plugin-dir ./claude-code
+claude --plugin-dir .
 ```
 
 Or if you keep the plugin repo at a fixed location:

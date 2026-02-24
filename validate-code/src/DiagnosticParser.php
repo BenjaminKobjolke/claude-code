@@ -26,6 +26,12 @@ class DiagnosticParser
             }
         }
 
+        // If no "=== Diagnostics ===" header found (HTTP endpoint format),
+        // return the full output since it already contains only diagnostics
+        if ($errorLines === []) {
+            return trim($output);
+        }
+
         return implode("\n", $errorLines);
     }
 }

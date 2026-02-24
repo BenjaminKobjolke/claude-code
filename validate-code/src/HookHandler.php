@@ -45,7 +45,8 @@ class HookHandler
         $projectDir = getenv('CLAUDE_PROJECT_DIR') ?: dirname(__DIR__, 2);
         $this->logger->log("Project dir: {$projectDir}");
 
-        $result = $this->runner->run($validator['check_bat'], $filePath, $projectDir);
+        $httpPort = $validator['http_port'] ?? null;
+        $result = $this->runner->run($validator['check_bat'], $filePath, $projectDir, $httpPort);
 
         if ($this->parser->hasErrors($result->output)) {
             $diagnostics = $this->parser->extractDiagnostics($result->output);

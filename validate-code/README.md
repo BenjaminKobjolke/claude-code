@@ -55,7 +55,7 @@ cp config_example.php config.php
         "hooks": [
           {
             "type": "command",
-            "command": "php %CLAUDE_PROJECT_DIR%/hooks/validate-code.php"
+            "command": "php $CLAUDE_PROJECT_DIR/hooks/validate-code.php"
           }
         ]
       }

@@ -172,3 +172,10 @@ Unsupported platform: {Platform}
 - Make sure to properly escape paths that contain spaces using double quotes.
 - For relative SCRIPT_PATH, resolve to an absolute path using `$(pwd)/` before passing to the terminal launcher.
 - The new terminal window should stay open after the script finishes so the user can read the output.
+
+## Strictly forbidden
+
+- Do NOT spawn any subagents or Task tool calls.
+- Do NOT read, check, or modify any files beyond the script resolution logic above.
+- Do NOT add explanatory text or follow-up suggestions after the Bash command completes.
+- Do NOT take any follow-up actions. The launched script handles everything.

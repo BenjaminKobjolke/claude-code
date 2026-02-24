@@ -404,7 +404,7 @@ calc_effective() {
 
 # ── Rate limit API (cached) ─────────────────────────
 
-CACHE_DIR="$HOME/.cache/xida-statusline"
+CACHE_DIR="$HOME/.cache/xida"
 CACHE_FILE="$CACHE_DIR/usage.json"
 CACHE_TTL=180
 

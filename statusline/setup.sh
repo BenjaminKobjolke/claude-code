@@ -141,8 +141,7 @@ is_installed() {
   [ -f "$SETTINGS" ] || return 1
   local current
   current=$(jq -r '.statusLine.command // empty' "$SETTINGS" 2>/dev/null)
-  # Match either the exact versioned path or the version-glob path.
-  [[ "$current" == *"statusline/statusline.sh"* ]]
+  [ "$current" = "$STATUSLINE_CMD" ]
 }
 
 get_current_statusline() {

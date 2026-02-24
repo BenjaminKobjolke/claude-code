@@ -70,7 +70,7 @@ The progress bar uses an autocompact-aware denominator:
 
 - Fetches from `api.anthropic.com/api/oauth/usage`
 - Auth via `~/.claude/.credentials.json` (or macOS Keychain)
-- File-cached in `~/.cache/xida-statusline/` with 3-minute TTL
+- File-cached in `~/.cache/xida/` with 3-minute TTL
 - 7-day limits shown automatically for Max plan users (auto-detected from API response)
 
 ## Files
@@ -98,7 +98,7 @@ Most renders are fast (~460ms) -- all widgets use local data. The only network c
 
 | Call | When | Overhead | Cache |
 |------|------|----------|-------|
-| Rate limit API | Every 3 min (cache miss) | ~340ms | `~/.cache/xida-statusline/usage.json` |
+| Rate limit API | Every 3 min (cache miss) | ~340ms | `~/.cache/xida/usage.json` |
 | Exchange rate API | Every 7 days, non-USD locales only | ~200ms (background) | `XIDA_RATE` in `statusline.conf` |
 
 Between cache refreshes, both widgets read local files with negligible overhead. Set `SHOW_RATELIMIT=0` in `statusline.conf` to skip the rate limit API entirely.

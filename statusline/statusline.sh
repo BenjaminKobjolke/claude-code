@@ -160,9 +160,8 @@ fi
 widget_version() {
   local ver
   ver="$(basename "$(dirname "$SCRIPT_DIR")")"
-  # Only show if it looks like a version number
-  [[ "$ver" =~ ^[0-9] ]] || return
-  printf '%bv%s%b' "$C_DIM" "$ver" "$C_RESET"
+  [ -z "$ver" ] && return 0
+  printf '%b%s%b' "$C_DIM" "$ver" "$C_RESET"
 }
 
 # ── Widget: Model ────────────────────────────────────
@@ -524,7 +523,6 @@ fi
 [ "${SHOW_MODEL:-1}" = "1" ] && parts+=("$(widget_model)")
 
 ver_out=$(widget_version)
-[ -n "$ver_out" ] && parts+=("$ver_out")
 
 # Join with dim separator
 SEP=$(printf ' %b│%b ' "$C_DIM" "$C_RESET")
@@ -534,4 +532,5 @@ for i in "${!parts[@]}"; do
   output+="${parts[$i]}"
 done
 
+[ -n "$ver_out" ] && printf '%b\n' "$ver_out"
 printf '%b\n' "$output"

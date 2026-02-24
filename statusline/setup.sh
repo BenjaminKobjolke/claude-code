@@ -34,7 +34,7 @@ DEFAULT_SHOW_DURATION=1
 DEFAULT_SHOW_RATELIMIT=1
 DEFAULT_SHOW_COST=1
 DEFAULT_SHOW_MODEL=1
-DEFAULT_SHOW_EMOJIS=0
+DEFAULT_SHOW_EMOJIS=1
 
 DEFAULT_THEME="default"
 
@@ -443,10 +443,10 @@ do_install() {
     echo ""
     echo "  Installing will replace it."
     echo ""
-    read -rp "  Continue? [y/N]: " confirm
+    read -rp "  Continue? [Y/n]: " confirm
+    confirm="${confirm:-Y}"
     case "$confirm" in
-      y|Y|yes|YES) ;;
-      *)
+      n|N|no|NO)
         echo ""
         echo "  Cancelled."
         read -rp "  Press Enter to close..."

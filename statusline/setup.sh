@@ -34,6 +34,7 @@ DEFAULT_SHOW_DURATION=1
 DEFAULT_SHOW_RATELIMIT=1
 DEFAULT_SHOW_COST=1
 DEFAULT_SHOW_MODEL=1
+DEFAULT_SHOW_EMOJIS=0
 
 DEFAULT_THEME="default"
 
@@ -83,6 +84,7 @@ SHOW_DURATION=1
 SHOW_RATELIMIT=1
 SHOW_COST=1
 SHOW_MODEL=1
+SHOW_EMOJIS=0
 
 C_ACCENT='\033[36m'
 C_WARN='\033[33m'
@@ -195,6 +197,7 @@ show_current() {
   printf "    %-16s %s\n" "Rate Limit:" "$(widget_label "$SHOW_RATELIMIT")"
   printf "    %-16s %s\n" "Cost:" "$(widget_label "$SHOW_COST")"
   printf "    %-16s %s\n" "Model:" "$(widget_label "$SHOW_MODEL")"
+  printf "    %-16s %s\n" "Emojis:" "$(widget_label "$SHOW_EMOJIS")"
   echo ""
   echo "  Theme:"
   local hint
@@ -398,6 +401,7 @@ SHOW_DURATION=$SHOW_DURATION
 SHOW_RATELIMIT=$SHOW_RATELIMIT
 SHOW_COST=$SHOW_COST
 SHOW_MODEL=$SHOW_MODEL
+SHOW_EMOJIS=$SHOW_EMOJIS
 
 # Colors (ANSI escape codes)
 C_ACCENT='$C_ACCENT'
@@ -585,6 +589,9 @@ quit_if_asked "$SHOW_COST"
 
 SHOW_MODEL=$(ask_widget "Model name" "$SHOW_MODEL" "$DEFAULT_SHOW_MODEL")
 quit_if_asked "$SHOW_MODEL"
+
+SHOW_EMOJIS=$(ask_widget "Emoji prefixes (📋⏱️⚡💰🤖)" "$SHOW_EMOJIS" "$DEFAULT_SHOW_EMOJIS")
+quit_if_asked "$SHOW_EMOJIS"
 
 # ── Write config and install ─────────────────────────
 

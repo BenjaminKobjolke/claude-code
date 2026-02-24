@@ -32,6 +32,20 @@ Claude Code pipes JSON to the statusLine command on each render. The script pars
 ████░░░░░░ 45% │ 90K/200K │ $0.50 │ 5h: 23% (2h30m) 7d: 5% (3d12h) │ Opus 4.6(H)
 ```
 
+## Emoji Prefixes
+
+Each widget can display an emoji prefix for quick visual identification. Toggle with `SHOW_EMOJIS=1` in `statusline.conf` or via the setup.
+
+| Widget | Emoji |
+|--------|-------|
+| Tokens | 📋 |
+| Duration | ⏱️ |
+| Rate Limit | ⚡ |
+| Cost | 💰 |
+| Model | 🤖 |
+
+Progress bar has no emoji (the bar itself is the visual indicator).
+
 ## Color Themes
 
 The setup offers 5 built-in color themes. Each theme defines four semantic colors: accent (healthy state), warn (moderate usage), danger (high usage), and dim (labels/separators).
@@ -71,7 +85,7 @@ The progress bar uses an autocompact-aware denominator:
 
 The `statusline.conf` file is created by setup and can also be hand-edited. It controls:
 
-- **Widget toggles** (`SHOW_PROGRESS`, `SHOW_TOKENS`, `SHOW_COST`, `SHOW_RATELIMIT`, `SHOW_MODEL`) -- `1`=on, `0`=off
+- **Widget toggles** (`SHOW_PROGRESS`, `SHOW_TOKENS`, `SHOW_COST`, `SHOW_RATELIMIT`, `SHOW_MODEL`, `SHOW_EMOJIS`) -- `1`=on, `0`=off
 - **Colors** (`C_ACCENT`, `C_WARN`, `C_DANGER`, `C_DIM`) -- ANSI escape codes in single quotes
 - **Thresholds** (`CONTEXT_WARN_PCT`, `CONTEXT_DANGER_PCT`, `COST_WARN_USD`, `COST_DANGER_USD`, `RATE_WARN_PCT`, `RATE_DANGER_PCT`) -- numeric values
 - **Auto-managed** (`XIDA_RATE`, `XIDA_RATE_EPOCH`) -- exchange rate cache, do not edit

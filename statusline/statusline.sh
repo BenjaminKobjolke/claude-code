@@ -178,6 +178,7 @@ widget_model() {
     low) suffix="(L)" ;;
   esac
 
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '🤖 '
   printf '%b%s%b' "$C_ACCENT" "$name" "$C_RESET"
   [ -n "$suffix" ] && printf '%b%s%b' "$C_DIM" "$suffix" "$C_RESET"
   :
@@ -232,6 +233,7 @@ widget_tokens() {
 
   local cur_k; cur_k=$(fmt_thousands "$((J_CURRENT_TOKENS / 1000))")
   local max_k; max_k=$(fmt_thousands "$((J_CONTEXT_SIZE / 1000))")
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📋 '
   printf '%b%sK%b%b/%sK%b' "$color" "$cur_k" "$C_RESET" "$C_DIM" "$max_k" "$C_RESET"
 }
 
@@ -268,6 +270,7 @@ widget_cost() {
   else color="$C_DANGER"
   fi
 
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '💰 '
   printf '%b%s%b' "$color" "$formatted" "$C_RESET"
 }
 
@@ -303,6 +306,7 @@ widget_duration() {
   else color="$C_DANGER"
   fi
 
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⏱️ '
   printf '%b%s%b' "$color" "$display" "$C_RESET"
 }
 
@@ -332,6 +336,7 @@ widget_ratelimit() {
     else color="$C_DANGER"
     fi
 
+    [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⚡ '
     printf '%b5h: %b%b%s%% %b' "$C_DIM" "$C_RESET" "$color" "$util_int" "$C_RESET"
     [ -n "$countdown" ] && printf '%b(%s)%b' "$C_DIM" "$countdown" "$C_RESET"
   fi

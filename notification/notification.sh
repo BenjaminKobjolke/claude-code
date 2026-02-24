@@ -9,7 +9,7 @@ EVENT="${1:-}"
 [ -z "$EVENT" ] && exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONF="$SCRIPT_DIR/notification.conf"
+CONF="$HOME/.config/xida/notification.conf"
 
 # No config = unconfigured = silent exit
 [ -f "$CONF" ] || exit 0

@@ -8,7 +8,7 @@ INPUT=$(cat)
 
 # ── Config file ──────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONF_FILE="$SCRIPT_DIR/statusline.conf"
+CONF_FILE="$HOME/.config/xida/statusline.conf"
 [ -f "$CONF_FILE" ] && source "$CONF_FILE"
 
 # ── Early exit if all widgets disabled ───────────────

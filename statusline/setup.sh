@@ -12,9 +12,25 @@ case "$OSTYPE" in
   *)                           DISPLAY_DIR="$SCRIPT_DIR" ;;
 esac
 SETTINGS="$HOME/.claude/settings.json"
-STATUSLINE_CMD="bash \"$SCRIPT_DIR/statusline.sh\""
-CONF_FILE="$SCRIPT_DIR/statusline.conf"
-CONF_FILE_DISPLAY="$DISPLAY_DIR\\statusline.conf"
+
+# Build a version-agnostic command for settings.json.
+# When installed from the plugin cache the path contains a version segment
+# (e.g. .claude/plugins/cache/xida/xida/1.0.2/statusline/statusline.sh).
+# Replace the version with a glob so the command survives plugin updates.
+# We wrap in "bash -c" so the glob is always shell-expanded at runtime.
+STATUSLINE_PATH="$SCRIPT_DIR/statusline.sh"
+CACHE_PREFIX="$HOME/.claude/plugins/cache/"
+if [[ "$SCRIPT_DIR" == "$CACHE_PREFIX"* ]]; then
+  local_rel="${SCRIPT_DIR#"$CACHE_PREFIX"}"        # xida/xida/1.0.2/statusline
+  IFS='/' read -r seg1 seg2 _ver rest <<< "$local_rel"
+  STATUSLINE_PATH="${CACHE_PREFIX}${seg1}/${seg2}/*/statusline/statusline.sh"
+  STATUSLINE_CMD="bash -c 'bash $STATUSLINE_PATH'"
+else
+  STATUSLINE_CMD="bash \"$STATUSLINE_PATH\""
+fi
+
+CONF_FILE="$HOME/.config/xida/statusline.conf"
+CONF_FILE_DISPLAY="~/.config/xida/statusline.conf"
 
 # Build a clickable OSC 8 hyperlink for terminals that support it
 # Uses BEL (\a) as String Terminator — avoids backslash collision with Windows paths
@@ -125,7 +141,8 @@ is_installed() {
   [ -f "$SETTINGS" ] || return 1
   local current
   current=$(jq -r '.statusLine.command // empty' "$SETTINGS" 2>/dev/null)
-  [[ "$current" == *"$SCRIPT_DIR/statusline.sh"* ]]
+  # Match either the exact versioned path or the version-glob path.
+  [[ "$current" == *"statusline/statusline.sh"* ]]
 }
 
 get_current_statusline() {
@@ -407,6 +424,7 @@ ask_theme() {
 # ── Write config ─────────────────────────────────────
 
 write_conf() {
+  mkdir -p "$(dirname "$CONF_FILE")"
   cat > "$CONF_FILE" << EOF
 # ── User preferences (edit these) ────────────────
 # Widgets to display (1=on, 0=off)

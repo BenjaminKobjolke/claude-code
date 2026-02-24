@@ -323,14 +323,19 @@ show_theme_preview() {
   printf '      '
   printf '%b████░░░░░░ 45%%%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '📋 '
   printf '%b90K%b%b/200K%b' "$accent" "$reset" "$dim" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⏱️ '
   printf '%b3m 33s%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '⚡ '
   printf '%b5h: %b%b23%%%b %b(2h)%b' "$dim" "$reset" "$accent" "$reset" "$dim" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '💰 '
   printf '%b$3.50%b' "$accent" "$reset"
   printf ' %b│%b ' "$dim" "$reset"
+  [ "${SHOW_EMOJIS:-0}" = "1" ] && printf '🤖 '
   printf '%bOpus 4.6%b' "$accent" "$reset"
   printf '\n'
 }
@@ -498,23 +503,28 @@ show_preview() {
   fi
 
   if [ "$SHOW_TOKENS" = "1" ]; then
-    parts+=("$(printf '%b90K%b%b/200K%b' "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
+    local ep_tokens=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_tokens="📋 "
+    parts+=("$(printf '%s%b90K%b%b/200K%b' "$ep_tokens" "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
   fi
 
   if [ "$SHOW_DURATION" = "1" ]; then
-    parts+=("$(printf '%b3m 33s%b' "$C_ACCENT" "$C_RESET")")
+    local ep_duration=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_duration="⏱️ "
+    parts+=("$(printf '%s%b3m 33s%b' "$ep_duration" "$C_ACCENT" "$C_RESET")")
   fi
 
   if [ "$SHOW_RATELIMIT" = "1" ]; then
-    parts+=("$(printf '%b5h: %b%b23%%%b %b(2h)%b' "$C_DIM" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
+    local ep_rl=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_rl="⚡ "
+    parts+=("$(printf '%s%b5h: %b%b23%%%b %b(2h)%b' "$ep_rl" "$C_DIM" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_DIM" "$C_RESET")")
   fi
 
   if [ "$SHOW_COST" = "1" ]; then
-    parts+=("$(printf '%b$3.50%b' "$C_ACCENT" "$C_RESET")")
+    local ep_cost=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_cost="💰 "
+    parts+=("$(printf '%s%b$3.50%b' "$ep_cost" "$C_ACCENT" "$C_RESET")")
   fi
 
   if [ "$SHOW_MODEL" = "1" ]; then
-    parts+=("$(printf '%bOpus 4.6%b' "$C_ACCENT" "$C_RESET")")
+    local ep_model=""; [ "${SHOW_EMOJIS:-0}" = "1" ] && ep_model="🤖 "
+    parts+=("$(printf '%s%bOpus 4.6%b' "$ep_model" "$C_ACCENT" "$C_RESET")")
   fi
 
   echo ""

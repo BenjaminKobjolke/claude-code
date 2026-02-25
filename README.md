@@ -15,7 +15,7 @@ A native [Claude Code](https://docs.anthropic.com/en/docs/claude-code) plugin pr
 
 - `/plugin` > **Marketplaces** > **xida** > **Enable auto-update**
 
-> Auto-updates run at startup in the background. After an update, open a **new terminal window** for the new version to take effect.
+> Auto-updates check for new versions when Claude Code starts. The update is downloaded in the background, but the **current session keeps using the old version**. You must open a **new terminal window** (i.e. start a fresh Claude Code session) for the updated plugin to take effect.
 
 **Install the plugin:**
 

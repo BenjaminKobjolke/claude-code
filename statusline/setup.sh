@@ -24,7 +24,7 @@ if [[ "$SCRIPT_DIR" == "$CACHE_PREFIX"* ]]; then
   local_rel="${SCRIPT_DIR#"$CACHE_PREFIX"}"        # xida/xida/1.0.2/statusline
   IFS='/' read -r seg1 seg2 _ver rest <<< "$local_rel"
   STATUSLINE_PATH="${CACHE_PREFIX}${seg1}/${seg2}/*/statusline/statusline.sh"
-  STATUSLINE_CMD="bash -c 'bash $STATUSLINE_PATH'"
+  STATUSLINE_CMD="bash -c 'bash \$(printf \"%s\\n\" $STATUSLINE_PATH | sort -V | tail -1)'"
 else
   STATUSLINE_CMD="bash \"$STATUSLINE_PATH\""
 fi
@@ -141,7 +141,7 @@ is_installed() {
   [ -f "$SETTINGS" ] || return 1
   local current
   current=$(jq -r '.statusLine.command // empty' "$SETTINGS" 2>/dev/null)
-  [ "$current" = "$STATUSLINE_CMD" ]
+  [[ "$current" == *"statusline/statusline.sh"* ]]
 }
 
 get_current_statusline() {

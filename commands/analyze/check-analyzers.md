@@ -108,6 +108,13 @@ Check if the current project has all applicable analyzers configured and suggest
 "pmd_duplicates": {
   "enabled": true,
   "minimum_tokens": 100
+},
+"pmd_similar_code": {
+  "enabled": false,
+  "minimum_tokens": 100,
+  "ignore_identifiers": true,
+  "ignore_literals": true,
+  "ignore_annotations": false
 }
 ```
 

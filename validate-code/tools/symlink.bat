@@ -1,13 +1,12 @@
 @echo off
 
 cd "%~dp0.."
-:: Check for admin privileges
+:: Check for admin privileges, auto-elevate if needed
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo This script requires Administrator privileges.
-    echo Please right-click and select "Run as administrator"
-    pause
-    exit /b 1
+    echo Requesting Administrator privileges...
+    powershell -Command "Start-Process cmd -ArgumentList '/c \"%~f0\"' -Verb RunAs"
+    exit /b
 )
 
 :: Prompt for target project folder
@@ -38,10 +37,11 @@ if exist "%HOOKS_DIR%" (
     exit /b 1
 )
 
-:: Get current directory
-set "CURRENT_DIR=%~dp0"
-:: Remove trailing backslash
-set "CURRENT_DIR=%CURRENT_DIR:~0,-1%"
+:: Get project root directory (parent of tools/)
+set "CURRENT_DIR=%~dp0.."
+pushd "%CURRENT_DIR%"
+set "CURRENT_DIR=%CD%"
+popd
 
 :: Create symlink
 mklink /D "%HOOKS_DIR%" "%CURRENT_DIR%"

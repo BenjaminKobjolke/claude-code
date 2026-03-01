@@ -3,7 +3,18 @@ description: GIT commit changed and new files according to XIDA standards
 ---
 
 Git commit and push local changes and new files.
-Create separate commits for fixes, code improvements and new features. 
+Create separate commits for fixes, code improvements and new features.
+
+## How to execute the commit
+
+IMPORTANT: Do NOT use the HEREDOC/command-substitution pattern `$(cat <<'EOF' ... EOF)` for commit messages.
+Instead, always use a temporary file approach to avoid the "$() command substitution" security prompt:
+
+1. Write the commit message to `.git/COMMIT_EDITMSG_TMP` using the Write tool
+2. Run: `git commit -F .git/COMMIT_EDITMSG_TMP`
+3. Delete `.git/COMMIT_EDITMSG_TMP` after a successful commit
+
+IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands directly (e.g. `git add`, `git commit`, `git push`) without `cd`. The working directory is already correct. Combining `cd` with git triggers a "bare repository attack" security prompt.
 
 Never commit PLAN.md or HANDOFF.md.
 

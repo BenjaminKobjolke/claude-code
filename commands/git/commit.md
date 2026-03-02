@@ -19,8 +19,8 @@ IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands di
 Never commit PLAN.md or HANDOFF.md.
 
 Before committing, check if the project has validators configured in CLAUDE.md.
-If yes, ask the user if they want to run /validate:pre-commit first.
-If the user declines, proceed with the commit.
+If validators are configured and /validate:pre-commit was not already run in this session, run it automatically before committing — do not just ask, run it.
+If validation fails, show the failures and ask the user if they want to fix the issues or proceed with the commit anyway.
 
 Also do not confirm GIT commit message in prompt or slash commands.
 

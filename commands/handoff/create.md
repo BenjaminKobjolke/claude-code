@@ -4,6 +4,8 @@ description: write HANDOFF.md if you are running out of context
 
 Write a handoff document so the next agent with fresh context can continue this work.
 
+**Low-context mode:** If context is running low, use the abbreviated template — skip the Dependencies section, minimize What Worked/Didn't Work to one line each, and keep all sections as brief as possible.
+
 Steps:
 
 Check if HANDOFF.md already exists in the project root.
@@ -36,6 +38,12 @@ What we're trying to accomplish. Be specific about the end state.
 ### Pending
 - [ ] Task still to do
 - [ ] Another pending task
+
+## Task Progress
+
+If a TaskList is active, include the current task status here:
+- List each task with its status (completed, in_progress, pending)
+- Note any blocked tasks and what blocks them
 
 ## What Worked
 

@@ -385,6 +385,47 @@ Full documentation: D:\GIT\BenjaminKobjolke\php-localization\README.md
 
 ---
 
+## Code Quality
+
+### PHPStan
+
+Use PHPStan at level 5 for static analysis:
+
+```bash
+composer require --dev phpstan/phpstan
+```
+
+```neon
+# phpstan.neon
+parameters:
+    level: 5
+    paths:
+        - src
+```
+
+### PHP-CS-Fixer
+
+Use PHP-CS-Fixer with PSR-12 rules for code style:
+
+```bash
+composer require --dev friendsofphp/php-cs-fixer
+```
+
+```php
+// .php-cs-fixer.php
+<?php
+
+$finder = PhpCsFixer\Finder::create()->in(__DIR__ . '/src');
+
+return (new PhpCsFixer\Config())
+    ->setRules(['@PSR12' => true])
+    ->setFinder($finder);
+```
+
+Run formatting: `php vendor/bin/php-cs-fixer fix`
+
+---
+
 ## Essential Rules
 
 ### Required Batch Files

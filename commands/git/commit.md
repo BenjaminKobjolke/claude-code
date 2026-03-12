@@ -10,9 +10,9 @@ Create separate commits for fixes, code improvements and new features.
 IMPORTANT: Do NOT use the HEREDOC/command-substitution pattern `$(cat <<'EOF' ... EOF)` for commit messages.
 Instead, always use a temporary file approach to avoid the "$() command substitution" security prompt:
 
-1. Write the commit message to `.git/COMMIT_EDITMSG_TMP` using the Write tool
-2. Run: `git commit -F .git/COMMIT_EDITMSG_TMP`
-3. Delete `.git/COMMIT_EDITMSG_TMP` after a successful commit
+1. Write the commit message to `.claude/commit_msg.tmp` using the Write tool
+2. Run: `git commit -F .claude/commit_msg.tmp`
+3. Delete `.claude/commit_msg.tmp` after a successful commit
 
 IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands directly (e.g. `git add`, `git commit`, `git push`) without `cd`. The working directory is already correct. Combining `cd` with git triggers a "bare repository attack" security prompt.
 

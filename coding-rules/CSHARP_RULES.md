@@ -462,8 +462,30 @@ protected override void OnFormClosed(FormClosedEventArgs e)
 
 Every project must include these batch files in the `tools/` directory:
 
-- `tools/tests.bat` - Runs the test suite
+- `tools/run_tests.bat` - Runs the test suite
 - `tools/build_release.bat` - Builds the release version
+
+---
+
+## Async/Await
+
+Use `async`/`await` for all I/O operations (file access, network, database). Never block on
+async code with `.Result` or `.Wait()` — this risks deadlocks, especially in UI and ASP.NET
+contexts. Propagate `async` all the way up the call chain.
+
+---
+
+## Exception Hierarchy
+
+Create custom exception types for domain errors instead of throwing generic `Exception`. Catch
+specific exception types — avoid bare `catch (Exception)` unless it is a top-level handler.
+
+---
+
+## Dependency Injection
+
+Use `Microsoft.Extensions.DependencyInjection` or a similar IoC container to manage service
+lifetimes and dependencies. Register services at startup and inject them via constructors.
 
 ---
 

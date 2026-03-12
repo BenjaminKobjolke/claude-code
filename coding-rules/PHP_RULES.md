@@ -432,7 +432,15 @@ Run formatting: `php vendor/bin/php-cs-fixer fix`
 
 Every project must include:
 
-- `tools/tests.bat` - Runs the test suite
+- `tools/run_tests.bat` - Runs the test suite
+
+---
+
+### Middleware
+
+Use PSR-15 middleware for cross-cutting concerns such as authentication, CORS, logging, and rate
+limiting. This keeps controller code focused on business logic and avoids duplicating infrastructure
+code across routes.
 
 ---
 

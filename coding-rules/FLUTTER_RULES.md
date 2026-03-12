@@ -342,7 +342,7 @@ project/
 │   └── main.dart
 ├── test/                       # Unit and widget tests
 ├── tools/                      # Build scripts
-│   ├── tests.bat
+│   ├── run_tests.bat
 │   ├── build_debug.bat
 │   └── build_release.bat
 ├── .fvmrc                      # FVM Flutter version
@@ -376,7 +376,7 @@ Update all dependencies:
 - Runs `fvm flutter analyze` for linting
 - Runs tests to verify compatibility
 
-### tools/tests.bat
+### tools/run_tests.bat
 
 Run the test suite:
 
@@ -404,7 +404,7 @@ Build release APK:
 install.bat
 
 # Run tests
-tools\tests.bat
+tools\run_tests.bat
 
 # Build debug APK
 tools\build_debug.bat
@@ -619,7 +619,7 @@ Every project must include these batch files:
 
 - `install.bat` - In the root directory, initial project setup
 - `update.bat` - In the root directory, update dependencies
-- `tools/tests.bat` - Runs the test suite
+- `tools/run_tests.bat` - Runs the test suite
 - `tools/build_debug.bat` - Builds debug APK
 - `tools/build_release.bat` - Builds release APK
 
@@ -1040,3 +1040,28 @@ See the detailed integration guide: [In-App Debugger Documentation](flutter/IN_A
 - Searchable log viewer
 - Password protection for release builds
 - Log sharing and export
+
+---
+
+## Dependency Injection
+
+Use `GetIt` for service location and dependency injection. Register services at app startup and
+retrieve them via `GetIt.instance`. This keeps services decoupled and testable.
+
+---
+
+## JSON Serialization
+
+Use `freezed` + `json_serializable` for type-safe API models. This generates immutable data
+classes with `fromJson`/`toJson` methods, `copyWith`, and equality out of the box.
+
+---
+
+## Widget Rebuild Optimization
+
+Minimize unnecessary widget rebuilds to maintain smooth performance:
+
+- Use `const` constructors wherever possible
+- Extract subtrees into separate widgets to limit rebuild scope
+- Avoid building large widget trees inside a single `build` method
+- Use `BlocSelector` or `BlocBuilder` with `buildWhen` to rebuild only when relevant state changes

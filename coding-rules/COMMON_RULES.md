@@ -34,6 +34,24 @@ Follow TDD when implementing features or fixing bugs:
 
 ---
 
+## Integration Tests
+
+Every project must include integration tests in addition to unit tests. Integration tests verify that
+components work correctly together and catch issues that unit tests alone cannot detect.
+
+---
+
+## Test Runner Scripts
+
+Every project must provide the following batch files in the `tools/` directory:
+
+- `tools/run_tests.bat` — runs unit tests
+- `tools/run_integration_tests.bat` — runs integration tests
+
+These scripts ensure a consistent way to execute tests across environments.
+
+---
+
 ## Prefer Type-Safe Values
 
 Use strong, explicit types instead of loosely typed or stringly typed values (e.g., typed DTOs,
@@ -79,3 +97,60 @@ up-to-date dependencies.
 - Do not assume which version to use
 - Ask the user to verify the latest stable version
 - Avoid outdated packages that may have security vulnerabilities or missing features
+
+---
+
+## Error Handling & Logging Strategy
+
+Every project must have a centralized error handler rather than ad-hoc try/catch blocks scattered
+throughout the codebase.
+
+- Use structured logging (not `print`/`console.log`/`echo`)
+- Log at appropriate levels: debug, info, warning, error
+- Include context in log messages (module name, operation, relevant IDs)
+
+---
+
+## Input Validation at Boundaries
+
+Always validate data at system boundaries — API inputs, user input, file uploads, external service
+responses.
+
+- Never trust external data; validate before processing
+- Use language-appropriate validation libraries (e.g., Pydantic, Zod, FluentValidation)
+- Fail fast with clear error messages when validation fails
+
+---
+
+## Maximum File Length — 300 Lines
+
+Split files when they exceed 300 lines to keep code navigable during fast iteration.
+
+- Extract classes, functions, or components into separate modules
+- Group related extractions logically (by domain, not by type)
+- Exceptions: generated files, configuration files, test files with many similar cases
+
+---
+
+## Naming Conventions
+
+Be consistent within a project. Follow these defaults unless the language or framework dictates
+otherwise:
+
+- Files: `snake_case` (or language convention, e.g., `PascalCase` for C# classes)
+- Classes: `PascalCase`
+- Functions/methods: language convention (`snake_case` for Python/PHP, `camelCase` for Dart/JS/C#)
+- Constants: `UPPER_SNAKE_CASE`
+- Variables: language convention (`snake_case` for Python/PHP, `camelCase` for Dart/JS/C#)
+
+---
+
+## Security Baseline
+
+Every project must follow these minimum security practices:
+
+- Never commit secrets (`.env`, API keys, credentials, private keys)
+- Escape output to prevent XSS/injection attacks
+- Use parameterized queries or ORM-provided methods — never concatenate user input into queries
+- Validate and sanitize all user input at system boundaries
+- Keep dependencies updated to avoid known vulnerabilities

@@ -57,7 +57,7 @@ project/
 │   │   └── ApiTestCase.php     # Base test class
 │   └── Api/                    # API test files
 ├── tools/
-│   ├── tests.bat               # Run PHPUnit
+│   ├── run_tests.bat            # Run PHPUnit
 │   ├── analyze_code.bat        # Run code analysis
 │   ├── fix_issues.bat          # Auto-fix code issues
 │   └── gen_token.php           # JWT token generator for manual testing
@@ -678,7 +678,7 @@ Every REST API project must include these batch files in `tools/`:
 
 | File | Purpose |
 |------|---------|
-| `tools/tests.bat` | Run PHPUnit test suite |
+| `tools/run_tests.bat` | Run PHPUnit test suite |
 | `tools/analyze_code.bat` | Run PHPStan + code analysis |
 | `tools/fix_issues.bat` | Auto-fix code style (PHP-CS-Fixer) |
 | `tools/gen_token.php` | Generate JWT tokens for manual API testing |
@@ -695,7 +695,7 @@ powershell -Command "cd 'tools'; cmd /c '.\fix_issues.bat'"
 powershell -Command "cd 'tools'; cmd /c '.\analyze_code.bat'"
 
 # 3. Run all tests
-powershell -Command "cd 'tools'; cmd /c '.\tests.bat'"
+powershell -Command "cd 'tools'; cmd /c '.\run_tests.bat'"
 ```
 
 ---

@@ -289,3 +289,25 @@ src/stores/auth.test.js
 src/components/entries/EntryTable.svelte
 src/components/entries/EntryTable.test.js
 ```
+
+---
+
+## API Client
+
+Create a centralized fetch wrapper in `src/lib/api.js` with error handling and auth headers.
+All API calls go through this module — never use raw `fetch()` directly in components.
+
+---
+
+## Form Validation
+
+Validate form inputs before submission. Show inline error messages next to the relevant fields.
+Disable the submit button while validation errors exist or while a request is in-flight.
+
+---
+
+## Environment Config
+
+Use `.env` files with Vite's `import.meta.env` for environment-specific configuration. Prefix
+variables with `VITE_`. Always provide a `.env.example` with placeholder values committed to
+version control.

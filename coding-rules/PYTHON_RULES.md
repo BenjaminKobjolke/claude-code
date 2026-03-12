@@ -354,7 +354,7 @@ Update all dependencies:
 - Runs linting checks (`ruff`, `mypy`)
 - Runs tests to verify compatibility
 
-### tools/tests.bat
+### tools/run_tests.bat
 
 Run the test suite:
 
@@ -368,7 +368,7 @@ Run the test suite:
 install.bat
 
 # Run tests
-tools\tests.bat
+tools\run_tests.bat
 
 # Update dependencies
 update.bat
@@ -530,4 +530,25 @@ with patch("module.ClassName", spec=RealClass) as mock_cls:
 Every project must include these batch files:
 
 * `start.bat` - In the root directory, starts the application
-* `tools/tests.bat` - Runs the test suite
+* `tools/run_tests.bat` - Runs the test suite
+
+---
+
+## Async Patterns
+
+Use `asyncio` for I/O-bound tasks (network requests, file I/O, database queries). Avoid blocking
+calls (`time.sleep`, synchronous HTTP) in async contexts — they block the entire event loop.
+
+---
+
+## Validation
+
+Use Pydantic for request and data validation at API boundaries. Define models for incoming data
+and let Pydantic handle type coercion and error reporting.
+
+---
+
+## Structured Logging
+
+Use `structlog` or the `logging` module with JSON formatters — not `print()`. Configure a
+centralized logging setup that all modules use consistently.

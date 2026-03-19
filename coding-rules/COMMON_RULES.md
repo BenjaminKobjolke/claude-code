@@ -154,3 +154,15 @@ Every project must follow these minimum security practices:
 - Use parameterized queries or ORM-provided methods — never concatenate user input into queries
 - Validate and sanitize all user input at system boundaries
 - Keep dependencies updated to avoid known vulnerabilities
+
+---
+
+## No God Classes
+
+A class that handles too many responsibilities becomes fragile, hard to test, and impossible to
+reuse. Keep each class focused on a single purpose.
+
+- **Warning signs**: more than 5 public methods, more than 4 constructor dependencies, or methods that span unrelated domains (e.g., a class that validates input, queries the database, and sends emails)
+- Split by responsibility: extract collaborators (e.g., a `Validator`, a `Repository`, a `Notifier`) rather than piling logic into one class
+- If you struggle to name the class without using "Manager", "Handler", "Service", or "Helper" as a catch-all, it likely does too much
+- This complements the 300-line file rule — a short class can still be a god class if it owns too many concerns

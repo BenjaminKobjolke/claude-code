@@ -6,6 +6,8 @@ description: fix issues, but do not create analysis files first
 
 Work on fixing the problems reported in the CSV files located in the `@code_analysis_results` folder.
 
+Only work on the csv files, do not read the _violations_cache.db
+
 ## CSV File Formats
 
 Each rule generates a CSV with specific columns:
@@ -17,7 +19,8 @@ Each rule generates a CSV with specific columns:
 | `flutter_analyze.csv` | `file,line,column,severity,code,message` |
 | `dart_code_linter.csv` | `file_path,metric,severity,message` |
 | `line_count_report.csv` | `file,line_count,threshold,severity` |
-| `duplicate_code.csv` | `lines,tokens,occurrences,files` |
+| `duplicate_code.csv` | `file_path,line,column,severity,message` |
+| `similar_code.csv` | `file_path,line,column,severity,message` |
 | `phpstan_analyze.csv` | `file,line,severity,message` |
 | `php_cs_fixer.csv` | `file,line,severity,rule,message` |
 
@@ -34,7 +37,9 @@ Each rule generates a CSV with specific columns:
 - Extract classes/functions into separate files
 - Consider if the file has too many responsibilities
 
-### Duplicate Code (`pmd_duplicates`)
+### Duplicate Code (`pmd_duplicates`, `pmd_similar_code`)
+- Each violation points to a specific file and line, with the message listing
+  the other file(s) sharing the duplicate (e.g. "also in: src/Other.php:42")
 - Extract duplicated code into shared functions/utilities
 - Create base classes for common patterns
 - Use composition or inheritance where appropriate

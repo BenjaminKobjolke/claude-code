@@ -32,7 +32,7 @@ project/
 │   ├── App.svelte              # Root component (router + layout shell)
 │   ├── main.js                 # Entry point (mounts App)
 │   ├── config.js               # Runtime configuration constants
-│   ├── app.css                 # Global styles (Tailwind imports)
+│   ├── app.css                 # Global styles (Tailwind and/or SCSS imports)
 │   ├── components/             # Reusable UI components
 │   │   ├── layout/             # Navbar, Footer, Sidebar
 │   │   ├── shared/             # ConfirmDialog, LoadingSpinner, Toast

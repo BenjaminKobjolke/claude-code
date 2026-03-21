@@ -79,6 +79,17 @@ export default {
 };
 ```
 
+### SCSS/Sass (Optional)
+
+SCSS can be used alongside Tailwind for complex component styles, or as the sole styling approach.
+See `SCSS_RULES.md` for detailed rules on file organization, naming, mixins, and dark mode.
+
+Install as a dev dependency — Vite compiles SCSS automatically:
+
+```bash
+npm install -D sass
+```
+
 ---
 
 ## API Client

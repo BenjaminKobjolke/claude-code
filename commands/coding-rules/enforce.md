@@ -63,6 +63,7 @@ Check that files, classes, functions, and variables follow the project's languag
 If language-specific rules are in CLAUDE.md, also check those. Common checks:
 - **Localization**: hardcoded user-facing strings instead of using the localization library
 - **Framework patterns**: not following the framework's recommended patterns (e.g., raw fetch instead of API client, missing Pydantic validation at API boundaries)
+- **SCSS specifics**: `@import` instead of `@use`/`@forward` in `.scss` files; selector nesting deeper than 3 levels; hardcoded color/spacing values that should use variables from `_variables.scss`
 
 ## Reporting
 

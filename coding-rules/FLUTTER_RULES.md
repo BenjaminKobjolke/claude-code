@@ -1065,3 +1065,37 @@ Minimize unnecessary widget rebuilds to maintain smooth performance:
 - Extract subtrees into separate widgets to limit rebuild scope
 - Avoid building large widget trees inside a single `build` method
 - Use `BlocSelector` or `BlocBuilder` with `buildWhen` to rebuild only when relevant state changes
+
+---
+
+## Self-Describing Classes
+
+Implement the common "Self-Describing Classes" rule using an abstract class or mixin.
+
+```dart
+abstract class Searchable {
+  /// Returns a map of field name to field value for all searchable fields.
+  Map<String, String> getSearchableFields();
+}
+
+class Customer implements Searchable {
+  final String name;
+  final String email;
+  final String phone;
+
+  const Customer({required this.name, required this.email, required this.phone});
+
+  @override
+  Map<String, String> getSearchableFields() {
+    return {'name': name, 'email': email, 'phone': phone};
+  }
+}
+```
+
+Alternatively, use a mixin when classes already have an inheritance hierarchy:
+
+```dart
+mixin SearchableMixin {
+  Map<String, String> getSearchableFields();
+}
+```

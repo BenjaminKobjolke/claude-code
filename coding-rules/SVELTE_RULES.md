@@ -311,3 +311,43 @@ Disable the submit button while validation errors exist or while a request is in
 Use `.env` files with Vite's `import.meta.env` for environment-specific configuration. Prefix
 variables with `VITE_`. Always provide a `.env.example` with placeholder values committed to
 version control.
+
+---
+
+## Self-Describing Classes
+
+Implement the common "Self-Describing Classes" rule using a TypeScript interface with an explicit
+method, or a static field descriptor.
+
+### Option A: Interface with method (for class-based code)
+
+```typescript
+interface Searchable {
+  getSearchableFields(): Record<string, string>;
+}
+
+class Customer implements Searchable {
+  constructor(
+    public name: string,
+    public email: string,
+    public phone: string,
+  ) {}
+
+  getSearchableFields(): Record<string, string> {
+    return { name: this.name, email: this.email, phone: this.phone };
+  }
+}
+```
+
+### Option B: Field descriptor (for plain objects / Svelte stores)
+
+```typescript
+const CUSTOMER_SEARCHABLE_FIELDS = ['name', 'email', 'phone'] as const;
+
+function getSearchableValues(customer: Customer): string[] {
+  return CUSTOMER_SEARCHABLE_FIELDS.map((key) => customer[key]);
+}
+```
+
+Prefer the interface approach when using classes. For store-based data, keep the field
+descriptor co-located with the type definition so new fields are not forgotten.

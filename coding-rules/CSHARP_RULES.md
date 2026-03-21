@@ -510,3 +510,51 @@ foreach (Control control in this.Controls)
     control.ForeColor = DarkForeground;
 }
 ```
+
+---
+
+## Self-Describing Classes
+
+Implement the common "Self-Describing Classes" rule using interfaces or custom attributes.
+
+### Option A: Interface with explicit method
+
+```csharp
+public interface ISearchable
+{
+    IReadOnlyList<string> GetSearchableFields();
+}
+
+public class Customer : ISearchable
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public string Phone { get; set; }
+
+    public IReadOnlyList<string> GetSearchableFields()
+    {
+        return new[] { Name, Email, Phone };
+    }
+}
+```
+
+### Option B: Custom attribute on properties
+
+```csharp
+[AttributeUsage(AttributeTargets.Property)]
+public class SearchableAttribute : Attribute { }
+
+public class Customer
+{
+    [Searchable] public string Name { get; set; }
+    [Searchable] public string Email { get; set; }
+    public string InternalNotes { get; set; } // not searchable
+}
+
+// Consumer uses reflection once at startup:
+// typeof(Customer).GetProperties()
+//     .Where(p => p.GetCustomAttribute<SearchableAttribute>() != null)
+```
+
+Prefer the interface approach when the logic is non-trivial. Use attributes when you want
+declarative opt-in per property and can tolerate the reflection cost.

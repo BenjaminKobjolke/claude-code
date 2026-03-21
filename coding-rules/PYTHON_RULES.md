@@ -552,3 +552,52 @@ and let Pydantic handle type coercion and error reporting.
 
 Use `structlog` or the `logging` module with JSON formatters — not `print()`. Configure a
 centralized logging setup that all modules use consistently.
+
+---
+
+## Self-Describing Classes
+
+Implement the common "Self-Describing Classes" rule using a Protocol/ABC or dataclass field
+metadata.
+
+### Option A: Protocol with abstract method
+
+```python
+from typing import Protocol
+
+
+class Searchable(Protocol):
+    def get_searchable_fields(self) -> list[str]: ...
+
+
+class Customer:
+    def __init__(self, name: str, email: str, phone: str) -> None:
+        self.name = name
+        self.email = email
+        self.phone = phone
+
+    def get_searchable_fields(self) -> list[str]:
+        return [self.name, self.email, self.phone]
+```
+
+### Option B: Dataclass field metadata
+
+```python
+from dataclasses import dataclass, field, fields
+
+SEARCHABLE = "searchable"
+
+
+@dataclass
+class Customer:
+    name: str = field(metadata={SEARCHABLE: True})
+    email: str = field(metadata={SEARCHABLE: True})
+    internal_notes: str = field(default="", metadata={SEARCHABLE: False})
+
+
+def get_searchable_values(obj: object) -> list[str]:
+    return [getattr(obj, f.name) for f in fields(obj) if f.metadata.get(SEARCHABLE)]
+```
+
+Prefer the Protocol approach for simple cases. Use dataclass metadata when you need declarative
+per-field control without writing boilerplate methods.

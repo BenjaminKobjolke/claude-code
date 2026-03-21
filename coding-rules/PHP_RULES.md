@@ -610,3 +610,52 @@ public function testDatePreservedAcrossTimezones(): void
     date_default_timezone_set($originalTz);
 }
 ```
+
+---
+
+## Self-Describing Classes
+
+Implement the common "Self-Describing Classes" rule using interfaces or PHP 8 attributes.
+
+### Option A: Interface with explicit method
+
+```php
+interface Searchable
+{
+    /** @return string[] */
+    public function getSearchableFields(): array;
+}
+
+class Customer implements Searchable
+{
+    public function __construct(
+        public readonly string $name,
+        public readonly string $email,
+        public readonly string $phone,
+    ) {}
+
+    public function getSearchableFields(): array
+    {
+        return [$this->name, $this->email, $this->phone];
+    }
+}
+```
+
+### Option B: PHP 8 attribute on properties
+
+```php
+#[Attribute(Attribute::TARGET_PROPERTY)]
+class Searchable {}
+
+class Customer
+{
+    #[Searchable] public readonly string $name;
+    #[Searchable] public readonly string $email;
+    public readonly string $internalNotes; // not searchable
+}
+
+// Consumer reads attributes via ReflectionClass at bootstrap
+```
+
+Prefer the interface approach for straightforward cases. Use attributes when you need
+fine-grained per-property control.

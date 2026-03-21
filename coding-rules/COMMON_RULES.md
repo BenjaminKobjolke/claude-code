@@ -166,3 +166,22 @@ reuse. Keep each class focused on a single purpose.
 - Split by responsibility: extract collaborators (e.g., a `Validator`, a `Repository`, a `Notifier`) rather than piling logic into one class
 - If you struggle to name the class without using "Manager", "Handler", "Service", or "Helper" as a catch-all, it likely does too much
 - This complements the 300-line file rule — a short class can still be a god class if it owns too many concerns
+
+---
+
+## Self-Describing Classes
+
+When behavior depends on which fields or properties a class has — such as search, serialization,
+display, validation, or auditing — the class itself must declare those fields through a contract
+(interface, abstract method, attribute/annotation, or introspection pattern). Never hardcode field
+lists in consuming code.
+
+- **Anti-pattern**: A search service contains a hardcoded list of fields to index for each entity;
+  adding a new field requires updating every consumer manually
+- **Correct pattern**: Each class implements a contract (e.g., `GetSearchableFields()`,
+  `GetDisplayColumns()`) that returns its own relevant fields, so adding a field in one place
+  automatically propagates everywhere
+- This applies to any cross-cutting concern that operates over class fields: search, filtering,
+  export, form generation, diffing, logging, etc.
+- Combine with compile-time checks where the language supports them (e.g., sealed interfaces,
+  exhaustive matching) to ensure new fields cannot be silently ignored

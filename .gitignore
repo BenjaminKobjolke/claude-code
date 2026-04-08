@@ -3,3 +3,4 @@ validate-code/config.php
 validate-code/vendor
 
 /nul
+.claude/settings.local.json

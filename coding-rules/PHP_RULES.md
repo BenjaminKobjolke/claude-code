@@ -385,6 +385,160 @@ Full documentation: D:\GIT\BenjaminKobjolke\php-localization\README.md
 
 ---
 
+## Database: Cycle ORM Relations & Query Builder
+
+### No Raw SQL
+
+**Never use raw SQL or DBAL direct queries.** Always use Cycle ORM relations and the query builder. Raw SQL causes bugs when entity columns change — every SELECT must be manually updated. ORM relations automatically include all fields.
+
+### Defining Relations (PHP 8 Attributes)
+
+Always define entity relationships using Cycle ORM relation attributes. Use `fkCreate: false` and `indexCreate: false` when indexes already exist or FK constraints are not desired.
+
+```php
+use Cycle\Annotated\Annotation\Relation\BelongsTo;
+use Cycle\Annotated\Annotation\Relation\HasOne;
+use Cycle\Annotated\Annotation\Relation\HasMany;
+```
+
+#### BelongsTo (child stores FK to parent)
+
+```php
+// Required parent (non-nullable FK)
+#[BelongsTo(target: BankAccount::class, innerKey: 'bank_account_id', fkCreate: false, indexCreate: false)]
+public ?BankAccount $bankAccount = null;
+
+// Optional parent (nullable FK)
+#[BelongsTo(target: Category::class, innerKey: 'category_id', nullable: true, fkCreate: false, indexCreate: false)]
+public ?Category $category = null;
+```
+
+**Key parameters:** `target` (parent class), `innerKey` (FK column in this entity), `nullable` (default false), `fkCreate` (create DB constraint, default true), `indexCreate` (create index, default true).
+
+The existing column property (e.g., `public int $bankAccountId`) must remain — Cycle ORM uses both the column and the relation property.
+
+#### HasOne (parent owns one child; child stores FK)
+
+```php
+#[HasOne(target: Expense::class, outerKey: 'bank_transaction_id', nullable: true, fkCreate: false, indexCreate: false)]
+public ?Expense $expense = null;
+```
+
+**Key parameters:** `target` (child class), `outerKey` (FK column in child entity), `nullable` (default false).
+
+#### HasMany (parent owns many children)
+
+```php
+#[HasMany(target: Post::class, outerKey: 'user_id', orderBy: ['created_at' => 'DESC'])]
+private array $posts = [];
+```
+
+**Key parameters:** `target`, `outerKey`, `where` (auto-filter), `orderBy` (default sort).
+
+### Eager Loading with `load()`
+
+Use `load()` to preload relation data and avoid N+1 queries:
+
+```php
+// Load single relation
+$this->select()
+    ->load('bankAccount')
+    ->load('category')
+    ->load('expense')
+    ->where('bank_account_id', $bankAccountId)
+    ->orderBy('date_actual', 'DESC')
+    ->fetchAll();
+
+// Nested relations (dot notation)
+$this->select()->load('posts.comments.author')->fetchAll();
+```
+
+### Filtering by Relations with `with()`
+
+Use `with()` to join a relation for WHERE conditions without loading its data:
+
+```php
+// Filter transactions by related bank account's company
+$this->select()
+    ->with('bankAccount')
+    ->where('bankAccount.companyId', $companyId)
+    ->fetchAll();
+```
+
+**Key difference:** `load()` = preload relation data. `with()` = join for filtering only.
+
+### Entity Output with Relations
+
+Add a `toDetailArray()` method for enriched output that includes relation data:
+
+```php
+public function toDetailArray(): array
+{
+    return [
+        ...$this->toArray(),
+        'category_label' => $this->category?->label,
+        'expense_id' => $this->expense?->id,
+    ];
+}
+```
+
+Only call `toDetailArray()` on entities fetched with `->load()`.
+
+### Aggregate Queries (SUM, COUNT, GROUP BY)
+
+Use `buildQuery()` to access the DBAL-level query builder for aggregates:
+
+```php
+use Cycle\Database\Injection\Fragment;
+use Cycle\Database\Injection\Expression;
+
+// Simple aggregate
+$total = $this->select()->where('status', 'active')->count();
+
+// Complex aggregates with GROUP BY
+$this->select()
+    ->with('bankAccount')
+    ->where('bankAccount.companyId', $companyId)
+    ->buildQuery()
+    ->columns([
+        'bt.category_id',
+        new Fragment('SUM(CASE WHEN CAST(bt.value AS DECIMAL(15,2)) > 0 THEN CAST(bt.value AS DECIMAL(15,2)) ELSE 0 END) AS income'),
+        new Fragment('COUNT(*) AS transaction_count'),
+    ])
+    ->groupBy('bt.category_id')
+    ->run()
+    ->fetchAll();
+```
+
+**Fragment vs Expression:**
+- `Fragment`: Raw SQL, no escaping. Use for SQL functions, subqueries.
+- `Expression`: Auto-quotes column identifiers. Use when referencing columns inside functions.
+
+### Dynamic WHERE Conditions
+
+Build dynamic conditions using chained `where()` calls on the query builder:
+
+```php
+$query = $this->select()
+    ->with('bankAccount')
+    ->where('bankAccount.companyId', $companyId);
+
+if ($pattern !== null) {
+    $query->where('name', 'LIKE', '%' . $pattern . '%');
+}
+
+if ($amountMin !== null && $amountMax !== null) {
+    $query->where(new Fragment('ABS(CAST(value AS DECIMAL(15,2)))'), '>=', $amountMin)
+          ->where(new Fragment('ABS(CAST(value AS DECIMAL(15,2)))'), '<=', $amountMax);
+}
+
+return $query->orderBy('date_actual', 'DESC')
+    ->limit($limit)->offset($offset)
+    ->fetchAll();
+```
+
+---
+
 ## Code Quality
 
 ### PHPStan

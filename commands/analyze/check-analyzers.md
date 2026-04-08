@@ -74,6 +74,68 @@ Check if the current project has all applicable analyzers configured and suggest
 }
 ```
 
+### Intelephense LSP MCP Server
+
+The `intelephense_analyze` analyzer above uses the cli-code-analyzer. For real-time LSP-based diagnostics via MCP, the **Intelephense LSP MCP Server** can be configured separately.
+
+**Source:** `D:\GIT\BenjaminKobjolke\intelephense-lsp-mcp`
+
+#### Adding the MCP Server to Claude Code
+
+Register it per-project in `.claude.json` (project settings) or globally via CLI:
+
+```bash
+claude mcp add --transport stdio intelephense -- uv --directory D:\GIT\BenjaminKobjolke\intelephense-lsp-mcp run python -m intelephense_watcher.mcp_server
+```
+
+Or add it manually to the project's `mcpServers` section in `.claude.json`:
+
+```json
+"mcpServers": {
+  "intelephense": {
+    "type": "stdio",
+    "command": "uv",
+    "args": [
+      "--directory",
+      "D:\\GIT\\BenjaminKobjolke\\intelephense-lsp-mcp",
+      "run",
+      "python",
+      "-m",
+      "intelephense_watcher.mcp_server"
+    ],
+    "env": {}
+  }
+}
+```
+
+#### Excluding Files via `intelephense.json`
+
+Create an `intelephense.json` in the PHP project root to filter diagnostics for files you don't want to see:
+
+```json
+{
+    "ignore": [
+        "config/app.php",
+        "tests/fixtures/**"
+    ]
+}
+```
+
+These patterns filter diagnostics from the output. The LSP still indexes `vendor/` internally for import resolution — only the **scanning** (which files get opened as documents) skips `vendor`, `node_modules`, `.git`, `cache`, and `.phpstan-cache` automatically.
+
+#### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_diagnostics` | Get PHP errors/warnings for a project or file |
+| `find_references` | Find all references to a symbol |
+| `go_to_definition` | Navigate to symbol definition |
+| `get_hover` | Get symbol documentation/type |
+| `get_document_symbols` | List all symbols in a file |
+| `search_symbols` | Search workspace symbols |
+| `reindex` | Force re-index all PHP files |
+```
+
 ### Python Defaults
 ```json
 "ruff_analyze": {

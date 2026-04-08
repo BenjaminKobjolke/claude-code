@@ -120,3 +120,85 @@ powershell -Command "cd 'D:\Path With Spaces\project'; cmd /c '.\script.bat'"
 
 ### Environment variables not set
 Some scripts depend on environment variables. If a script fails, check if it requires specific environment setup.
+
+---
+
+# Intelephense LSP MCP Server Setup (PHP Projects)
+
+For PHP projects, in addition to the cli-code-analyzer, you can set up the **Intelephense LSP MCP Server** for real-time LSP-based diagnostics accessible via MCP tools.
+
+**Source:** `D:\GIT\BenjaminKobjolke\intelephense-lsp-mcp`
+
+## Prerequisites
+
+- Python 3.10+
+- `uv` package manager
+- Node.js with Intelephense installed globally: `npm install -g intelephense`
+
+## Step 1: Register the MCP Server
+
+Run this command to add the MCP server to the current project's Claude Code settings:
+
+```bash
+claude mcp add --transport stdio intelephense -- uv --directory D:\GIT\BenjaminKobjolke\intelephense-lsp-mcp run python -m intelephense_watcher.mcp_server
+```
+
+This adds the following to the project's `mcpServers` in `.claude.json`:
+
+```json
+"mcpServers": {
+  "intelephense": {
+    "type": "stdio",
+    "command": "uv",
+    "args": [
+      "--directory",
+      "D:\\GIT\\BenjaminKobjolke\\intelephense-lsp-mcp",
+      "run",
+      "python",
+      "-m",
+      "intelephense_watcher.mcp_server"
+    ],
+    "env": {}
+  }
+}
+```
+
+## Step 2: Verify
+
+Check that the MCP server is running in Claude Code:
+
+```
+/mcp
+```
+
+The `intelephense` server should appear with its tools listed.
+
+## Step 3: Create `intelephense.json` (Optional)
+
+Create an `intelephense.json` in the PHP project root to exclude files/directories from diagnostics output:
+
+```json
+{
+    "ignore": [
+        "config/app.php",
+        "tests/fixtures/**"
+    ]
+}
+```
+
+**How filtering works:**
+- **Automatically skipped during scanning** (never opened in LSP): `vendor`, `node_modules`, `.git`, `cache`, `.phpstan-cache`
+- **`intelephense.json` ignore patterns**: Files are still scanned but their diagnostics are filtered from output
+- **Intelephense internal indexing**: The LSP always indexes `vendor/` internally for import/type resolution regardless of the above filters
+
+## Available MCP Tools
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `get_diagnostics` | Get PHP errors/warnings | `project_path`, `file_path?`, `min_severity?` |
+| `find_references` | Find all references to a symbol | `project_path`, `file_path`, `line`, `column` |
+| `go_to_definition` | Navigate to symbol definition | `project_path`, `file_path`, `line`, `column` |
+| `get_hover` | Get symbol documentation/type | `project_path`, `file_path`, `line`, `column` |
+| `get_document_symbols` | List all symbols in a file | `project_path`, `file_path` |
+| `search_symbols` | Search workspace symbols | `project_path`, `query` |
+| `reindex` | Force re-index all PHP files | `project_path` |

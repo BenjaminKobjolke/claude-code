@@ -17,12 +17,17 @@ Steps:
      - Python: ruff check or configured linter
      - Other: whatever is configured in CLAUDE.md
 
-3. Report results per validator:
+3. Run convention checks on changed files (git diff --name-only):
+   - **DI wiring**: If any new service classes were created or referenced in controllers, verify they are registered in the DI container
+   - **Translation format**: If translation keys were added/modified, verify they use the project's parameter format (e.g. :param not %param%)
+   - **UI components**: If HTML form inputs were added, check if the project has existing widget components that should be used instead of raw HTML
+
+4. Report results per validator:
    - PASS: validator ran with no errors
    - FAIL: validator found issues, list them
 
-4. If all validators pass: tell the user everything looks good and they can proceed with /git:commit.
+5. If all validators pass: tell the user everything looks good and they can proceed with /git:commit.
 
-5. If any validator fails: list the failures clearly and ask the user if they want to fix the issues before committing.
+6. If any validator fails: list the failures clearly and ask the user if they want to fix the issues before committing.
 
 This command does NOT auto-commit and does NOT auto-fix. It only validates and reports.

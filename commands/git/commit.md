@@ -1,9 +1,13 @@
 ---
 description: GIT commit changed and new files according to XIDA standards
+effort: low
+
 ---
 
 Git commit and push local changes and new files.
 Create separate commits for fixes, code improvements and new features.
+
+Before staging, group changed files by logical concern. If changes span multiple unrelated concerns (e.g. a bug fix + a new feature + a style change), propose separate commits and stage only relevant files per commit. Do not bundle unrelated changes into a single commit.
 
 ## How to execute the commit
 

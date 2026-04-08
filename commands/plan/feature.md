@@ -16,8 +16,10 @@ Steps:
    - Identify the project's tech stack, frameworks, and patterns
    - Find existing code that relates to or would be affected by the feature
    - Map dependencies and integration points
+   - **Convention check**: Grep for existing UI components, widgets, and reusable patterns related to this feature. List them explicitly — these MUST be reused in the plan (do not assume, verify by searching)
    - Check for existing utilities, helpers, or patterns that should be reused
    - Note any configuration or infrastructure that would need changes
+   - Check translation format conventions (e.g. :param vs %param%) and DI container patterns
 
 4. Ensure the `plan/` directory exists in the project root. If not, create it.
 
@@ -36,12 +38,16 @@ Steps:
    ## Affected Files
    List of all files that will need to be modified or created, grouped by purpose.
 
+   ## Existing Patterns to Reuse
+   List of existing components, widgets, utilities, and conventions found during research that MUST be used in the implementation. Include file paths and grep evidence.
+
    ## Implementation Plan
    Numbered steps describing what to build and where, in order of execution.
    Each step should include:
    - What to do
    - Which files to modify or create
    - Key implementation details and patterns to follow
+   - Which existing components/patterns to reuse (reference the section above)
 
    ## Open Questions
    Uncertainties or decisions that need user input before implementation.

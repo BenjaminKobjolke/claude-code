@@ -17,10 +17,17 @@ Steps:
 
 4. **Validate approach**: Present your proposed fix strategy (what to change and why). Wait for user approval before implementing.
 
-5. **Implement the fix**: Make the code changes.
+5. **Write a failing test**: Before writing any fix, create a test that reproduces the bug. Run the test suite to confirm it fails. If the project has no test infrastructure, skip this step and note it.
 
-6. **Verify**: Run /validate:pre-commit to check the fix does not break anything.
+6. **Implement the fix**: Make the minimal code changes to fix the bug. Check for existing project patterns and components before writing new code.
 
-7. If validation passes, mark the bug as fixed in BUGS.md by adding `[FIXED]` prefix to its entry and tell the user they can commit with /git:commit.
+7. **Run tests**: Run the test suite to confirm the failing test now passes and no other tests broke. If the test still fails, iterate on the fix.
 
-8. If validation fails, report the failures and ask the user how to proceed.
+8. **Verify**: Run /validate:pre-commit to check the fix does not break anything. Also check:
+   - DI container includes any new services
+   - Translation keys use the project's format conventions
+   - No raw HTML where project widgets exist
+
+9. If validation passes, mark the bug as fixed in BUGS.md by adding `[FIXED]` prefix to its entry and tell the user they can commit with /git:commit.
+
+10. If validation fails, report the failures and ask the user how to proceed.

@@ -169,3 +169,6 @@ FEATURE (editor): add emmet plug-in to editor
 
 Closes #351
 ```
+
+Also check .gitmodules if there are submodules.
+Then process with the same workflow for those submodules.

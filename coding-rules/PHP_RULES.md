@@ -4,12 +4,12 @@ See `COMMON_RULES.md` for rules that apply to all languages.
 
 ## PHP Version
 
-Use PHP 8.4 for all projects. Set the requirement in `composer.json`:
+Use PHP 8.5 for all projects. Set the requirement in `composer.json`:
 
 ```json
 {
     "require": {
-        "php": "^8.4"
+        "php": "^8.5"
     }
 }
 ```
@@ -577,6 +577,20 @@ return (new PhpCsFixer\Config())
 ```
 
 Run formatting: `php vendor/bin/php-cs-fixer fix`
+
+---
+
+## Upgrading to a Newer PHP Version
+
+When migrating an existing PHP codebase to a newer language version, follow the workflow in [`PHP_UPGRADE_TO_NEWER_VERSION.md`](PHP_UPGRADE_TO_NEWER_VERSION.md). High-level steps:
+
+1. **Inventory** — scan the codebase for deprecated patterns with PHPCompatibility, file the findings as a baseline.
+2. **Automate fixes** — run Rector against the target `PhpVersion::PHP_XX` with focused deprecation rules.
+3. **Manual cleanup** — patch what Rector can't (bundled libraries, removed extensions, magic-method renames).
+4. **Verify** — green PHPUnit suite on the new PHP binary + PHPCompatibility scan reports zero project-code issues.
+5. **Smoke test** — exercise UI flows in a browser before declaring the migration done.
+
+Templated batch runners and a Rector config live in [`php_setup_files/`](php_setup_files/). Copy them into the project's `tools/` folder and fill in the gitignored `php_upgrade_config.bat`.
 
 ---
 

@@ -23,6 +23,62 @@ readability, reduces call-site churn, and makes changes safer.
 
 ---
 
+## No Bag-of-Keys Returns at Module Boundaries
+
+When a public method on a manager/repository/service returns data that crosses a module
+boundary, the return type must be a typed object (DTO, value object, or domain model) — never
+a raw associative array indexed by string keys. Plain `array` returns silently swallow shape
+bugs: a missing key reads as `null`, a list-vs-single mix-up reads as "no data", and renames
+go undetected by static analysis.
+
+- **Anti-pattern.** `getSettingsValue(...)` returns `array|null`; callers do `$result['value']`,
+  `$result['type']`. A consumer mis-indexes `$result[0]['value']` after a refactor; nothing
+  flags the change. The function silently returns `null` and downstream defaults take over.
+- **Correct pattern.** Return a class — `getSettingsElement(...): ?SettingsElement`. The class
+  exposes `getValue()`, `getType()`, `exists()`. Typed, autocompleted, statically checked;
+  renames propagate via the IDE.
+- **Lists vs single must be obvious from the type and the name.** `getThing(): ?Thing`
+  (zero or one) vs `getThings(): ThingList` or `iterable<Thing>`. Never overload the same
+  return type to mean both.
+- **Distinguish absent from empty.** `null` from a lookup means "not found"; an empty
+  collection means "found, but had nothing". A typed return makes this contract explicit;
+  a bag-of-keys array hides it.
+- **JSON-decoded blobs are arrays too.** The rule applies equally to `json_decode($column, true)`
+  results that cross a module boundary — wrap them in a value object before they leave the
+  layer that owns the schema.
+- **Internal helpers may stay arrays.** This rule targets *public* API on managers and the
+  boundary where a domain abstraction starts. Pure-private array juggling inside a single
+  method is fine.
+
+---
+
+## Reuse Existing Models Before Inventing Array Shapes
+
+Before designing a new return type or DTO, search the codebase for an existing domain class
+that already owns the same data. Most "should this be a DTO?" decisions are actually
+"is there already a `Contest` / `User` / `Order` class that should absorb this method?"
+
+- Grep for the table name, the primary key, and the most distinctive column.
+- If a model already exists with a constructor that accepts the row shape, use it — don't
+  invent a parallel array shape that mirrors the same columns.
+- Adding a `getXxxObject()` alongside a legacy `getXxxData()` is acceptable as a migration
+  step; keep both only until consumers are migrated, then delete the array-returning version.
+
+---
+
+## Tests Pin the Shape Before the Refactor
+
+When converting a bag-of-keys return to a typed object, write a **characterization test
+first** that locks the current behavior using the existing API, run it green against the
+unrefactored code, and then refactor. The same test (or a renamed-but-equivalent one) must
+remain green afterward.
+
+This converts "I think the new object preserves behavior" into "the test proves it." Pair
+with the "Test-Driven Development" rule below — characterization tests are TDD applied to
+refactors instead of new features.
+
+---
+
 ## Test-Driven Development for Features and Bug Fixes
 
 Follow TDD when implementing features or fixing bugs:

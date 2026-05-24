@@ -781,6 +781,90 @@ public function testDatePreservedAcrossTimezones(): void
 
 ---
 
+## Wrap DB Rows and JSON Columns in Value Objects
+
+PHP-specific application of the common rule "No Bag-of-Keys Returns at Module Boundaries".
+PHP makes the bag-of-keys trap easy because every `fetch_assoc_all()`, `json_decode($col, true)`,
+and `$_POST` payload starts life as `array<string, mixed>`. Stop the array from leaking past
+the boundary that owns its schema.
+
+### Repository methods return objects, not rows
+
+```php
+// Bad — caller indexes 20 string keys, silent on column rename
+public function getContestDataForAdmin(int $id): ?array { ... }
+
+// Good
+public function getContestForAdmin(int $id): ?Contest { ... }
+```
+
+The repository *may* internally hold an `array<string, mixed>`, but the public method returns
+a constructed object. PHPStan level 5+ then catches consumer regressions automatically when
+properties change.
+
+### List vs single is in the name and the return type
+
+```php
+public function findById(int $id): ?Thing;
+/** @return Thing[] */
+public function findAllForContest(int $contestId): array;
+```
+
+Never let one method return "row OR list of rows depending on input". A function whose body
+does `fetch_assoc_all()` and whose name reads as singular (`getXxxValue`, `getXxxElement`) is
+the exact shape that produces silent-`null` bugs at the call site.
+
+### JSON-encoded value columns get a value object
+
+A row's `value` column that stores `{"text":"...","fields":[...]}` JSON belongs in a
+`XxxValue` class with `getText(): string`, `getFields(): array`. Decoding inline at every
+call site spreads the schema across the codebase; each consumer becomes a maintenance
+hazard when the JSON shape changes.
+
+### `isset($result['key'])` on a method return is a smell
+
+If you find yourself writing `isset($result['some_key'])` on the output of a method you
+control, that method should be returning an object whose presence is signalled by `?Type`
+(nullable return) and whose fields are accessed by getters. The only legitimate use of
+`isset` on associative-array keys is on raw I/O input (`$_POST`, decoded external JSON) at
+the boundary, before validation produces a typed object.
+
+### Migration recipe for array-returning methods with many consumers
+
+1. Write a characterization test against the current method that exercises representative
+   inputs and locks the current outputs.
+2. Add a parallel `getXxxObject()` method returning the typed class.
+3. Migrate consumers one file per commit; the test stays green.
+4. Delete the array-returning method once `grep` finds zero callers.
+
+PHPStan level 5+ catches most regressions automatically once the return type changes from
+`array` to `?ClassName` — leverage this rather than relying on review.
+
+---
+
+## Value Objects for `$_POST` / `$_GET` Boundaries
+
+Project-input arrays (`$_POST`, decoded request bodies, file-upload payloads) are the
+legitimate source of raw associative arrays. Validate at the boundary and produce a typed
+object **once**; never let `$_POST['some_key']` flow through three managers.
+
+```php
+// At the controller boundary
+$payload = ContestSettingsPayload::fromPostArray($_POST);
+if (!$payload->isValid()) {
+    RedirectManager::backWithErrors($payload->errors());
+    return;
+}
+
+// Everywhere downstream
+$this->saveSettings($payload);   // type: ContestSettingsPayload
+```
+
+Pair with the existing "Input Validation at Boundaries" rule — that rule says *validate*;
+this rule says *what the validated result should be*: a typed object, not a sanitized array.
+
+---
+
 ## Self-Describing Classes
 
 Implement the common "Self-Describing Classes" rule using interfaces or PHP 8 attributes.

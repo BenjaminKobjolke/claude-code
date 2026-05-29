@@ -42,9 +42,11 @@ Use FVM (Flutter Version Manager) for all projects. Create `.fvmrc` in the proje
 
 ```json
 {
-  "flutter": "3.24.0"
+  "flutter": "3.44.0"
 }
 ```
+
+Latest verified stable as of 2026-05-26. Confirm with `fvm releases --channel stable` for new projects.
 
 All Flutter commands should be prefixed with `fvm`:
 
@@ -263,6 +265,39 @@ AppLocalizations.tr(TK.navDashboard);
 - Compile-time error if constant doesn't exist
 - Easy to find all usages of a key
 - Refactoring support
+
+### Detecting unused or missing keys
+
+Every Flutter project that uses the `TK` pattern **must** ship tooling that
+detects all of the following:
+
+1. TK constants whose i18n path does not exist (broken at runtime).
+2. TK constants with no callers (dead Dart code).
+3. i18n leaves with no TK constant pointing at them (orphan translations).
+4. Raw `AppLocalizations.tr('literal')` calls that bypass the TK class.
+
+Reference implementation: `tools/check_translation_keys.dart` +
+`tools/check_translation_keys.bat`, shipped in `flutter_setup_files/tools/`.
+Run the audit whenever a TK constant or i18n key is added or removed, and
+do not consider the change complete while the audit reports any issue. The
+`--fix` flag auto-substitutes matchable raw literals **and** auto-creates
+TK constants for raw literals that already have a matching i18n leaf;
+remaining "broken" entries (raw literal whose i18n leaf is missing too)
+must be resolved by hand.
+
+Companion tooling lives next to the audit script:
+
+- `prune_unused_translation_keys.dart` — deletes dead TK constants from
+  `lib/config/translation_keys/tk_*.dart`. Safe because the audit
+  guarantees zero references.
+- `prune_orphan_i18n_leaves.dart` — removes i18n leaves no caller
+  references (TK or raw literal), and appends them to
+  `tools/attributes_to_remove.json` so the translator can strip them from
+  the remaining locale files.
+- `split_translation_keys.dart` — when the project's `TK` class grows past
+  ~500 lines, split it into one `TKModule` class per top-level i18n key
+  group with a barrel re-export. The split keeps every existing
+  `TK.foo`-style call site valid after a one-shot codemod.
 
 ---
 

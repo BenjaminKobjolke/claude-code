@@ -123,6 +123,23 @@ the codebase. Use language-appropriate patterns for constants and reuse them con
 
 ---
 
+## Reusable Tooling
+
+Before building project-specific infrastructure scripts (audits, codemods,
+build helpers, lint checks, etc.) for a project, check the matching
+language's `*_setup_files/` folder under this `coding-rules` repo for an
+existing equivalent. If found, copy or reference it. If not:
+
+1. Build the script in the project and prove it on real data.
+2. Copy the script into the right `*_setup_files/tools/` folder.
+3. Document it in that language's `*_RULES.md` so the next project picks
+   it up automatically.
+
+This keeps cross-project tooling consistent and prevents the same script
+from being re-invented in every new project.
+
+---
+
 ## README.md is Mandatory
 
 Every project must have a `README.md` file in the root directory. It should include:

@@ -13,7 +13,8 @@ Steps:
 2. Process the todos in ascending numeric order by their leading `NN_` prefix.
 
 3. For each todo plan, in order:
-   - Read the plan file completely.
+   - Read the plan file completely, including its `## Research & Findings` section (the research captured when the plan was saved).
+   - **Light re-verify**: treat the embedded research as your starting point — do NOT redo the research from scratch. Quickly confirm the key referenced files/symbols still exist (a cheap sanity check). If something referenced has moved, been renamed, or no longer exists, note it and re-research only that specific gap.
    - **Open Questions gate**: if the plan has an "Open Questions" section with unresolved questions, present each to the user, wait for answers to ALL of them, write the answers back into the file, and only then continue.
    - Implement the plan step by step. Announce which step you are starting and report what was done before moving to the next step.
    - **On failure**: stop immediately, explain what went wrong, and ask the user whether to attempt a fix or create a handoff via `/handoff:create`. Do NOT move the file to `done/` if implementation is incomplete.

@@ -14,8 +14,17 @@ Steps:
 
 4. Determine the next number: scan `claude-plans/todos/*.md`, find the highest leading `NN_` integer prefix, add 1, and zero-pad to 2 digits. Start at `01` if no numbered file exists yet.
 
-5. Write the full current plan content to `claude-plans/todos/<NN>_<short-name>.md` (e.g. `claude-plans/todos/01_dark-mode-toggle.md`).
+5. **Make the saved file self-contained so no research is lost.** The session may have done heavy research (file traces, conventions, decisions) before producing the plan — after clearing the session that context is gone and would otherwise be redone at implementation time. Before writing, capture everything learned into the file. The written content = the full plan PLUS a `## Research & Findings` section containing:
+   - **Relevant files** — paths and their role, i.e. the code traces already followed.
+   - **Patterns / utilities / conventions to reuse** — with file paths and grep evidence.
+   - **Key decisions and WHY** — including options considered and rejected.
+   - **Gotchas, constraints, integration points** — anything non-obvious discovered.
+   - **Open questions + their answers** — fold in anything already resolved with the user.
 
-6. Clear the plan from session memory — this is equivalent to `/clear` of the active plan: discard the in-context plan so a fresh plan can be started. Do NOT delete the saved `.md` file you just wrote. (If the user wants a full conversation reset, they can run `/clear` themselves.)
+   Goal: a fresh session (no prior context) could implement purely from this one file.
 
-7. Confirm the saved path to the user and STOP. Do NOT implement any part of the plan.
+6. Write that content to `claude-plans/todos/<NN>_<short-name>.md` (e.g. `claude-plans/todos/01_dark-mode-toggle.md`).
+
+7. Clear the plan from session memory — this is equivalent to `/clear` of the active plan: discard the in-context plan so a fresh plan can be started. Do NOT delete the saved `.md` file you just wrote. (If the user wants a full conversation reset, they can run `/clear` themselves.)
+
+8. Confirm the saved path to the user and STOP. Do NOT implement any part of the plan.

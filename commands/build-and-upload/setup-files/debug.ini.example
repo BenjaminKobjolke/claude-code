@@ -1,0 +1,23 @@
+# ftp-sync settings for DEBUG uploads.
+# Copy to debug.ini and fill in real values. debug.ini is gitignored (holds the FTP password).
+# This file is passed straight to ftp-sync; the [KIOSK] section is ignored by the tool and read by
+# the upload bats.
+#
+# Note: values are parsed by Python configparser. A literal percent sign in any value (e.g. in a
+# password) must be written as %% .
+
+[FTP]
+FTP_HOST=yourserver.com
+FTP_USER=your_user
+FTP_PASS=your_password
+# Account is chrooted to the apps dir, so the FTP root is the target.
+FTP_DIRECTORY=/
+DIRECTION=up
+# Keep existing remote files (the release APKs) instead of mirror-deleting them.
+NO_DELETE=true
+
+[KIOSK]
+# Public link base where APKs are served from.
+APK_LINK_DIR=https://yourserver.com/apps
+# Path to the ftp-sync tool checkout.
+FTPSYNC_DIR=D:\GIT\BenjaminKobjolke\ftp-sync

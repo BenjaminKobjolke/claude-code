@@ -10,6 +10,7 @@ SendMode Input               ; faster, more reliable Send
 SetWorkingDir %A_ScriptDir%
 
 #Include %A_ScriptDir%\_libraries\SingleInstance.ahk
+#Include %A_ScriptDir%\_libraries\TrayMenu.ahk
 
 ; --- Single-instance toggle -------------------------------------------------
 ; The class is the script's lifecycle. __New() runs on first launch, Quit() runs
@@ -32,14 +33,9 @@ class MyScriptObject {
 ; Generate a fresh, unique GUID per script (do NOT reuse another script's GUID).
 CheckSingleInstance("{REPLACE-WITH-A-UNIQUE-GUID}", "MyScriptObject")
 
-; --- Tray menu --------------------------------------------------------------
-Menu, tray, NoStandard
-Menu, tray, add                 ; separator
-Menu, tray, add, Reload, TrayReload
-Menu, tray, add, Exit, TrayExit
-
-; --- Clean exit: free the single-instance COM slot before quitting ----------
-OnExit("Revoke")
+; --- Tray menu + clean exit (revokes the single-instance COM slot) -----------
+SetupTrayMenu()
+return
 
 ; ============================================================================
 ;  Hotkeys / logic below
@@ -48,17 +44,3 @@ OnExit("Revoke")
 ; #+a::                         ; example: Win+Shift+A
 ;     ; do work
 ; return
-
-; --- Handlers ---------------------------------------------------------------
-TrayReload:
-    Reload
-return
-
-TrayExit:
-    ExitApp
-return
-
-Revoke(ExitReason, ExitCode) {
-    global ActiveObject
-    ObjRegisterActive(ActiveObject, "")   ; unregister so a relaunch starts fresh
-}

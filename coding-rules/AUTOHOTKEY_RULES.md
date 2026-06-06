@@ -86,10 +86,12 @@ A_ScriptDir` loses the `%...%`.
 my-ahk-tools/
 ├── _libraries/             # shared code, #Include'd by scripts (underscore sorts to top)
 │   ├── SingleInstance.ahk
+│   ├── TrayMenu.ahk        # shared tray menu + clean-exit revoke
+│   ├── IniConfig.ahk       # per-script ini read/auto-create helper
 │   └── Log.ahk
 ├── maximize.ahk            # one script = one responsibility
 ├── downloads_launcher.ahk
-├── settings.ini            # machine-specific paths/values (not hardcoded in scripts)
+├── downloads_launcher.ini  # machine-specific, gitignored, auto-created on first run
 ├── docs/
 │   └── MAXIMIZE.md
 └── README.md
@@ -116,44 +118,78 @@ in both. This is the AutoHotkey form of the common **DRY** rule.
 ## Tray Menu Convention
 
 Persistent scripts get a consistent tray menu — strip the standard items, then offer Reload and
-Exit:
+Exit — plus an `OnExit` handler that **revokes the single-instance registration** before the
+process dies, so a later relaunch starts cleanly instead of finding a stale slot.
+
+This whole block is identical across scripts, so it lives once in `_libraries\TrayMenu.ahk` and
+every script calls `SetupTrayMenu()`:
 
 ```autohotkey
-Menu, tray, NoStandard
-Menu, tray, add                 ; separator
-Menu, tray, add, Reload, TrayReload
-Menu, tray, add, Exit, TrayExit
-
-TrayReload:
+; _libraries\TrayMenu.ahk  (requires SingleInstance.ahk for ObjRegisterActive + ActiveObject)
+SetupTrayMenu() {
+    Menu, tray, NoStandard
+    Menu, tray, add                       ; separator
+    Menu, tray, add, Reload, TrayMenu_Reload
+    Menu, tray, add, Exit,   TrayMenu_Exit
+    OnExit("TrayMenu_OnExit")
+}
+TrayMenu_Reload:
     Reload
 return
-
-TrayExit:
+TrayMenu_Exit:
     ExitApp
 return
+TrayMenu_OnExit(ExitReason:="", ExitCode:="") {
+    global ActiveObject
+    if (ActiveObject)
+        ObjRegisterActive(ActiveObject, "")   ; unregister the COM active object
+}
 ```
 
-Pair this with an `OnExit` handler that **revokes the single-instance registration** before the
-process dies, so a later relaunch starts cleanly instead of finding a stale slot:
+In each script, after `CheckSingleInstance(...)`:
 
 ```autohotkey
-OnExit("Revoke")
-
-Revoke(ExitReason, ExitCode) {
-    global ActiveObject
-    ObjRegisterActive(ActiveObject, "")   ; unregister the COM active object
-}
+#Include %A_ScriptDir%\_libraries\TrayMenu.ahk
+SetupTrayMenu()
+return
 ```
 
 ---
 
-## Configuration over Hardcoded Paths
+## Configuration over Hardcoded Paths — Per-Script Auto-Created Ini
 
 Do not bake machine-specific paths or values into scripts (e.g. `E:\downloads`, a 7-Zip install
-path). Read them from a `settings.ini` next to the script at startup:
+path). Each script reads its **own** ini named after the script — `downloads_launcher.ahk` →
+`downloads_launcher.ini` — sitting next to it. Three rules make this portable:
+
+1. **Per-script, not shared.** One `<scriptname>.ini` per script, beside the `.ahk`. No central
+   `settings.ini` that every script fights over.
+2. **Gitignored.** The ini holds machine-specific values, so it is never committed. The project
+   `.gitignore` MUST include `*.ini`.
+3. **Auto-created on first launch.** The script creates the ini with default values the first
+   time it runs, then reads from it. A fresh clone runs once, generates the ini, and the user
+   edits it afterwards — no manual setup step, no missing-file errors.
+
+Use the shared `_libraries\IniConfig.ahk` helper — the first read of a missing key writes the
+default, which both creates the file and seeds it:
 
 ```autohotkey
-IniRead, DownloadsDir, %A_ScriptDir%\settings.ini, Paths, DownloadsDir, E:\downloads
+; _libraries\IniConfig.ahk
+GetIniSetting(file, section, key, default) {
+    IniRead, value, %file%, %section%, %key%, %A_Space%
+    if (value = "") {
+        IniWrite, %default%, %file%, %section%, %key%
+        value := default
+    }
+    return value
+}
+```
+
+```autohotkey
+#Include %A_ScriptDir%\_libraries\IniConfig.ahk
+cfg := A_ScriptDir . "\downloads_launcher.ini"
+DownloadsDir := GetIniSetting(cfg, "Paths", "DownloadsDir", "E:\downloads")
+SevenZipPath := GetIniSetting(cfg, "Paths", "SevenZipPath", "C:\Program Files\7-Zip\7z.exe")
 ```
 
 Keep the per-script GUID as a clearly labelled constant near the top of the file. This is the
@@ -164,7 +200,12 @@ change a value, and the script is portable to another machine by editing the `.i
 
 ## Logging Strategy
 
-Don't scatter `MsgBox` calls for debugging. Use a single logger module in `_libraries\` (e.g.
+**Small scripts** (a handful of hotkeys, a one-shot job): `MsgBox` is acceptable for output and
+debugging. No centralized logger module is required — don't add `Log.ahk` for a script that
+doesn't need it.
+
+**Persistent / larger scripts** (tray tools, watchers, anything that grows past a few hotkeys):
+don't scatter `MsgBox` calls for tracing. Use a single logger module in `_libraries\` (e.g.
 `Log.ahk`) that writes to a file and is gated by one `debug` flag, so logging has a single
 off switch — the AutoHotkey form of the common **centralized-logger** rule:
 
@@ -178,8 +219,17 @@ Log(msg) {
 }
 ```
 
-Reserve `MsgBox` for genuine user-facing prompts (confirmations, errors the user must see), not
-for tracing what the script is doing.
+In those larger scripts, reserve `MsgBox` for genuine user-facing prompts (confirmations, errors
+the user must see), not for tracing what the script is doing.
+
+---
+
+## Testing
+
+The common **Test-Driven Development** and **Integration Tests** rules in `COMMON_RULES.md` do
+**not** apply to AutoHotkey scripts. No test suite, no `tools/run_tests.bat`, no
+`run_integration_tests.bat` is required. Verify manually: run the script and confirm the
+hotkeys/behavior work as expected.
 
 ---
 
@@ -206,8 +256,19 @@ The COM-based single-instance library (`ObjRegisterActive` + `CheckSingleInstanc
 the project's `_libraries\` folder and `#Include` it — this is what powers the run-once-starts,
 run-again-exits toggle.
 
+### _libraries/TrayMenu.ahk
+
+The shared tray menu + clean-exit handler (`SetupTrayMenu` + `TrayMenu_OnExit` revoke). `#Include`
+it and call `SetupTrayMenu()` after `CheckSingleInstance(...)` — removes the duplicated tray block
+from every script.
+
+### _libraries/IniConfig.ahk
+
+The per-script ini helper (`GetIniSetting`) that reads `<scriptname>.ini` and auto-creates missing
+keys with defaults on first run. Pair with `*.ini` in `.gitignore`.
+
 ### template.ahk
 
-A skeleton script with the standard header, the `#Include`, a sample single-instance class, a
-placeholder GUID, the tray menu, and the `OnExit`/revoke handler. Copy it, rename it, replace the
-GUID and class name, and add hotkeys — the fastest correct starting point for a new script.
+A skeleton script with the standard header, the `#Include`s, a sample single-instance class, a
+placeholder GUID, and `SetupTrayMenu()`. Copy it, rename it, replace the GUID and class name, and
+add hotkeys — the fastest correct starting point for a new script.

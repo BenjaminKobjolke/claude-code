@@ -5,3 +5,4 @@ validate-code/vendor
 /nul
 .claude/settings.local.json
 claude-plans
+coding-rules/claude-plans

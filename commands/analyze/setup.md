@@ -48,6 +48,26 @@ Follow the "Example Batch Files" section in the documentation to create the appr
 
 If a `code_analysis_rules.json` file doesn't exist in the project root, create one using the "Example Configuration" from the language-specific documentation.
 
+### Duplicate-code detection (PMD)
+
+The `pmd_duplicates` (and `pmd_similar_code`) rules require PMD. PMD prompts
+interactively for its path on first run if it is not configured, which hangs in
+a non-interactive shell — so decide up front:
+
+1. Check whether PMD is configured: read `{cli-code-analyzer-path}/settings.ini`
+   for a `[pmd]` `pmd_path`, and confirm that binary actually exists on disk.
+2. **If PMD is installed and configured** → set `pmd_duplicates.enabled` to
+   `true` in `code_analysis_rules.json` (duplicate detection is valuable and runs
+   non-interactively).
+3. **If PMD is missing or unconfigured** → leave `pmd_duplicates` disabled and
+   **warn the user**: tell them duplicate-code detection is off because PMD was
+   not found, and that they can install/configure PMD (run the analyzer once to
+   let it download/configure PMD, or set `pmd_path` in `settings.ini`) and then
+   flip `pmd_duplicates.enabled` to `true`.
+
+Leave `pmd_similar_code` disabled by default (noisier structural-similarity
+pass); the user can enable it the same way once PMD is available.
+
 ## Step 6: Update CLAUDE.md
 
 Add the following section to the project's CLAUDE.md file (create it if it doesn't exist):

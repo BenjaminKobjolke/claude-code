@@ -543,10 +543,28 @@ Debug.LogError("[VideoPlayer] Failed to prepare video");
 - `Debug.LogWarning` — recoverable issues
 - `Debug.LogError` — unrecoverable errors
 
+### Central Logger Class
+
+Route all logging through one static helper named **`GameLog`** (`GameLog.cs`). Never call
+`Debug.Log`/`LogWarning`/`LogError` directly from gameplay code — only `GameLog` wraps them.
+This gives a single enable/level toggle and one place to strip logs from production.
+
+```csharp
+GameLog.Info("AudioManager", "Playing clip: " + clipName);
+GameLog.Warning("MainController", "State transition skipped");
+GameLog.Error("VideoPlayer", "Failed to prepare video");
+```
+
 ### Strip from Production
 
-Create a centralized log helper or use `[System.Diagnostics.Conditional]` to strip logs from
+Inside `GameLog`, use `[System.Diagnostics.Conditional]` (or `#if`) to strip logs from
 production builds targeting Quest, where console overhead affects frame rate.
+
+```csharp
+[System.Diagnostics.Conditional("UNITY_EDITOR")]
+[System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+public static void Info(string tag, string message) => Debug.Log($"[{tag}] {message}");
+```
 
 ---
 

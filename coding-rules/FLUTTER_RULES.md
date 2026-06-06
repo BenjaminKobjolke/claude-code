@@ -611,6 +611,19 @@ logger.w('Warning message');
 logger.e('Error message', error: e, stackTrace: stackTrace);
 ```
 
+#### Central Logger Class
+
+Route all logging through one class named **`AppLogger`** (`app_logger.dart`). Never call
+`print()`, `developer.log`, or the `logger` package directly from feature code — only
+`AppLogger` wraps them. This gives a single enable/level toggle (e.g. `AppConfig.logLevel`)
+without touching call sites.
+
+```dart
+AppLogger.d('Debug message');
+AppLogger.i('User loaded', name: 'UserService');
+AppLogger.e('Failed to load user', error: e, stackTrace: stackTrace);
+```
+
 ### Error Handling
 
 - Use try-catch for all async and critical operations

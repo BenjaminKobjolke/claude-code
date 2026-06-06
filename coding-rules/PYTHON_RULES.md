@@ -553,6 +553,10 @@ and let Pydantic handle type coercion and error reporting.
 Use `structlog` or the `logging` module with JSON formatters — not `print()`. Configure a
 centralized logging setup that all modules use consistently.
 
+Route all logging through one class named **`AppLogger`** (`app_logger.py`) that wraps
+`structlog`/`logging`. Feature code calls `AppLogger`, never `logging.getLogger(...)` or
+`print()` directly — this gives a single enable/level toggle without touching call sites.
+
 ---
 
 ## Self-Describing Classes

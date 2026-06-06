@@ -235,6 +235,10 @@ strips out of release builds (saving flash/RAM and keeping timing tight):
 Enable with `arduino-cli compile --build-property "build.extra_flags=-DDEBUG" ...`. This is the
 embedded form of the common centralized-logging rule.
 
+Wrap these macros in one logger named **`Log`** (`Log.h` / `Log.cpp`) — e.g. `Log::info(...)`,
+`Log::error(...)`. Feature code calls `Log`, never `Serial.print` directly, so logging has a
+single compile-time gate and one place to change the sink (Serial, none, etc.).
+
 ---
 
 ## Input Validation at Boundaries

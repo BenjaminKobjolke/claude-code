@@ -184,6 +184,39 @@ throughout the codebase.
 
 ---
 
+## Centralized Logger — Single Off Switch
+
+Route all logging through one dedicated logger class/module. Never call the language's
+built-in output directly for logging (`print`, `console.log`, `echo`, `Debug.Log`,
+`System.out`). Code calls the project logger; the project logger wraps the underlying sink.
+
+- **One toggle.** Because every log goes through one place, logging can be turned off,
+  level-filtered, or redirected (file, console, remote) from a single config flag — without
+  touching call sites. Example: a `logEnabled` / `logLevel` setting the logger checks once.
+- **Levels live in the logger.** Callers pass a level (debug/info/warning/error); the logger
+  decides what is emitted based on central config. Callers never branch on "should I log?".
+- **Wrap, don't scatter.** Built-in calls (`print`, framework loggers, `Debug.Log`) appear
+  in exactly one file — the logger implementation. Everywhere else imports the logger.
+- **Language specifics** still apply (e.g. Unity `[Conditional]` stripping, Flutter `logger`
+  package, Python `logging`) — but they are configured inside the central logger, not at
+  call sites.
+
+The logger's name is fixed per language so it is the same known type in every project (see each
+`*_RULES.md` for details):
+
+| Language      | Class / export     | File                |
+|---------------|--------------------|---------------------|
+| Python        | `AppLogger`        | `app_logger.py`     |
+| PHP           | `Logger`           | `Logger.php`        |
+| Dart/Flutter  | `AppLogger`        | `app_logger.dart`   |
+| Kotlin        | `AppLogger`        | `AppLogger.kt`      |
+| C# (plain)    | `AppLogger`        | `AppLogger.cs`      |
+| Unity C#      | `GameLog` (static) | `GameLog.cs`        |
+| Svelte/JS/TS  | `logger` (export)  | `logger.ts`         |
+| Arduino       | `Log`              | `Log.h` / `Log.cpp` |
+
+---
+
 ## Input Validation at Boundaries
 
 Always validate data at system boundaries — API inputs, user input, file uploads, external service

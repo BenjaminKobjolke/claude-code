@@ -482,6 +482,20 @@ specific exception types — avoid bare `catch (Exception)` unless it is a top-l
 
 ---
 
+## Logging
+
+Route all logging through one class named **`AppLogger`** (`AppLogger.cs`) that wraps the
+underlying sink (`Microsoft.Extensions.Logging`, Serilog, etc.). Feature code calls `AppLogger`,
+never `Console.WriteLine`/`Debug.WriteLine` or a raw `ILogger` directly — this gives a single
+enable/level toggle without touching call sites.
+
+```csharp
+AppLogger.Info("User loaded: {0}", userId);
+AppLogger.Error(ex, "Failed to load user {0}", userId);
+```
+
+---
+
 ## Dependency Injection
 
 Use `Microsoft.Extensions.DependencyInjection` or a similar IoC container to manage service

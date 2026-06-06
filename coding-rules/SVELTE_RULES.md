@@ -299,6 +299,21 @@ All API calls go through this module — never use raw `fetch()` directly in com
 
 ---
 
+## Logging
+
+Route all logging through one module that exports **`logger`** (`src/lib/logger.ts`). Feature
+code and components import `logger`, never call `console.log`/`console.error` directly — this
+gives a single enable/level toggle (e.g. off in production) without touching call sites.
+
+```ts
+import { logger } from '$lib/logger';
+
+logger.info('User loaded', { userId });
+logger.error('Failed to load user', { userId, error });
+```
+
+---
+
 ## Form Validation
 
 Validate form inputs before submission. Show inline error messages next to the relevant fields.

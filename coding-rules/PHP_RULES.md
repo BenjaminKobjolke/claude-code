@@ -580,6 +580,19 @@ Run formatting: `php vendor/bin/php-cs-fixer fix`
 
 ---
 
+## Logging
+
+Route all logging through one class named **`Logger`** (`src/Logger.php`), a thin PSR-3 wrapper
+(e.g. over Monolog). Feature code calls `Logger`, never `echo`/`error_log`/`var_dump` or a raw
+Monolog instance — this gives a single enable/level toggle and one place to change the sink.
+
+```php
+$logger->info('User loaded', ['user_id' => $id]);
+$logger->error('Failed to load user', ['user_id' => $id, 'exception' => $e]);
+```
+
+---
+
 ## Upgrading to a Newer PHP Version
 
 When migrating an existing PHP codebase to a newer language version, follow the workflow in [`PHP_UPGRADE_TO_NEWER_VERSION.md`](PHP_UPGRADE_TO_NEWER_VERSION.md). High-level steps:

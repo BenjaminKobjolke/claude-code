@@ -14,13 +14,13 @@ SetupTrayMenu() {
     OnExit("TrayMenu_OnExit")
 }
 
-TrayMenu_Reload:
+TrayMenu_Reload(ItemName:="", ItemPos:="", MenuName:="") {
     Reload
-return
+}
 
-TrayMenu_Exit:
+TrayMenu_Exit(ItemName:="", ItemPos:="", MenuName:="") {
     ExitApp
-return
+}
 
 TrayMenu_OnExit(ExitReason:="", ExitCode:="") {
     global ActiveObject

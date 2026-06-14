@@ -113,6 +113,21 @@ Shared logic belongs in `_libraries\` and is pulled in with an `%A_ScriptDir%`-a
 Never copy-paste a helper function between scripts — extract it into `_libraries\` and include it
 in both. This is the AutoHotkey form of the common **DRY** rule.
 
+**Shared libraries must be function-only.** `#Include` injects the file's text in place, so a
+library that has **bare top-level labels or executable statements** and is included *above* the
+auto-execute terminator (`return`/`ExitApp`) gets **fallen into at startup** — the auto-execute
+flow skips function definitions but runs straight into the first label. Real failure seen here: a
+`TrayMenu_Reload:` label ran `Reload` before `CheckSingleInstance` registered, so the
+single-instance toggle never armed and instances piled up. Rules:
+
+- A lib that needs callbacks (menu targets, `OnExit`, timers, hotkeys-by-binding) exposes them as
+  **functions**, not bare labels. `Menu, ..., FuncName` (v1.1.20+) and `OnExit("FuncName")` both
+  accept functions.
+- If a lib genuinely must contain subroutine labels, `#Include` it **at the bottom** of the script
+  (after the auto-execute `return`), never at the top.
+- Function-only libs (`SingleInstance.ahk`, `IniConfig.ahk`, `TrayMenu.ahk`) are safe to include
+  anywhere.
+
 ---
 
 ## Tray Menu Convention
@@ -124,6 +139,12 @@ process dies, so a later relaunch starts cleanly instead of finding a stale slot
 This whole block is identical across scripts, so it lives once in `_libraries\TrayMenu.ahk` and
 every script calls `SetupTrayMenu()`:
 
+The library is **function-only** (no bare top-level labels). This matters: a label-bearing file
+`#Include`d above the auto-execute `return` would be **fallen into at startup** — e.g. a
+`TrayMenu_Reload:` label runs `Reload` before `CheckSingleInstance` registers, breaking the
+single-instance toggle. Menu targets and `OnExit` therefore use functions, which the auto-execute
+flow skips:
+
 ```autohotkey
 ; _libraries\TrayMenu.ahk  (requires SingleInstance.ahk for ObjRegisterActive + ActiveObject)
 SetupTrayMenu() {
@@ -133,12 +154,12 @@ SetupTrayMenu() {
     Menu, tray, add, Exit,   TrayMenu_Exit
     OnExit("TrayMenu_OnExit")
 }
-TrayMenu_Reload:
+TrayMenu_Reload(ItemName:="", ItemPos:="", MenuName:="") {
     Reload
-return
-TrayMenu_Exit:
+}
+TrayMenu_Exit(ItemName:="", ItemPos:="", MenuName:="") {
     ExitApp
-return
+}
 TrayMenu_OnExit(ExitReason:="", ExitCode:="") {
     global ActiveObject
     if (ActiveObject)

@@ -162,6 +162,30 @@ reusable function, class, module, or utility.
 
 ---
 
+## Derive, Don't Duplicate — One Value Owns the Derivation
+
+When one value strictly determines another, pass only the determinant and derive the rest —
+never thread both side-by-side through call sites, constructors, and events. Two co-varying
+parameters are a functional dependency in disguise; passing both lets them drift into illegal
+combinations.
+
+- **Anti-pattern.** `createLog(ActionCategory $cat, ActionType $type)` threaded through ~10
+  sites. Nothing stops a caller passing `category: email, type: lead.created`.
+- **Correct pattern.** The richer type owns the relationship: `ActionType::category()` returns
+  its `ActionCategory` via a single exhaustive `match`. Call sites pass only `ActionType`;
+  category is always derived, so a mismatch is unconstructable.
+- **Apply when** one value *determines* the other (a true functional dependency).
+- **Don't apply when** the relationship is many-to-many or genuinely independent — forcing a
+  derivation that doesn't exist couples things that should stay separate.
+- **Keep derivation cheap and pure** — a getter/match, no DB or IO behind a call that looks free.
+- **Keep the mapping exhaustive** (enum + exhaustive match) so a new case cannot silently skip
+  its derived value.
+
+This is Single Source of Truth applied to parameters, and a form of "make illegal states
+unrepresentable." Pairs with "Prefer Type-Safe Values" and "Self-Describing Classes".
+
+---
+
 ## Confirm Dependency Versions
 
 Before adding any new package or library, confirm the version with the user to ensure we use

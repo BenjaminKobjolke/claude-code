@@ -36,6 +36,51 @@ Rules:
 
 ---
 
+## When to Use `part` / `part of`
+
+Prefer normal `import` / `export` for all hand-written code. Do **not** use `part`
+to split large classes, organize features into folders, or share utilities — it
+hides dependencies, weakens encapsulation (all `part` files share one private
+scope), and makes refactoring harder.
+
+Use `part` only when:
+
+1. **Code generation requires it** — the common modern case. Generators emit into
+   `*.g.dart` / `*.freezed.dart` files included via `part`:
+
+   ```dart
+   import 'package:json_annotation/json_annotation.dart';
+
+   part 'user.g.dart';
+
+   @JsonSerializable()
+   class User {
+     final String name;
+     User(this.name);
+     factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+     Map<String, dynamic> toJson() => _$UserToJson(this);
+   }
+   ```
+
+   Applies to `freezed`, `json_serializable`, `objectbox` (`objectbox.g.dart`), and
+   similar — see the JSON Serialization and Database (ObjectBox) sections.
+
+2. **One tightly-coupled library** (rare) — several files that genuinely form a
+   single library and must share library-private (`_`) members.
+
+| Scenario                                   | Use `part`? |
+| ------------------------------------------ | ----------- |
+| Application / widget code                  | No          |
+| Splitting a large class across files       | No          |
+| Organizing features or modules             | No          |
+| Generated files (`freezed`, `*.g.dart`)    | Yes         |
+| One tightly-coupled library impl           | Sometimes   |
+
+Rule of thumb: **if you write the code, use imports/exports; if a generator
+requires it, use `part`.**
+
+---
+
 ## Flutter Version Management
 
 Use FVM (Flutter Version Manager) for all projects. Create `.fvmrc` in the project root:

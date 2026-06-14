@@ -103,3 +103,21 @@ REPO='BenjaminKobjolke/claude-code'
 BRANCH='main'
 DIR='settings'
 ```
+
+---
+
+# Project Notes: QR Scavenger Hunt
+
+> Unrelated to the setting-commands guide above — recorded here on request.
+
+The QR scavenger hunt is **two repos**:
+
+- **Frontend (React)**: `D:\GIT\qr-scavenger-hunt-app` — per-domain content folders under
+  `public/<domain>/` (config.json, assets). Domain auto-resolves the folder.
+- **Backend API (PHP Slim)**: `D:\wamp64\www\qr-scavenger-hunt-api` — serves questions via
+  `POST /{project}/locations`. Questions live in `public/<project>.json`, registered in
+  `src/Infrastructure/Persistence/Location/InMemoryLocationRepository.php`.
+
+**Mapping**: frontend `apiEndpoint = https://<domain>/api/<project>` → the segment after
+`/api/` is the backend **project key** → `public/<project>.json`. See
+`D:\GIT\qr-scavenger-hunt-app\docs\CREATE_NEW_CONTEST.md` for the full new-contest guide.

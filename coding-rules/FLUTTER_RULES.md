@@ -81,6 +81,65 @@ requires it, use `part`.**
 
 ---
 
+## Mixins
+
+Mixins share behavior across classes that do **not** share an inheritance chain.
+Reach for a mixin only when composition (a plain helper class injected via `GetIt`,
+or a field) does not fit — Flutter favors composition over inheritance, and a
+mixin is a form of inheritance.
+
+### Rules
+
+1. **Use the `mixin` keyword, never a `class` as a mixin.** A `mixin` cannot be
+   instantiated or extended, which documents intent and prevents misuse. Use
+   `mixin class` only in the rare case a type must serve as both — never by default.
+
+2. **Constrain with `on` whenever the mixin depends on a host type.** This both
+   restricts where the mixin can be applied and grants typed access to the host's
+   members. Prefer `mixin AnalyticsLogging on State` over an unconstrained mixin
+   that assumes a `context`.
+
+3. **Keep mixins stateless.** All `part`/mixin members live in the host's scope, so
+   a mutable field in a mixin silently couples to — and can collide with — the
+   host's fields. If state is unavoidable, prefix fields with `_`, document the
+   ownership, and keep it to one field.
+
+4. **One capability per mixin (single responsibility).** A mixin named for a
+   behavior (`Disposable`, `Validatable`) is good; a `UtilsMixin` grab-bag is not.
+
+5. **Name by capability**, ending in `-able` or with a `Mixin` suffix, matching the
+   existing `SearchableMixin` convention. Be consistent within a project.
+
+6. **Only call `super.method()` when the `on` constraint guarantees it exists.**
+   Mixins are linearized left-to-right; later mixins override earlier ones. Know the
+   apply order when overriding lifecycle methods (e.g. `initState`/`dispose`).
+
+7. **Mark host-only members `@protected`** and give every public member a `///`
+   doc comment, per the Documentation Comments rules.
+
+8. **Do not use a mixin to share code that could be a standalone service.** If the
+   behavior owns state or has dependencies, make it a class and inject it with
+   `GetIt` — see Dependency Injection.
+
+Legit Flutter framework mixins — `TickerProviderStateMixin`,
+`AutomaticKeepAliveClientMixin`, `WidgetsBindingObserver` — model all of the above:
+host-constrained, behavior-focused, named by capability.
+
+### When to use a mixin vs. the alternative
+
+| Need                                                    | Use                          |
+| ------------------------------------------------------- | ---------------------------- |
+| Share stateless behavior across unrelated classes       | `mixin`                      |
+| Add behavior that needs a specific host (`State`, etc.) | `mixin ... on HostType`      |
+| Share behavior that owns state or dependencies          | Class + `GetIt` (composition)|
+| Define a contract only (no implementation)              | `abstract interface class`   |
+| Reuse one widget's look/structure                       | Compose widgets, not a mixin |
+
+Rule of thumb: **a mixin adds behavior, not state.** If you find yourself storing
+data in a mixin, it should probably be a class you inject instead.
+
+---
+
 ## Flutter Version Management
 
 Use FVM (Flutter Version Manager) for all projects. Create `.fvmrc` in the project root:
@@ -1185,7 +1244,8 @@ class Customer implements Searchable {
 }
 ```
 
-Alternatively, use a mixin when classes already have an inheritance hierarchy:
+Alternatively, use a mixin when classes already have an inheritance hierarchy
+(follow the [Mixins](#mixins) rules):
 
 ```dart
 mixin SearchableMixin {

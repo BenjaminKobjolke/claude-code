@@ -4,169 +4,87 @@ description: create release notes based on docs/CREATE_NEW_RELEASE.md
 
 Create new release notes for the project.
 
-There must be documentation about that in $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md
+This workflow is **stack-agnostic**. The concrete commands (how to read the
+version/build, where the notes folder lives, the `en.json` schema, the translator
+bat) differ per coding language and per project, and live in two places:
 
-If not, ask the user to run /release:setup.
+1. **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`** — the project's own,
+   authoritative recipe (produced by `/release:setup`). **This always wins.**
+   If it is missing, stop and ask the user to run `/release:setup`.
+2. **`coding-rules/<lang>_setup_files/CREATE_RELEASE_NOTES.md`** — the per-coding-
+   language default, used to fill gaps the project doc leaves open. (Kept out of
+   `commands/` so it does not register as its own slash-command.) Pick the file by
+   detecting the stack from a root marker:
+   - `pyproject.toml` → `coding-rules/python_setup_files/CREATE_RELEASE_NOTES.md`
+   - `package.json` → `coding-rules/javascript_setup_files/CREATE_RELEASE_NOTES.md`
+   - any other stack → see "Missing stack recipe" below.
 
-## Step-by-Step Workflow
+Read **both** before starting: the project doc for specifics, the language file
+for the stack defaults.
 
-### 1. Get the Next Version and Build Number
+### Missing stack recipe
 
-**Important:** the `prebuild` hook bumps **both** `package.json` semver patch and Android `versionCode` on every `npm run build`. So the next AAB will ship as `currentSemver+1patch` / `currentVersionCode+1`.
+If no `coding-rules/<lang>_setup_files/CREATE_RELEASE_NOTES.md` exists for the
+detected stack, **ask the user**: *"There's no reusable release-notes recipe for
+`<lang>` yet. Add one so future projects in this stack inherit it?"*
 
-Read the current semver from `package.json` and bump the patch by one:
+- **Yes** → copy `coding-rules/RELEASE_NOTES_RECIPE.template.md` to
+  `coding-rules/<lang>_setup_files/CREATE_RELEASE_NOTES.md`, fill it in from this
+  project's `docs/CREATE_NEW_RELEASE.md` (version/build commands, folder path,
+  `en.json` schema, translator bat, in-app view), show it to the user to confirm,
+  then continue using it. Create the `<lang>_setup_files/` folder if absent.
+- **No** → proceed with **only** the project's `docs/CREATE_NEW_RELEASE.md`; do not
+  save a recipe.
 
-```
-node -e "const v=require('./package.json').version.split('.');console.log(v[0]+'.'+v[1]+'.'+(+v[2]+1))"
-```
+Either way the release notes still get created — the recipe is just a reusable
+default for next time.
 
-Get the next `versionCode`:
+## Workflow
 
-```
-tools/build_number_show.bat
-```
+### 1. Determine the next release label
 
-The directory name will be `<nextSemver>_<nextBuildNumber>` — for example `1.0.7_1655`.
+Read the version + build number and form the folder label (commonly
+`<version>_<build>`) per the project doc / language file. Confirm whether this
+release bumps the build (most stacks) or reuses the current one (first release,
+or an explicit no-bump build).
 
-If you're authoring notes for a build that will use `--no-bump` (rare), use the current semver as-is (since `--no-bump` skips the package-version bump). The `versionCode` always bumps regardless of the flag.
+### 2. Find changes since the last release
 
-### 2. Find Changes Since Last Release
+- Establish the **anchor** = the last release actually shipped (a git tag/commit,
+  store metadata, or the newest existing notes folder — see the language file).
+- List commits since the anchor, plus uncommitted work (`git log`, `git status
+  --short`, `git diff --stat`). If the project ships from **multiple repos**, do
+  this for each repo listed in the project doc.
 
-This app is split across **three repos** that ship together:
+### 3. Synthesize ONE user-facing note
 
-| Repo | Path |
-| --- | --- |
-| `ai-chat` (this) | `$CLAUDE_PROJECT_DIR` |
-| `ai-chat-api` | `D:/wamp64/www/ai-chat-api` |
-| `ai-chat-data-server` | `D:/GIT/Intern/ai-chat-data-server` |
+- Translate internal changes into user language (e.g. "transcription is faster",
+  not "switched to whisper-large-v3"). Map backend/data changes to the behavior
+  users see.
+- **Drop** pure refactors, lint/format fixes, version bumps, dependency churn,
+  and internal infra.
+- **Dedup:** read the release notes *immediately before* this one and don't
+  re-announce features already shipped.
+- If there are zero meaningful user-facing changes, ask the user whether to ship a
+  minor "Improvements and bug fixes" note or hold the release.
 
-All three may contain user-visible changes for this release.
+Writing guidelines:
+- Informal, friendly tone; write for end users, no technical jargon.
+- Focus on user benefit. Be brief and clear.
+- When there are several changes, group them: `New:` / `Improved:` / `Fixed:`.
+- Respect any length cap the stack imposes (see the language file's schema).
 
-#### 2a. Anchor: last versionCode actually on the appstore
+### 4. Create the folder + `en.json`
 
-The anchor is the versionCode currently live on the Play Store — **not** the latest local `RELEASE` commit. A locally built/committed version may never have been uploaded.
+- Create the release-notes subdirectory at the path + name from the project doc /
+  language file.
+- Write **`en.json` only**, using the project's schema. Put the actual note in the
+  schema's text key (e.g. a `notes[]` array, or a single `text` field — varies by
+  stack; the language file states which).
 
-##### 2a-i. Determine `$APPSTORE_VERSIONCODE`
+### 5. Translate
 
-1. If `$CLAUDE_PROJECT_DIR/appstore-versioncode.txt` is **missing**:
-   - Ask the user: *"`appstore-versioncode.txt` is missing. What is the last versionCode that was uploaded to the appstore?"*
-   - Write the integer answer to `$CLAUDE_PROJECT_DIR/appstore-versioncode.txt` (single line, no trailing whitespace).
-2. Read the integer from the file → `$APPSTORE_VERSIONCODE`.
-
-##### 2a-ii. Detect stale file (latest RELEASE commit ahead of appstore)
-
-```
-git log --oneline --grep="^RELEASE" -n 1
-```
-
-Parse the `+<N>` suffix from the commit subject (e.g. `RELEASE (android): 1.1.0+935` → `935`). Call this `$LATEST_RELEASE_VERSIONCODE`.
-
-If `$LATEST_RELEASE_VERSIONCODE` ≠ `$APPSTORE_VERSIONCODE`:
-
-- Ask the user: *"Last `RELEASE` commit is `+$LATEST_RELEASE_VERSIONCODE` but `appstore-versioncode.txt` says `$APPSTORE_VERSIONCODE`. Was `+$LATEST_RELEASE_VERSIONCODE` uploaded to the appstore?"*
-- If **yes** → overwrite `appstore-versioncode.txt` with `$LATEST_RELEASE_VERSIONCODE` and set `$APPSTORE_VERSIONCODE = $LATEST_RELEASE_VERSIONCODE`.
-- If **no** → keep the file as-is; continue with the existing `$APPSTORE_VERSIONCODE`.
-
-##### 2a-iii. Find the anchor commit by versionCode
-
-```
-git log --oneline -E --grep="^RELEASE.*\+${APPSTORE_VERSIONCODE}$" -n 1
-```
-
-- Take the SHA from the single match.
-- **If zero matches:** stop and ask the user to paste the anchor commit SHA directly. Do **not** silently fall back to "latest RELEASE commit" — that defeats the purpose of this anchor.
-
-Capture the SHA and ISO timestamp:
-
-```
-git log -1 --format="%H %aI" <sha>
-```
-
-Use the ISO timestamp as `$LAST_RELEASE_DATE` for the other repos.
-
-#### 2b. Commits since the anchor
-
-Run in parallel:
-
-```
-# ai-chat
-git log --oneline <sha>..HEAD
-
-# ai-chat-api
-git -C D:/wamp64/www/ai-chat-api log --oneline --since="$LAST_RELEASE_DATE"
-
-# ai-chat-data-server
-git -C D:/GIT/Intern/ai-chat-data-server log --oneline --since="$LAST_RELEASE_DATE"
-```
-
-#### 2c. Uncommitted work in all three repos
-
-```
-git -C $CLAUDE_PROJECT_DIR status --short
-git -C $CLAUDE_PROJECT_DIR diff --stat
-
-git -C D:/wamp64/www/ai-chat-api status --short
-git -C D:/wamp64/www/ai-chat-api diff --stat
-
-git -C D:/GIT/Intern/ai-chat-data-server status --short
-git -C D:/GIT/Intern/ai-chat-data-server diff --stat
-```
-
-#### 2d. Synthesize
-
-Combine all three sources into ONE user-facing release note. Backend/data-server commits often map to user-visible behavior — translate them into user language (e.g. "transcription is faster" — not "switched to whisper-large-v3"). Drop pure refactors, lint fixes, version bumps, dependency churn, and internal infra.
-
-If there are zero meaningful user-facing changes across all sources, ask the user whether they want to ship with a minor "Improvements and bug fixes" note or hold the release.
-
-### 3. Create the Release Notes Subdirectory
-
-Folder name: `static/release-notes/<semver>_<buildNumber>/`
-
-Example: `static/release-notes/1.0.3_1638/`
-
-Legacy folders named with just the build number (e.g. `1407`) are still supported by the loader for backward compatibility, but **new** folders must use the `<semver>_<build>` format.
-
-### 4. Create the `en.json` File
-
-```json
-{
-  "_hint_": "If the language has a formal and an informal way. Then use the informal way.",
-  "_hint_2_": "All texts are for a AI chat app. So the translations should be adjusted to this genre. Example: Home in english should be translated to Start in german since a translation like Zuhause doesnt make sense for an app like this",
-  "_hint_3_": "SUMMERA and SUMMERA AI are brand names and should not be translated",
-  "_hint_text": "Maximum length is 400 characters; if it's too long, you must shorten it, even if that means not adhering 100% to the original language. Count the characters afterwards and adjust the length if its still too long.",
-  "text": "Your release notes here"
-}
-```
-
-**Writing Guidelines:**
-- Use **informal tone** (conversational, friendly)
-- Write for **end users** (no technical jargon)
-- Maximum **400 characters**
-- Structure with sections when there are multiple changes:
-  - `New:` for new features
-  - `Improved:` for enhancements
-  - `Fixed:` for bug fixes
-- Focus on **user benefits**, not internal implementation
-- Be brief and clear
-
-**Examples:**
-
-Single change:
-```
-New: Quick filter bar to search files by name. Type multiple words separated by space to narrow down results.
-```
-
-Multiple changes:
-```
-New: Quick filter bar with multi-word search
-Improved: Lock button to keep filter active when navigating
-Fixed: Filter bar positioning on devices with navigation bar
-```
-
-### 5. Important Reminders
-
-- **Only create `en.json`** — other languages are produced by `tools/translator_app-release-notes.bat` after the fact.
-- Focus on changes visible to end users, not internal refactors.
-- Check the release notes *immediately before* the current ones in `static/release-notes/` so you don't repeat features that were already announced.
-- The in-app "What's New" screen displays the folder as `Version <semver> (<buildNumber>)` — make sure both halves of the folder name are correct.
-- Folder format reference and rendering details live in `docs/frontend/WHATS_NEW.md`.
+After `en.json` is written, run the project's translator bat (named in the project
+doc / language file) to generate the other human languages from the English
+source. **Never hand-author non-English files.** Make sure this step is not
+skipped.

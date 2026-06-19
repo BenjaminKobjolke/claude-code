@@ -2,16 +2,47 @@
 description: create new release based on docs/CREATE_NEW_RELEASE.md
 ---
 
-Can you create a new release.
-There must be documentation about that in $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md
+Create a new release. The concrete commands (version/build, folder path, build
+script, translator) live in the project's **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`**
+(authoritative) and the per-stack recipe at
+`coding-rules/<lang>_setup_files/CREATE_RELEASE_NOTES.md`. If the project doc is
+missing, stop and ask the user to run `/release:setup`.
 
-## Step-by-Step Workflow
+**Build-number model — bump first, ship next.** The build counter (e.g.
+`build_version.txt`) holds the **last shipped** build; `0` means nothing shipped
+yet. A release **increments** it and ships that new number. The notes folder must
+match the shipped label.
 
-### 1. Get the Next Build Number
+## Workflow
 
-### 2. Check if there are release notes for that
-If not ask the user if you should run /release:create-release-notes
+### 1. Compute the next release label
 
-### 3. Increment build number
+Read the version (per the stack recipe) and the current build number. The release
+ships as `<version>_<currentBuild + 1>`. Call this `<nextLabel>`.
 
-### 4. Build
+### 2. Ensure release notes exist for `<nextLabel>`
+
+Check for the notes folder + `en.json` at `<nextLabel>` (path per the recipe). If
+missing, ask the user whether to run `/release:create-release-notes` first — those
+notes must be authored for the **next** label (current build + 1) and translated.
+Do not build without notes for the shipping label.
+
+### 3. Increment the build number
+
+Bump the counter to the next build (e.g. `tools/build_increment.bat`). Now the
+current build equals the about-to-ship build, and matches the notes folder.
+
+### 4. Translate
+
+Run the project's translator bat so the bundled notes include every locale (skip
+only if the project ships English-only).
+
+### 5. Build
+
+Run the project's release build (e.g. `tools/build_release.bat`). It tests,
+builds, and bundles `release_notes/`. The artifact ships as `<nextLabel>`.
+
+### 6. Commit & tag (optional, ask first)
+
+Offer to commit the release and tag it (e.g. `RELEASE: <nextLabel>`), so the next
+`/release:create-release-notes` can diff changes since this release.

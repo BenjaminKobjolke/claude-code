@@ -1,0 +1,40 @@
+; Template for tools\publish_settings.ini (release-tool, Backend B).
+; Copy to publish_settings.ini and fill in. The real file is gitignored (it holds
+; the FTP password). configparser note: a literal % in any value (e.g. a password)
+; must be doubled as %%.
+
+[FTP]
+host = ftp.example.com
+port = 21
+username = your_user
+password = your_password
+; Remote folder the artifact is uploaded into (most accounts are chrooted).
+remote_path = /downloads/your-app/
+
+[OldFileHandling]
+; What to do with the previously uploaded file: "delete" or "rename".
+policy = rename
+; Subfolder that renamed (backed-up) old versions are moved into.
+subfolder_base = versions
+; Backup folder naming: "timestamp" (YYYYMMDD_HHMMSS) or "version"
+; ("version" uses the bat's --previous-version argument).
+subfolder_naming = version
+
+[PreSigning]
+; Optional code-signing handshake. Set enabled = false to skip entirely.
+enabled = false
+; Folder a signing service watches; the tool drops the exe here and waits.
+network_path = //SERVER/Signing/
+; Folder the signing service writes the signed exe back to.
+network_path_signed = //SERVER/Signing/signed
+; Certificate CN the signed file must match (verification guard).
+expected_signer = Your Company Name
+poll_interval = 10
+timeout = 300
+
+[ReleaseNotes]
+; Local release_notes folder (the <version>_<build> subfolders from /release:setup).
+; New subfolders are auto-uploaded after the artifact; existing ones are skipped.
+path = D:/GIT/BenjaminKobjolke/your-project/release_notes
+; Remote path the release-notes folders are uploaded to.
+remote_path = /public/sites/your-app/release_notes

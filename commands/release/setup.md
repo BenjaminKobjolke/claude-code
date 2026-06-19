@@ -46,3 +46,31 @@ When done $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md should contain:
 - how to create a new release notes directory and en.json file
 - how to actually build a new release
 - where the in-app release notes view is located and how it works
+
+## Established conventions (defaults when nothing exists yet)
+
+When a project has no release system, set it up with these conventions (proven in
+`pdf-toolkit`). Reusable templates live in
+`coding-rules/python_setup_files/` (Python) — copy them instead of reinventing.
+
+- **Release label** = `<version>_<build>` (e.g. `0.1.0_22`).
+  - `version` = the project's existing semver source of truth (e.g. `pyproject.toml`
+    `[project] version`). Bump by hand.
+  - `build` = a plain integer stored in **`build_version.txt`** at the **project root**.
+    Get/increment/decrement via `tools/build_get.bat`, `tools/build_increment.bat`,
+    `tools/build_decrement.bat`. `tools/version_get.bat` prints the full label.
+- **Release notes folder** = `release_notes/<version>_<build>/`, one JSON file per
+  locale. Schema:
+  ```json
+  {"version": "0.1.0", "build": 22, "date": "YYYY-MM-DD", "title": "Headline",
+   "notes": ["bullet one", "bullet two"]}
+  ```
+  The actual release text is the **`notes`** array. Author **only `en.json`**.
+- **Translation step is mandatory** and must be impossible to miss: after writing
+  `en.json`, run the project's translation bat (ask the user for its path if none
+  exists) to generate the other locales from the English source.
+- **Bundle `release_notes/` into the build** (don't just copy it beside the exe), so
+  the in-app view ships with the binary. For PyInstaller add it (and `build_version.txt`)
+  to the spec `datas`, plus `copy_metadata(<pkg>)` so the version is readable when frozen.
+- **In-app view** loads all releases, sorts **newest first**, shows the latest first
+  with Older/Newer navigation, and falls back to `en.json` when a locale is missing.

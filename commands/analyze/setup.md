@@ -68,6 +68,32 @@ a non-interactive shell — so decide up front:
 Leave `pmd_similar_code` disabled by default (noisier structural-similarity
 pass); the user can enable it the same way once PMD is available.
 
+### Flutter LSP-based analyzers (dart_unused_code, dart_missing_dispose)
+
+For **Flutter/Dart** projects the rules `dart_unused_code` and `dart_missing_dispose`
+require **dart-lsp-mcp** (`D:\GIT\BenjaminKobjolke\dart-lsp-mcp`). That repo serves two
+distinct roles — do not confuse them:
+
+1. **Library backend for the batch analyzer.** The analyzer imports
+   `dart_lsp_watcher.api` (`find_references`, `get_document_symbols`, `get_hover`). For
+   this to work the package must be importable from the **cli-code-analyzer venv** —
+   install it once:
+
+   ```bash
+   "{cli-code-analyzer-path}\venv\Scripts\python.exe" -m pip install -e D:\GIT\BenjaminKobjolke\dart-lsp-mcp
+   ```
+
+   Verify: `... python.exe -c "from dart_lsp_watcher.api import find_references, get_document_symbols, get_hover; print('ok')"`.
+   If the import fails, **leave both rules disabled** and warn the user (mirror the PMD
+   guidance) — otherwise every run reports a "tool failure". These rules also need the
+   **Dart SDK on PATH** and are slow (LSP indexes the project on first call).
+2. **Interactive MCP server inside Claude Code.** Independently of the batch analyzer,
+   `dart-lsp` is also used as an **interactive MCP server in Claude Code** for live code
+   navigation (`mcp__dart-lsp__find_references`, `go_to_definition`, `get_hover`,
+   `get_diagnostics`, `search_symbols`, …). This is a separate channel from the batch
+   run — see "Dart LSP MCP Server Setup (Flutter/Dart Projects)" at the end of this
+   document. Offer to register it for Flutter projects.
+
 ## Step 6: Update CLAUDE.md
 
 Add the following section to the project's CLAUDE.md file (create it if it doesn't exist):
@@ -222,3 +248,75 @@ Create an `intelephense.json` in the PHP project root to exclude files/directori
 | `get_document_symbols` | List all symbols in a file | `project_path`, `file_path` |
 | `search_symbols` | Search workspace symbols | `project_path`, `query` |
 | `reindex` | Force re-index all PHP files | `project_path` |
+
+---
+
+# Dart LSP MCP Server Setup (Flutter/Dart Projects)
+
+For Flutter/Dart projects, `dart-lsp` is used as an **interactive MCP server inside Claude Code** for real-time LSP-based code navigation and diagnostics — separate from (and in addition to) the cli-code-analyzer batch run.
+
+**Source:** `D:\GIT\BenjaminKobjolke\dart-lsp-mcp`
+
+## Prerequisites
+
+- Python 3.10+
+- `uv` package manager
+- Dart SDK installed and on PATH (`dart --version`)
+
+## Step 1: Register the MCP Server
+
+Run this command to register dart-lsp with Claude Code (registration is global; applies to all projects):
+
+```bash
+claude mcp add --transport stdio dart-lsp -- uv --directory D:\GIT\BenjaminKobjolke\dart-lsp-mcp run python -m dart_lsp_watcher.mcp_server
+```
+
+Or add it manually to the project's `mcpServers` (in `.mcp.json` or `.claude.json`):
+
+```json
+"mcpServers": {
+  "dart-lsp": {
+    "type": "stdio",
+    "command": "uv",
+    "args": [
+      "--directory",
+      "D:\\GIT\\BenjaminKobjolke\\dart-lsp-mcp",
+      "run",
+      "python",
+      "-m",
+      "dart_lsp_watcher.mcp_server"
+    ],
+    "env": {}
+  }
+}
+```
+
+## Step 2: Verify
+
+Run `/mcp` in Claude Code — the `dart-lsp` server should appear with its tools listed.
+
+## Step 3: Configure ignore patterns (Optional)
+
+Create `dart_lsp.json` in the project root:
+
+```json
+{
+  "ignore": ["build/**", ".dart_tool/**", "**/*.g.dart", "**/*.freezed.dart"]
+}
+```
+
+## Available MCP Tools
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `get_diagnostics` | Get Dart errors/warnings | `project_path`, `file_path?`, `min_severity?` |
+| `find_references` | Find all references to a symbol | `project_path`, `file_path`, `line`, `column` |
+| `go_to_definition` | Navigate to symbol definition | `project_path`, `file_path`, `line`, `column` |
+| `get_hover` | Get symbol documentation/type | `project_path`, `file_path`, `line`, `column` |
+| `get_document_symbols` | List all symbols in a file | `project_path`, `file_path` |
+| `search_symbols` | Search workspace symbols | `project_path`, `query` |
+| `reindex` | Re-scan workspace for new/removed Dart files | `project_path` |
+
+> **Note:** position-based tools take **0-indexed** `line`/`column`; first call is slow (5–10s LSP startup + indexing), subsequent calls are fast.
+
+> **Not the same as the batch analyzer.** `dart_unused_code` / `dart_missing_dispose` consume `dart_lsp_watcher.api` from the analyzer venv (see "Flutter LSP-based analyzers" under Step 5). Registering the MCP server here does **not** enable those batch rules, and vice versa.

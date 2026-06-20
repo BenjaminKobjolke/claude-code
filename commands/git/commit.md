@@ -58,25 +58,7 @@ If a matching ignore rule already exists in `.gitignore`, do not duplicate it. C
 The user has to call this command again for feature commit and push requests.
 Which means to not automatically commit or push no changes the user requested after this commit request.
 
-If Git reports line-ending warnings (for example, `LF will be replaced by CRLF`) or files show as modified only because of line-ending changes, check if the project has a `.gitattributes` file. If not, create one to normalize line endings to LF before committing anything else:
-
-```
-# Normalize all text files to LF in the repository
-* text=auto eol=lf
-
-# Explicitly mark binary files
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.ico binary
-*.pdf binary
-*.zip binary
-*.gz binary
-*.tar binary
-```
-
-Then run `git add --renormalize .` to fix existing files and commit the `.gitattributes` and any renormalized files as a separate `GIT` commit before continuing with the original requested commits.
+If Git reports line-ending warnings (for example, `LF will be replaced by CRLF` or `CRLF will be replaced by LF`) or files show as modified only because of line-ending changes, run the `/git:fix-line-endings` skill to diagnose and permanently resolve it, then continue with the original requested commits. That skill ensures a `.gitattributes` exists, sets repo-local `core.autocrlf=false` so the attributes win, and renormalizes/commits the content only if needed.
 
 Automatically push at the end.
 

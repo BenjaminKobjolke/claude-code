@@ -49,9 +49,11 @@ test_output.*
 
 Pick the smallest set of glob patterns that covers the surfaced files without ignoring real source files. If a debug file does not fit an existing pattern, extend the group rather than listing it verbatim.
 
-2. If a `claude-plans` folder (or files under it) surfaces in the git added / changed list, add `claude-plans` to `.gitignore`.
+2. If `tmp/commit_msg.tmp` surfaces in the git added / changed list, add `tmp/commit_msg.tmp` to `.gitignore`.
 
-In both cases, if a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
+3. If a `claude-plans` folder (or files under it) surfaces in the git added / changed list, add `claude-plans` to `.gitignore`.
+
+If a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
 
 The user has to call this command again for feature commit and push requests.
 Which means to not automatically commit or push no changes the user requested after this commit request.

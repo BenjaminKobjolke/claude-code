@@ -6,3 +6,4 @@ validate-code/vendor
 .claude/settings.local.json
 claude-plans
 coding-rules/claude-plans
+tmp/commit_msg.tmp

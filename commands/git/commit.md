@@ -32,6 +32,27 @@ Commit changes that you didnt do in this session too. Research those files to fi
 
 Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files.
 
+## Files to ignore automatically
+
+Before staging, scan the changed / added list for files that should never be committed and add them to `.gitignore` instead.
+
+1. Debug / test output files that are clearly throwaway artifacts (e.g. `output_test.txt`, `debug_test.log`, `test_output.json`, `debug.log`). Do NOT add one rule per file. Prefer a single grouped glob pattern that catches the current files and future ones with similar names, e.g.:
+
+```
+# Debug / test output artifacts
+*_test.txt
+*_test.log
+debug*.log
+*.debug.log
+test_output.*
+```
+
+Pick the smallest set of glob patterns that covers the surfaced files without ignoring real source files. If a debug file does not fit an existing pattern, extend the group rather than listing it verbatim.
+
+2. If a `claude-plans` folder (or files under it) surfaces in the git added / changed list, add `claude-plans` to `.gitignore`.
+
+In both cases, if a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
+
 The user has to call this command again for feature commit and push requests.
 Which means to not automatically commit or push no changes the user requested after this commit request.
 

@@ -44,6 +44,20 @@ Example template:
 
 ---
 
+## GUI Framework
+
+For **desktop GUI** applications use **PySide6** (Qt for Python). Always install the
+latest version — do not pin an old one:
+
+```bash
+uv add pyside6
+```
+
+This is separate from the web template engine above: Jinja2 renders web HTML,
+PySide6 builds native desktop windows. Pick by app type.
+
+---
+
 ## Localization
 
 Use the `python-localization` library for multi-language support:

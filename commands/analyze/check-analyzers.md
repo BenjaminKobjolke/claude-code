@@ -15,6 +15,7 @@ Check if the current project has all applicable analyzers configured and suggest
    - **Python**: `requirements.txt`, `pyproject.toml`, `setup.py`, `*.py` files
    - **Dart/Flutter**: `pubspec.yaml`
    - **C#/.NET**: `*.csproj`, `*.sln` files
+   - **AutoHotkey**: `*.ahk`, `*.ah2`, `*.ahk2` files
 
 3. **Get available analyzers dynamically**:
 

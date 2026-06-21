@@ -23,6 +23,7 @@ Each rule generates a CSV with specific columns:
 | `similar_code.csv` | `file_path,line,column,severity,message` |
 | `phpstan_analyze.csv` | `file,line,severity,message` |
 | `php_cs_fixer.csv` | `file,line,severity,rule,message` |
+| `autohotkey_analyze.csv` | `file,line,severity,message` |
 
 ## Fix Priority
 
@@ -62,6 +63,11 @@ Each rule generates a CSV with specific columns:
 - Fix type errors and undefined references
 - Follow PSR-12 code style
 - **Auto-fix available**: PHP-CS-Fixer can auto-fix style issues
+
+### AutoHotkey Issues (`autohotkey_analyze`)
+- These are real syntax/load errors from the AutoHotkey interpreter (always ERROR)
+- The message includes the interpreter's `Specifically:` detail — fix at that file/line
+- Errors are reported against the offending file even when surfaced via a `#Include`d root
 
 ## Adding Exceptions to Rules
 

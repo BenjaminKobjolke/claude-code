@@ -46,7 +46,13 @@ This invokes cli-code-analyzer with `--only-changed`, so it reports only on file
 ### Workflow
 
 1. Run the bat above.
-2. Read the report under `code_analysis_results/`.
+2. Read the reports under `code_analysis_results/`. Reports are **per-rule CSV
+   files** (one per tool that found issues), e.g. `flutter_analyze.csv`,
+   `dart_analyze.csv`, `dart_code_linter.csv`, `line_count_report.csv`,
+   `duplicate_code.csv`, `similar_code.csv`. **There is no `.md` report.** A
+   missing CSV means that rule found nothing. If the folder contains only
+   `_violations_cache.db` (no `.csv`/`.txt` files), the run was **clean** — the
+   bat also prints a short "No ... violations found" line to stdout in that case.
 3. Fix every error and warning that applies to your changes.
 4. Re-run until clean. Only then mark the feature / plan / bugfix as done.
 
@@ -72,6 +78,7 @@ First detect project language (same heuristic as `/analyze:setup`):
 - **PHP**: `composer.json` or `*.php`
 - **JavaScript/TypeScript**: `package.json` + `*.ts` / `*.js`
 - **Svelte**: `*.svelte`
+- **AutoHotkey**: `*.ahk` / `*.ah2` / `*.ahk2`
 
 If multiple match, ask the user which to configure.
 

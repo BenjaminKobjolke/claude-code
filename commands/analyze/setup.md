@@ -20,6 +20,7 @@ Analyze the current project to determine its primary language:
 - **C#**: Look for `.csproj` or `.sln` files
 - **Python**: Look for `requirements.txt`, `setup.py`, `pyproject.toml`, or `*.py` files
 - **PHP**: Look for `composer.json` or `*.php` files
+- **AutoHotkey**: Look for `*.ahk`, `*.ah2`, or `*.ahk2` files
 
 If multiple languages are detected, ask the user which one to configure.
 
@@ -31,6 +32,7 @@ Based on the detected language, read the corresponding setup documentation from 
 - C#: `{cli-code-analyzer-path}/docs/setup/CSHARP.md`
 - Python: `{cli-code-analyzer-path}/docs/setup/PYTHON.md`
 - PHP: `{cli-code-analyzer-path}/docs/setup/PHP.md`
+- AutoHotkey: `{cli-code-analyzer-path}/docs/setup/AUTOHOTKEY.md`
 
 ## Step 4: Create Batch Files
 
@@ -107,7 +109,10 @@ After implementing new features or making significant changes, run the code anal
 powershell -Command "cd '{project-path}'; cmd /c '.\tools\analyze_code.bat'"
 ```
 
-Fix any reported issues before committing.
+Results are written to `code_analysis_results/` as **per-rule CSV files** (e.g.
+`flutter_analyze.csv`, `line_count_report.csv`, `duplicate_code.csv`) — there is
+no `.md` report, and a missing CSV means that rule found nothing. Fix any
+reported issues before committing.
 ```
 
 Replace `{project-path}` with the actual project path.

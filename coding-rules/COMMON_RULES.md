@@ -186,6 +186,20 @@ unrepresentable." Pairs with "Prefer Type-Safe Values" and "Self-Describing Clas
 
 ---
 
+## Keep It Simple (KISS)
+
+Prefer the simplest solution that actually works. Complicated logic for a simple result must be
+kept to a minimum — a future maintainer (or you, at 3am) has to understand it.
+
+- **YAGNI.** Don't build for a need that isn't here yet: no interface with a single
+  implementation, no factory for one product, no config for a value that never changes.
+- **Boring over clever.** Clever is what someone decodes later. The obvious solution wins.
+- **Deletion over addition.** The shortest working change is usually the right one.
+- Pairs with "Don't Repeat Yourself" and "No God Classes" — simplicity is what those rules
+  are protecting.
+
+---
+
 ## Confirm Dependency Versions
 
 Before adding any new package or library, confirm the version with the user to ensure we use
@@ -275,6 +289,22 @@ otherwise:
 
 ---
 
+## Comments Explain Why, Not What
+
+Comment intent and non-obvious reasoning — not a restatement of the code. Good names carry the
+*what*; comments carry the *why*.
+
+- **Anti-pattern.** `i++ // increment i`. Redundant comments add noise and rot the moment the
+  code changes.
+- **Correct pattern.** Document *why* a workaround exists, why a non-obvious algorithm was
+  chosen, or a constraint that isn't visible locally (`// API rejects batches > 500`).
+- Prefer self-documenting code (clear names, small functions) over a comment that compensates
+  for unclear code — see "Naming Conventions" and "Keep It Simple".
+- Document the purpose of each module/class at its top.
+- Keep comments in sync with the code; delete stale ones rather than letting them mislead.
+
+---
+
 ## Security Baseline
 
 Every project must follow these minimum security practices:
@@ -284,6 +314,19 @@ Every project must follow these minimum security practices:
 - Use parameterized queries or ORM-provided methods — never concatenate user input into queries
 - Validate and sanitize all user input at system boundaries
 - Keep dependencies updated to avoid known vulnerabilities
+
+---
+
+## No Hardcoded Environment Values
+
+Never hardcode environment-specific values in code — filesystem paths, hostnames, IP addresses,
+ports, base URLs. They differ across machines and environments and make code non-portable.
+
+- **Anti-pattern.** `connect("192.168.1.50:5432")`, `open("C:\\Users\\bob\\data\\out.json")`.
+- **Correct pattern.** Read them from the project's central config (the config class each
+  `*_RULES.md` already mandates), with a committed `.example` template documenting every key.
+- Distinct from the secrets rule above: this is about **portability** (runs anywhere), not
+  secrecy. A non-secret hostname still belongs in config, not in code.
 
 ---
 

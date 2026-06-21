@@ -18,7 +18,7 @@ Steps:
    - Check for existing utility functions or helper methods
    - Check for existing CSS classes that could replace inline or per-file styles
 
-4. **Check for over-engineering**:
+4. **Check for over-engineering and complexity (YAGNI + KISS)**:
    - Are there new abstractions that only have one consumer? (premature abstraction)
    - Could the change be simpler?
 

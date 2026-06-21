@@ -41,6 +41,15 @@ Steps:
 
 This command audits and reports. It does NOT auto-fix unless the user asks.
 
+When done run /ponytail:ponytail for a YAGNI check
+
+If /ponytail:ponytail is not available, install it first:
+
+```
+/plugin marketplace add DietrichGebert/ponytail
+/plugin install ponytail@ponytail
+```
+
 Related commands:
 - /plan:dry — check a plan for DRY (before implementation)
 - /convention:check — pre-implementation convention scanner

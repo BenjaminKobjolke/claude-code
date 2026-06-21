@@ -14,24 +14,56 @@ skill rather than reimplementing its behavior.
 
 ## Feature / Change Workflow
 
-After a plan is proposed and the user approves it, follow this chain:
+After a plan is proposed and the user approves it, follow this chain. The DRY
+gate is a precondition for implementing — not just an earlier step.
 
 ```
 plan approved
-  → /plan:dry            check the approved plan for DRY/consolidation BEFORE writing code
-  → /plan:dry-checked    reload and review the DRY-adjusted plan
-  → /convention:check    scan for existing patterns/components to reuse before implementing
+  → /plan:dry            check approved plan for DRY/consolidation BEFORE code
+  → /plan:dry-checked    reload + review the DRY-adjusted plan
+  → /convention:check    scan for existing patterns/components to reuse
+  ─────────────────────  DRY GATE — must be cleared to proceed
+  → restate Definition-of-Done aloud
   → implement
-  → /dry:check           post-implementation DRY audit on the changed files
+  → /dry:check           post-implementation DRY audit (template below)
   → /verify:after-change run tests + code analysis
 ```
 
-- **`/plan:dry` runs before any code is written** — it is cheaper to remove duplication in
-  the plan than in the diff.
-- **`/convention:check` runs before implementing** — reuse existing utilities, components,
-  and patterns instead of inventing parallel ones.
-- **`/dry:check` and `/verify:after-change` run after implementation** — audit duplication
-  and confirm tests/analysis pass.
+### DRY gate (precondition for implementing)
+
+Do not write a single line until ALL are true. Restate this gate aloud at the
+moment you start implementing — if you cannot, the gate is not cleared:
+
+- [ ] `/plan:dry` ran and the plan was adjusted for any duplication found.
+- [ ] `/plan:dry-checked` reloaded and confirmed the adjusted plan.
+- [ ] `/convention:check` found the existing utilities/patterns to reuse.
+
+The gate survives the `implement` step: if mid-implementation you add a new
+helper, type, or pattern the gate would have caught, stop and re-clear it
+before continuing.
+
+### Definition of Done — restate aloud before implementing
+
+Before the first edit, state in chat what "done" means for THIS change:
+
+- [ ] Scope: <one line — what changes, what does not>
+- [ ] Reuse: <existing function/component this builds on, with path>
+- [ ] DRY gate cleared (above)
+- [ ] `/dry:check` clean
+- [ ] `/verify:after-change` green (tests + analysis)
+
+### Post-implementation DRY audit — paste-in template
+
+Run `/dry:check`, then paste and fill:
+
+```
+DRY audit — <change name>
+Changed files:     <list>
+Duplication found: <none | describe>
+Consolidated into: <shared fn/module + path | n/a>
+Convention reused: <name + path>
+Verdict:           <clean | needs rework>
+```
 
 ---
 

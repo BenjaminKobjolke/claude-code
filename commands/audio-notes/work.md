@@ -54,11 +54,17 @@ it if absent) before implementing. This is the lock other runs check in step 2.
 powershell -Command "New-Item -ItemType Directory -Force 'E:\[--Sync--]\Notes_Audio\MediaFileExplorer\processing' | Out-Null; Move-Item 'E:\[--Sync--]\Notes_Audio\MediaFileExplorer\note.md' 'E:\[--Sync--]\Notes_Audio\MediaFileExplorer\processing\note.md'"
 ```
 
-### 5. Gather context from docs/
+### 5. Gather context from docs/ and prior notes
 
 Notes are brief. Before implementing, read the project's `docs/` subfolder for
 fuller documentation of the affected feature. Search `docs/` for files matching
 the feature/keywords from the selected note(s) and read the relevant ones.
+
+A note may reference an earlier issue/task (a follow-up, a bug in a prior change,
+or a change request). If so, search the `done/` subfolder for the previous
+note(s) on the same feature/keywords and read them — including any
+`## Implementation` section — to recover the files changed and full context of
+that earlier work before implementing.
 
 ### 6. Plan, DRY-check, implement, audit
 
@@ -74,7 +80,21 @@ the feature/keywords from the selected note(s) and read the relevant ones.
 4. **Audit the result**: run `/dry:check` for a post-implementation DRY audit
    of the changed files.
 
-### 7. Move handled notes from processing/ to done/
+### 7. Append implementation details to the note
+
+Before moving, append an `## Implementation` section to the bottom of the note
+file (to the primary note if it was a cluster). Record enough to trace the change
+later if a bug or change request comes in:
+
+- **Files changed** — each path with a one-line note of what changed there,
+  and the key function/class/method names touched.
+- **What was done** — short summary of the fix/feature as implemented.
+- **Notes** — anything non-obvious (edge cases, follow-ups, related code).
+
+This keeps the diff-to-note link discoverable in `done/` without digging git
+history.
+
+### 8. Move handled notes from processing/ to done/
 
 On success, move the claimed note file(s) from `processing/` into the `done/`
 subfolder (create `done/` if it does not exist). On filename collision in `done/`,
@@ -87,7 +107,8 @@ powershell -Command "New-Item -ItemType Directory -Force 'E:\[--Sync--]\Notes_Au
 If implementation fails, move the note(s) back to the top level so they are not
 left stuck in `processing/`.
 
-### 8. Summary
+### 9. Summary
 
-Report: which note(s) were handled, what was changed, what was moved to `done/`,
-and which notes remain for the next run.
+Report: which note(s) were handled, what was changed (and that the
+`## Implementation` section was written), what was moved to `done/`, and which
+notes remain for the next run.

@@ -1252,3 +1252,25 @@ mixin SearchableMixin {
   Map<String, String> getSearchableFields();
 }
 ```
+
+---
+
+## Mixins, Widgets, and Injected Services (Coupling)
+
+Reinforces core principle #1 (Composition over inheritance) and
+**Inject Collaborators, Don't Fold Dependencies In** in `COMMON_RULES.md`.
+
+- **`with SomeMixin` folds the mixin's dependencies into the widget/class.** Stacking behavior
+  mixins spreads their imports across the host. Prefer a child widget or an injected service
+  (get_it / Provider / Riverpod) for anything that carries dependencies; keep mixins for small,
+  dependency-free behavior.
+- **A god `build()` method is a coupling sink.** A widget whose `build()` wires many services and
+  passes values down through several constructor layers (prop-drilling) depends on everything it
+  drills through. Extract child widgets, and pass a single config object or read shared state via
+  `InheritedWidget` / a provider instead of threading many parameters.
+
+```dart
+// Anti-pattern: one widget builds everything and drills props through 3 layers
+// Correct: extract InvoiceHeader / InvoiceActions child widgets; inject services via provider,
+//          pass an InvoiceViewConfig value object instead of a dozen constructor params
+```

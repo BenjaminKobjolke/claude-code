@@ -75,3 +75,14 @@ Bug fixes use a shorter variant (no plan-DRY phase):
 bugs:fix
   → /verify:after-change
 ```
+
+---
+
+## Optional Addons
+
+These live in `ai_rules_addons/` and are **not** always-on. Each is opt-in per project — ASK
+the user whether they want it before wiring it into that project's `CLAUDE.md`.
+
+- [`ai_rules_addons/graphify.md`](ai_rules_addons/graphify.md) — graphify knowledge graph:
+  scoped + directed AST build, folder layout, gitignore, and the query/refresh rules to paste
+  into a project's `CLAUDE.md`.

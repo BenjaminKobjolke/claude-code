@@ -924,3 +924,71 @@ class Customer
 
 Prefer the interface approach for straightforward cases. Use attributes when you need
 fine-grained per-property control.
+
+---
+
+## Traits and Config Getters (Coupling)
+
+See **Inject Collaborators, Don't Fold Dependencies In** in `COMMON_RULES.md` for the general
+rule. In PHP the fold-in mechanism is the trait.
+
+### `use SomeTrait` merges the trait's dependencies into the class
+
+A `use SomeTrait` copies the trait's body — and every class it imports — into the host. Stacking
+several behavior traits on one class quietly makes all of their dependencies the host's own. Prefer
+a constructor-injected collaborator service for anything that carries dependencies.
+
+```php
+// Anti-pattern: five behavior traits, each pulling its own services/DTOs/constants into the class
+class InvoiceDocumentController extends AbstractController
+{
+    use BulkUnlinkTrait;
+    use DocumentDownloadTrait;
+    use DocumentPreviewTrait;
+    use DocumentSendTrait;
+    use DocumentEmailPreviewTrait;
+}
+
+// Correct: inject one collaborator; its dependencies stay its own
+class InvoiceDocumentController extends AbstractController
+{
+    public function __construct(private DocumentActions $documents) {}
+}
+```
+
+### Replace config-getter swarms with a value object
+
+When a trait/base declares many `abstract protected function getXxx(): string` hooks that each
+subclass fills one-line-each, the constant references pile up across a dozen tiny methods. Bundle
+them into one config value object (see **Use Objects for Related Values**).
+
+```php
+// Anti-pattern
+protected function getSendEndpoint(): string      { return ApiEndpoints::INVOICE_SEND; }
+protected function getSendSuccessKey(): string     { return TranslationKeys::INVOICE_SEND_SUCCESS; }
+protected function getSendFailureRedirect(): string { return UrlPaths::INVOICES; }
+// ...several more
+
+// Correct
+protected function documentSendConfig(): DocumentSendConfig
+{
+    return new DocumentSendConfig(
+        sendEndpoint: ApiEndpoints::INVOICE_SEND,
+        successKey:   TranslationKeys::INVOICE_SEND_SUCCESS,
+        redirect:     UrlPaths::INVOICES,
+    );
+}
+```
+
+### Never `new` a service inside a method — inject it
+
+```php
+// Anti-pattern: hidden dependency, untestable
+public function send(...): ResponseInterface
+{
+    $preparer = new EmailDataPreparer();
+    $data = $preparer->prepare(...);
+}
+
+// Correct: inject EmailDataPreparer via the constructor and call the injected instance
+```

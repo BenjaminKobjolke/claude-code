@@ -358,3 +358,46 @@ lists in consuming code.
   export, form generation, diffing, logging, etc.
 - Combine with compile-time checks where the language supports them (e.g., sealed interfaces,
   exhaustive matching) to ensure new fields cannot be silently ignored
+
+---
+
+## Inject Collaborators, Don't Fold Dependencies In
+
+Composition reuse comes in two shapes, and they differ sharply in how much coupling they add to
+the reusing class. **Folding** a helper into a class (mixin, trait, multiple inheritance, copy-in
+include) merges *all of the helper's own dependencies* into that class — reuse five such helpers
+and every one of their imports is now the host's coupling. **Injecting** a collaborator adds a
+single dependency: the collaborator, which is built once and shared as a hub.
+
+Prefer injected collaborators. Reserve fold-in reuse for helpers that are stateless and carry no
+dependencies of their own.
+
+- **Anti-pattern**: A controller reuses five behavior mixins/traits; each brings its own service,
+  DTO, and constant imports, so the controller transitively depends on a few dozen things and is
+  hard to test in isolation.
+- **Correct pattern**: Extract that behavior into a collaborator object injected via the
+  constructor. The controller depends on the collaborator; the collaborator is reused across many
+  controllers as a shared, well-tested hub.
+
+### Inject services; never instantiate one inside a method
+
+Constructing a service with `new` (or the language equivalent) inside a method hides the
+dependency from the class's public contract and makes it impossible to substitute in a test. Pass
+collaborators in through the constructor.
+
+- **Anti-pattern**: A method does `helper = new EmailPreparer(); helper.prepare(...)`. Nothing in
+  the class signature reveals the dependency, and no test can replace it.
+- **Correct pattern**: Inject `EmailPreparer` once; the method calls the injected instance.
+
+### Collapse config-callback swarms into one value object
+
+When a base class pulls its configuration from the subclass through many small overridable getters
+that the subclass fills in one-line-each, each getter is a separate touch-point and the wiring is
+spread across dozens of methods. Bundle the related values into a single config object built once
+and handed to the base (see **Use Objects for Related Values**). This also keeps such classes off
+the wrong side of **No God Classes**.
+
+- **Anti-pattern**: A subclass implements `getSendEndpoint()`, `getSendSuccessKey()`,
+  `getSendFailureRedirect()`, and a dozen more one-line getters, each naming one constant.
+- **Correct pattern**: The subclass builds one `SendConfig` value object once; the base reads its
+  fields.

@@ -198,6 +198,26 @@ When it shows up as missing/disabled:
      (e.g. endpoints, route names, i18n keys) so healthy edges to them don't count as fan-out.
    - See `{cli-code-analyzer-path}/docs/analyzers/graphify_fanout.md` for full options and the
      per-file `exceptions` caveat (match on filename/glob, not a `src/`-anchored path).
+   - **Verify the graphify PreToolUse hook** in the project's `.claude/settings.json`. graphify's
+     "orient before searching/reading" nudge only fires if both hooks are present with the right
+     matchers. The common stale case is a search matcher of `"Bash"` alone — the native **Grep**
+     tool then bypasses the guard. Expected shape (path = the user's graphify binary, e.g.
+     `C:/Users/<user>/.local/bin/graphify.EXE`):
+
+     ```json
+     "hooks": {
+       "PreToolUse": [
+         { "matcher": "Bash|Grep", "hooks": [
+           { "type": "command", "command": "<graphify-path> hook-guard search" } ] },
+         { "matcher": "Read|Glob", "hooks": [
+           { "type": "command", "command": "<graphify-path> hook-guard read" } ] }
+       ]
+     }
+     ```
+
+     If the entries are missing, or the search matcher omits `Grep`, offer to **add/merge** them —
+     do **not** overwrite other existing hooks or `permissions` in the file. Changes take effect on
+     the next session reload.
 3. **If the user still wants it**, add the block below. It is safe to enable without the graph:
    a missing graph produces a single WARNING (not a tool failure), so it never breaks a run.
 

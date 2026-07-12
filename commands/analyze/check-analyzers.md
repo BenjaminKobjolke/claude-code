@@ -185,15 +185,20 @@ These patterns filter diagnostics from the output. The LSP still indexes `vendor
 
 `graphify_fanout` flags classes with high outgoing coupling (fan-out) using a graphify
 dependency graph. It is **opt-in and requires extra setup** — unlike the other analyzers it
-reads a `graphify-out/graph.json` that must already exist. Do **not** silently add it enabled.
+reads a `graphify-out/graph.json` that must exist (built by graphify, or auto-refreshed via
+`auto_build`). Do **not** silently add it enabled.
 
 When it shows up as missing/disabled:
 
 1. **Ask the user** whether they want to enable graphify fan-out analysis.
 2. **If yes, tell them extra setup is required** before it produces results:
    - **graphify must be installed** (the graph builder).
-   - **The graph must be built and kept fresh** — run `graphify src --directed` (adjust the
-     source folder) after code changes; the analyzer never builds or refreshes it.
+   - **The graph must be built and kept fresh** — run `graphify src --directed` once (adjust the
+     source folder; `--directed` is required for fan-out). Refresh after code changes with
+     `graphify update src`. By default the analyzer only reads the graph — a stale graph gives
+     stale results. To auto-refresh instead, set `auto_build: true` (+ `build_path`) in the block
+     below: it runs `graphify update <build_path>` before each analysis and soft-fails (missing
+     binary / failed build → warning, falls back to the existing graph).
    - **Tune the hub list** — set `hub_classes` to the project's centralized constant registries
      (e.g. endpoints, route names, i18n keys) so healthy edges to them don't count as fan-out.
    - See `{cli-code-analyzer-path}/docs/analyzers/graphify_fanout.md` for full options and the
@@ -224,6 +229,8 @@ When it shows up as missing/disabled:
 ```json
 "graphify_fanout": {
   "enabled": true,
+  "auto_build": false,
+  "build_path": "src",
   "warning": 20,
   "error": 32,
   "ratio_max": 0.25,

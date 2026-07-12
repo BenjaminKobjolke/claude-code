@@ -96,6 +96,18 @@ distinct roles — do not confuse them:
    run — see "Dart LSP MCP Server Setup (Flutter/Dart Projects)" at the end of this
    document. Offer to register it for Flutter projects.
 
+### Graphify fan-out (opt-in, extra setup)
+
+The `graphify_fanout` rule flags classes with high outgoing coupling (fan-out) using a
+graphify dependency graph. **Do not add it to the generated `code_analysis_rules.json`
+by default** — it needs graphify installed and a pre-built `graphify-out/graph.json`
+that this setup does not create.
+
+If the user wants it, follow the enable flow in
+`commands/analyze/check-analyzers.md` → "Graphify Fan-Out (special setup)": build the
+graph (`graphify src --directed`), tune `hub_classes`, verify the PreToolUse hook, and
+add the JSON block documented there. It can also be added later via `check-analyzers`.
+
 ## Step 6: Update CLAUDE.md
 
 Add the following section to the project's CLAUDE.md file (create it if it doesn't exist):

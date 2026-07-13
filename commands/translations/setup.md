@@ -51,6 +51,17 @@ Two shapes both work (recursive mode handles both):
 4. Create `tools\attributes_to_remove.json` with `{}` (the remover reads it as its 2nd arg).
 5. Author `en.json` (+ optional `_hint_` keys) and a `de.json` reference.
 
+## Loading translations at runtime
+
+GPT-json-translator only *produces* the JSON. To *load* it in an app, use the matching XIDA
+localization library (JSON, dot-notation nested keys, `:name` placeholders, fallback language):
+
+- **Python** — `D:\GIT\BenjaminKobjolke\python-localization`
+- **PHP** — `D:\GIT\BenjaminKobjolke\php-localization`
+- **C#** — `D:\GIT\BenjaminKobjolke\csharp-localization`
+
+(Flutter/Android apps load their `assets\i18n` JSON directly, no library needed.)
+
 ## Daily use
 
 - **Added new keys to `en.json`/`de.json`?** Run `tools\translator_app_texts.bat`. It fills only the

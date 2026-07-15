@@ -1,0 +1,20 @@
+[FTP]
+
+FTP_HOST = your-host.example.com
+FTP_USER = your-ftp-username
+FTP_PASS = your-ftp-password
+
+# up = local to FTP (mirror: deletes remote files absent locally)
+DIRECTION = up
+
+CONCURRENT_UPLOADS_OR_DOWNLOADS = 1
+
+# Absolute path to the project root to upload
+LOCAL_DIRECTORY = D:\path\to\project
+FTP_DIRECTORY = /target
+
+# Fast incremental uploads: local SHA-256 cache, skips FTP scan, only changed files sent.
+# Caveat: deletion is tracked via this cache, so on the FIRST run pre-existing remote
+# files not in the cache are NOT pruned. Omit this line for a true full mirror every run
+# (slower: scans FTP each time).
+HASH_CACHE_FILE = D:\path\to\project\tools\.ftp_sync_cache.db

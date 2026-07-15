@@ -1,0 +1,34 @@
+# .deployignore — files/dirs excluded from FTP deploy (ftp-sync, gitignore syntax).
+# Place in the project root (the LOCAL_DIRECTORY). Dirs as name/, files as literal path.
+# The .deployignore file itself is always excluded automatically.
+
+# VCS / tooling / dev-only
+.git/
+.claude/
+docs/
+tools/
+tests/
+logs/
+node_modules/
+code_analysis_results/
+claude-plans/
+feedback/
+
+# build sources (ship the built output, not the source)
+assets/scss/
+assets/ts/
+
+# repo metadata / config that should never touch the server
+.gitignore
+.gitattributes
+.mcp.json
+README.md
+CLAUDE.md
+composer.json
+composer.lock
+package.json
+package-lock.json
+
+# server owns its own runtime config — never overwrite/delete it
+config/app.php
+config/database.php

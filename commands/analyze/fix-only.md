@@ -8,6 +8,11 @@ Work on fixing the problems reported in the CSV files located in the `@code_anal
 
 Only work on the csv files, do not read the _violations_cache.db
 
+Note: the CSVs may come from a **full** run (`analyze_code.bat`) or a
+**changed-files** run (`analyze_changed_and_new_files.bat`, `--only-changed`).
+After a changed-files run they cover only files new/modified vs git `HEAD` — do
+not conclude the whole project is clean from them.
+
 ## CSV File Formats
 
 Each rule generates a CSV with specific columns:

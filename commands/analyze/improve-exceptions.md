@@ -4,6 +4,10 @@ description: try to remove exceptions
 
 # Code Analysis Fix Instructions
 
+Exception review requires a **full** analyzer run (`tools/analyze_code.bat`) —
+exceptions concern the whole tree; a changed-files (`--only-changed`) run hides
+the suppressed areas you are reviewing.
+
 Check the exceptions in code_analysis_rules.json.
 Try to improve on some of them. Add a date attribute to the ones you checked. So the next time we do this check we are not checking the same files again.
 

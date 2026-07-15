@@ -40,7 +40,10 @@ Follow the "Example Batch Files" section in the documentation to create the appr
 
 1. Create the `tools` folder if it doesn't exist
 2. Create `tools/analyze_code.bat` following the template from the documentation
-3. Create any language-specific fixer batch files mentioned in the documentation (e.g., `fix_ruff_issues.bat` for Python, `fix_phpcs_issues.bat` for PHP)
+3. Create `tools/analyze_changed_and_new_files.bat` using the exact template from
+   `enforce-post-feature-workflow.md` Step 5 (git-aware `--only-changed` run — the
+   post-implementation default; do not duplicate the template here)
+4. Create any language-specific fixer batch files mentioned in the documentation (e.g., `fix_ruff_issues.bat` for Python, `fix_phpcs_issues.bat` for PHP)
 
 **Important:** When creating batch files, replace the placeholder paths with:
 - The actual cli-code-analyzer path provided by the user
@@ -112,20 +115,38 @@ add the JSON block documented there. It can also be added later via `check-analy
 
 Add the following section to the project's CLAUDE.md file (create it if it doesn't exist):
 
-```markdown
+````markdown
 ## Code Analysis
 
-After implementing new features or making significant changes, run the code analysis:
+Two analysis modes — pick by situation:
+
+**Changed-files run (default after implementing a feature, finishing a plan, or
+fixing a bug):**
+
+```bash
+powershell -Command "cd '{project-path}'; cmd /c '.\tools\analyze_changed_and_new_files.bat'"
+```
+
+Uses `--only-changed`: the report is filtered to files new/modified vs git `HEAD`
+(includes untracked). Project-wide analyzers still run; only the report is
+filtered. Fast feedback, no noise from pre-existing violations elsewhere.
+
+**Full run (whole-project audits):**
 
 ```bash
 powershell -Command "cd '{project-path}'; cmd /c '.\tools\analyze_code.bat'"
 ```
 
+Use the full run for: an explicit audit request (`/analyze:run-and-fix`),
+exception maintenance (`/analyze:improve-exceptions`), before a release/merge,
+after refactors that touch shared code, or when the working tree is clean vs
+`HEAD` (a changed-files run would report nothing).
+
 Results are written to `code_analysis_results/` as **per-rule CSV files** (e.g.
 `flutter_analyze.csv`, `line_count_report.csv`, `duplicate_code.csv`) — there is
 no `.md` report, and a missing CSV means that rule found nothing. Fix any
 reported issues before committing.
-```
+````
 
 Replace `{project-path}` with the actual project path.
 

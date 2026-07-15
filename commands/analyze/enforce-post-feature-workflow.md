@@ -19,8 +19,18 @@ It does NOT run the analyzer itself. It only installs the workflow so that you (
 - Locate `CLAUDE.md` at the project root. If it does not exist, create it.
 - Search for a section that mandates running the analyzer after **any** of: new feature implemented, plan finished, bug fixed.
 - Detection cue: a heading containing "Post-Implementation Code Analysis" (or "Code Analysis" / "After Implementation") AND a reference to `tools/analyze_changed_and_new_files.bat`.
+- **Staleness check** — even when the section exists, treat it as outdated and
+  replace it via Step 2 if it contains manual cache-deletion advice, e.g. any of:
+  - "Cache gotcha"
+  - an instruction to delete `_violations_cache.db` as a required step before re-running
+  - "results are served from" / "cache-served for up to 60 minutes"
 
-If a matching, complete section already exists: skip to Step 3.
+  The violation cache self-invalidates on source changes since 2026-07-15
+  (mtime + file-set check in cli-code-analyzer `violation_cache.py`) — the
+  manual delete instruction is obsolete and misleading. Replace the outdated
+  section with the Step 2 block, keeping the project path from the old section.
+
+If a matching, complete, non-stale section already exists: skip to Step 3.
 
 ## Step 2 — Add or update the CLAUDE.md section
 
@@ -43,6 +53,14 @@ powershell -Command "cd '{PROJECT_PATH}'; cmd /c '.\tools\analyze_changed_and_ne
 
 This invokes cli-code-analyzer with `--only-changed`, so it reports only on files new or modified vs git `HEAD` (including untracked, excluding deletes).
 
+### When to run the full analyzer instead
+
+Run `tools/analyze_code.bat` (whole tree) instead of the changed-files bat for:
+an explicit audit request (`/analyze:run-and-fix`), exception maintenance
+(`/analyze:improve-exceptions`), before a release/merge, after refactors that
+touch shared code, or when the working tree is clean vs `HEAD` (a changed-files
+run would report nothing and silently look "clean").
+
 ### Workflow
 
 1. Run the bat above.
@@ -55,6 +73,10 @@ This invokes cli-code-analyzer with `--only-changed`, so it reports only on file
    bat also prints a short "No ... violations found" line to stdout in that case.
 3. Fix every error and warning that applies to your changes.
 4. Re-run until clean. Only then mark the feature / plan / bugfix as done.
+   The result cache self-invalidates when source files change (mtime +
+   file-set check since 2026-07-15), so re-runs after fixes are fresh. Only on
+   an older cli-code-analyzer would you need to delete
+   `code_analysis_results/_violations_cache.db` by hand.
 
 If the bat does not exist, run `/analyze:enforce-post-feature-workflow` to install it.
 ````

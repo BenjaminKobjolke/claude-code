@@ -1,0 +1,79 @@
+; {{APP_NAME}} Installer Script (NSIS + Modern UI 2)
+; Template placeholders to fill per project:
+;   {{APP_NAME}}     - display name; also install dir, registry key, Start Menu folder
+;   {{PAYLOAD_PATH}} - File /r source, relative to installer/ (e.g. ../dist/myapp/myapp/*.*)
+;   {{OUTFILE}}      - output path, relative to installer/ (e.g. ../releases/windows/installer.exe)
+;   {{MAIN_EXE}}     - main exe name for the Start Menu launch shortcut
+
+!include "MUI2.nsh"
+!include "FileFunc.nsh"
+!include "LogicLib.nsh"
+
+; Installer settings
+Outfile "{{OUTFILE}}"
+InstallDir $PROGRAMFILES\{{APP_NAME}}
+RequestExecutionLevel admin
+ShowInstDetails show
+
+; Default installation section
+Section "{{APP_NAME}} (required)"
+
+  SetOutPath $INSTDIR
+  File /r "{{PAYLOAD_PATH}}"
+
+  ; Write the installation path into the registry
+  WriteRegStr HKLM "Software\{{APP_NAME}}" "Install_Dir" $INSTDIR
+
+  ; Create the uninstaller
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
+
+  ; Create shortcuts in the Start Menu Programs folder
+  CreateDirectory $SMPROGRAMS\{{APP_NAME}}
+  CreateShortCut "$SMPROGRAMS\{{APP_NAME}}\{{APP_NAME}}.lnk" "$INSTDIR\{{MAIN_EXE}}"
+  CreateShortCut "$SMPROGRAMS\{{APP_NAME}}\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
+
+SectionEnd
+
+; Uninstaller settings
+Section "Uninstall"
+
+  ; Remove the registry entries
+  DeleteRegKey HKLM "Software\{{APP_NAME}}"
+
+  ; Remove the Start Menu shortcuts
+  Delete "$SMPROGRAMS\{{APP_NAME}}\{{APP_NAME}}.lnk"
+  Delete "$SMPROGRAMS\{{APP_NAME}}\Uninstall.lnk"
+  RMDir "$SMPROGRAMS\{{APP_NAME}}"
+
+  ; Remove the installed files
+  RMDir /r "$INSTDIR"
+
+SectionEnd
+
+; Modern User Interface settings
+!define MUI_WELCOMEPAGE_TITLE "Welcome to the {{APP_NAME}} Setup Wizard"
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of {{APP_NAME}}.$\r$\n$\r$\nClick Next to continue or Cancel to exit the setup."
+!insertmacro MUI_PAGE_WELCOME
+; --- LICENSE PAGE START (delete this block if the app ships without a license) ---
+!define MUI_LICENSEPAGE_TEXT_TOP "Please read the following terms and conditions before continuing."
+!define MUI_LICENSEPAGE_TEXT_BOTTOM "If you accept the terms and conditions, click 'I Agree' to continue. Otherwise, click 'Cancel' to exit the setup."
+!define MUI_LICENSEPAGE_BUTTON "I &Agree"
+!insertmacro MUI_PAGE_LICENSE "license.txt"
+; --- LICENSE PAGE END ---
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!define MUI_FINISHPAGE_NOAUTOCLOSE
+!define MUI_FINISHPAGE_TITLE "{{APP_NAME}} Installation Completed"
+!insertmacro MUI_PAGE_FINISH
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+!insertmacro MUI_UNPAGE_FINISH
+!insertmacro MUI_LANGUAGE "English"
+
+; No version info in this file on purpose: the build bat renames the output
+; to <app>_v<label>.exe using the project's version tools.
+;
+; Optional post-install steps (e.g. PATH setup) go in a .onInstSuccess hook:
+;   Function .onInstSuccess
+;     ExecWait '"$INSTDIR\setpath.bat"'
+;   FunctionEnd

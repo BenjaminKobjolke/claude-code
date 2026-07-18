@@ -41,6 +41,10 @@ only if the project ships English-only).
 
 Run the project's release build (e.g. `tools/build_release.bat`). It tests,
 builds, and bundles `release_notes/`. The artifact ships as `<nextLabel>`.
+If the project builds a Windows installer, **both exes get signed**: the app exe
+is signed during the build (before the installer packs it), and the versioned
+installer exe (not the raw app exe) is the artifact for the publish/sign step
+(see the project's `CREATE_NEW_RELEASE.md`).
 
 ### 6. Commit & tag (optional, ask first)
 

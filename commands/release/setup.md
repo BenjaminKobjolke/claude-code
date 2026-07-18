@@ -44,12 +44,18 @@ But when you are done you can check [create-release-notes.md](create-release-not
 When the release notes are created we need to build the actual new version.
 Check the tools folder for available bat files. If there are multiple ones ask the user which ones are used for releases. Then also document how to create a new release in  $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md
 
+Also ask whether the project should ship a **Windows installer** — see
+[Windows installer (optional)](#windows-installer-optional).
+
 When done $CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md should contain:
 - how to get the version number
 - how to increment the version number
 - how to create a new release notes directory and en.json file
 - how to actually build a new release
 - where the in-app release notes view is located and how it works
+- (if installer enabled) how the installer is built, where the versioned installer
+  exe lands, that the app exe is signed before packaging, and that the installer
+  exe is the artifact passed to publishing/signing
 
 ## Translation system
 
@@ -81,6 +87,56 @@ A real-world template to copy is checked in at
 project's `tools/` folder and swap the release-notes path for the current project.
 Document the resulting bat in `docs/CREATE_NEW_RELEASE.md` as the mandatory
 translation step.
+
+## Windows installer (optional)
+
+Ask the user if the project should ship a Windows installer (NSIS). If not,
+skip this whole section.
+
+If yes:
+
+1. Check that `makensis` is available (`where makensis`). If missing, tell the
+   user to install NSIS (https://nsis.sourceforge.io) and offer to skip this
+   section for now.
+2. Create an `installer/` folder in the project root. Copy
+   `commands/release/setup_files/installer.nsi.template` to
+   `installer/installer.nsi` and fill the placeholders:
+   - `{{APP_NAME}}` — display name; also install dir, HKLM registry key and
+     Start Menu folder
+   - `{{PAYLOAD_PATH}}` — the project's existing build output dir, relative to
+     `installer/` (e.g. `../dist/myapp/myapp/*.*`)
+   - `{{OUTFILE}}` — installer output path, relative to `installer/`
+     (e.g. `../releases/windows/installer.exe`)
+   - `{{MAIN_EXE}}` — main exe name for the Start Menu launch shortcut
+3. License page: ask the user for license text and write it to
+   `installer/license.txt`. If the app ships without a license, delete the
+   marked `LICENSE PAGE START`/`END` block from the NSI instead.
+4. Wire the installer into the release build bat, **after** the app build step:
+
+   ```bat
+   if not exist releases\windows mkdir releases\windows
+   call makensis installer\installer.nsi
+   ren releases\windows\installer.exe <app>_v<label>.exe
+   ```
+
+   `<label>` comes from the project's version tools; adjust the paths to the
+   chosen `{{OUTFILE}}`. The NSI has no version info on purpose — the versioned
+   filename is the version stamp.
+5. **Signing: when the installer is used, BOTH exes get signed** — the
+   project's app exe and the installer exe. Signing uses the existing
+   network-share handshake (drop exe on the signing share, wait for the signed
+   copy, verify signer CN) — no local signtool, no new signing code.
+   - **App exe**: must be signed **before** `makensis` runs, otherwise the
+     installer packs an unsigned exe. Add this signing step to the build bat
+     between the app build and the `makensis` call (same handshake the
+     release-tool uses; see `publish_settings.ini` `[PreSigning]` for the share
+     paths and expected signer).
+   - **Installer exe**: signed at publish time by the build-and-upload /
+     release-tool pipeline (`tools/publish_release.bat` + `publish_settings.ini`
+     `[PreSigning]`) — the artifact passed to it must be the **installer exe**.
+     If publishing gets set up later, that is the file to point at the
+     installer.
+6. Document all of the above in `docs/CREATE_NEW_RELEASE.md`.
 
 ## Established conventions (defaults when nothing exists yet)
 

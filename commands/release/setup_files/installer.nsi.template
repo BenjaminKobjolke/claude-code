@@ -1,6 +1,6 @@
 ; {{APP_NAME}} Installer Script (NSIS + Modern UI 2)
 ; Template placeholders to fill per project:
-;   {{APP_NAME}}     - display name; also install dir, registry key, Start Menu folder
+;   {{APP_NAME}}     - display name (window title via Name); also install dir, registry key, Start Menu folder
 ;   {{PAYLOAD_PATH}} - File /r source, relative to installer/ (e.g. ../dist/myapp/myapp/*.*)
 ;   {{OUTFILE}}      - output path, relative to installer/ (e.g. ../releases/windows/installer.exe)
 ;   {{MAIN_EXE}}     - main exe name for the Start Menu launch shortcut
@@ -10,6 +10,7 @@
 !include "LogicLib.nsh"
 
 ; Installer settings
+Name "{{APP_NAME}}"
 Outfile "{{OUTFILE}}"
 InstallDir $PROGRAMFILES\{{APP_NAME}}
 RequestExecutionLevel admin

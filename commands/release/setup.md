@@ -136,7 +136,15 @@ If yes:
      `[PreSigning]`) — the artifact passed to it must be the **installer exe**.
      If publishing gets set up later, that is the file to point at the
      installer.
-6. Document all of the above in `docs/CREATE_NEW_RELEASE.md`.
+6. **Publish under a STABLE filename** (constant download URL): the publish bat
+   copies the versioned installer to a stable name (e.g. `<app>.exe`) and hands
+   THAT to release-tool — never upload the `<app>_v<label>.exe` name. release-tool
+   uploads under the source filename and archives the previous remote file into
+   `versions/<--previous-version>/` (`[OldFileHandling]` policy=rename,
+   subfolder_naming=version), so server-side versioning lives in backup
+   subfolders, not the download name. The versioned local file remains the
+   version stamp.
+7. Document all of the above in `docs/CREATE_NEW_RELEASE.md`.
 
 ## Established conventions (defaults when nothing exists yet)
 

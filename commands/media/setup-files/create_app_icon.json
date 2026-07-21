@@ -1,0 +1,17 @@
+[
+  {
+    "prompt": "REPLACE: describe the icon. e.g. Pure white monochrome minimal line icon, flat, centered symbol, bold rounded strokes, generous padding, transparent background, no text.",
+    "provider": "openai",
+    "model": "gpt-image-1",
+    "size": "1024x1024",
+    "background": "transparent",
+    "reference_images": [],
+    "output": {
+      "path": "REPLACE_PROJECT_DIR/assets/icon.png",
+      "width": 512,
+      "height": 512,
+      "crop": "center",
+      "format": "png"
+    }
+  }
+]

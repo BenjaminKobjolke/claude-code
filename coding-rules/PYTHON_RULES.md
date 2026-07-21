@@ -374,6 +374,14 @@ Run the test suite:
 
 - Runs `pytest tests/ -v` with verbose output
 - Shows pass/fail summary
+- Projects that split unit/integration point it at `tests/unit`
+
+### tools/run_integration_tests.bat
+
+Run the integration test suite:
+
+- Runs `pytest tests/integration -v`
+- Same uv check + summary as run_tests.bat
 
 ### Usage
 

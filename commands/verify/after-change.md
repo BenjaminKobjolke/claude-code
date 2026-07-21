@@ -13,6 +13,11 @@ Steps:
    - Tests (if configured) — same as /testing:run
    - Code analysis (if configured) — same as /analyze:run-and-fix but only run analysis, do not auto-fix
 
+   Gotcha: many `tools\*.bat` files end with `pause`, which hangs forever in a
+   non-interactive shell even after all tests passed. Before running a bat,
+   check it for a trailing `pause`; if present, run the underlying command
+   directly (e.g. `uv run pytest tests/unit -v`) instead of the bat.
+
 3. Report results per validator:
    - PASS: validator ran with no errors
    - FAIL: validator found issues, list them

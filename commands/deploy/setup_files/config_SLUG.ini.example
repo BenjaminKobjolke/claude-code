@@ -1,0 +1,9 @@
+[FTP]
+LOCAL_DIRECTORY = <absolute path to the folder that gets uploaded>
+FTP_DIRECTORY = /<target dir on server>
+FTP_HOST = <host>
+FTP_USER = <user>
+FTP_PASS = <password, literal % must be written as %%>
+DIRECTION = up
+CONCURRENT_UPLOADS_OR_DOWNLOADS = 4
+HASH_CACHE_FILE = <LOCAL_DIRECTORY>\.ftp_sync_cache.db

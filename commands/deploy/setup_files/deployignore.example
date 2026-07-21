@@ -1,0 +1,14 @@
+# .deployignore — goes in the root of LOCAL_DIRECTORY, gitignore syntax.
+# Trim to the project. Excluded paths are never uploaded AND never deleted remotely.
+docs/
+logs/
+tools/
+tests/
+scss/
+README.md
+CLAUDE.md
+composer.json
+composer.lock
+.gitignore
+router.php
+.ftp_sync_cache.db

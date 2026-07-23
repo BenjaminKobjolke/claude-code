@@ -58,6 +58,22 @@ Which means to not automatically commit or push no changes the user requested af
 
 If Git reports line-ending warnings (for example, `LF will be replaced by CRLF` or `CRLF will be replaced by LF`) or files show as modified only because of line-ending changes, run the `/git:fix-line-endings` skill to diagnose and permanently resolve it, then continue with the original requested commits. That skill ensures a `.gitattributes` exists, sets repo-local `core.autocrlf=false` so the attributes win, and renormalizes/commits the content only if needed.
 
+## Required .gitattributes setup
+
+Before committing, check the repo has a `.gitattributes`. If it is missing, or if it has an LF catch-all (`* text=auto eol=lf`) without a Windows-script override, fix it and commit that as a separate `GIT` commit. Required baseline:
+
+```
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Windows batch files must be CRLF - cmd.exe misparses LF-only scripts
+# (e.g. "set" lines break into fragments, vars stay empty)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+```
+
+The `*.bat`/`*.cmd` override is mandatory whenever the repo contains batch files: an LF-only catch-all silently checks them out with LF endings, and cmd.exe then misparses them (broken `set` lines, empty variables). After adding the override, convert existing working-tree `.bat`/`.cmd` files to CRLF (`unix2dos`) — the stored blobs stay LF, so this normally produces no content diff. Keep any additional sensible rules the project already has (binary markers etc.); do not overwrite an existing policy, only add the missing override.
+
 Automatically push at the end.
 
 ---

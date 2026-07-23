@@ -47,6 +47,11 @@ common binaries (binary files must never be eol-converted):
 # Normalize all text files to LF in the repository
 * text=auto eol=lf
 
+# Windows batch files must be CRLF - cmd.exe misparses LF-only scripts
+# (e.g. "set" lines break into fragments, vars stay empty)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
 # Explicitly mark binary files
 *.png binary
 *.jpg binary
@@ -58,6 +63,18 @@ common binaries (binary files must never be eol-converted):
 *.gz binary
 *.tar binary
 ```
+
+**The `*.bat`/`*.cmd` CRLF override is mandatory whenever the repo contains batch
+files** — an LF catch-all without it checks batch files out with LF endings, and
+cmd.exe then misparses them: `set` lines break into command fragments (`'et' is not
+recognized...`) and the variables silently stay empty. If an existing
+`.gitattributes` has the LF catch-all but lacks this override, add the override
+(later rules win) instead of overwriting the file, then convert the working-tree
+`.bat`/`.cmd` files to CRLF with `unix2dos` — include gitignored ones (local config
+bats break the same way). The stored blobs stay LF (`eol=crlf` converts on
+checkout), so tracked files normally produce no content diff; a plain
+`git add -- '*.bat'` just refreshes the index. The same applies to any other
+CRLF-required types the repo carries (e.g. `*.reg`).
 
 If a `.gitattributes` already exists with a sensible policy, keep it — do not
 overwrite the project's chosen convention.

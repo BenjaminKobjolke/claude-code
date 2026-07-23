@@ -22,7 +22,12 @@ orient before grep and to spot god classes.
    `C:Users<you>.local...` → `command not found` on every Bash/Read/Glob. Fix: open
    `.claude/settings.json` and replace the backslashes in the hook `command`(s) with forward
    slashes — `C:/Users/<you>/.local/bin/graphify.EXE` (Git Bash accepts drive paths with `/`).
+   Also dedupe: the installer may write a redundant backslash `Bash` entry alongside a correct
+   `Bash|Grep` one — keep exactly two entries (`Bash|Grep`, `Read|Glob`), forward slashes.
    Then confirm it runs: `"C:/Users/<you>/.local/bin/graphify.EXE" hook-guard search`.
+   Note: Claude Code may permission-block edits to `.claude/settings.json` — the user may need
+   to explicitly request/approve the fix. Hooks written mid-session don't load until the user
+   opens `/hooks` once or restarts the session.
    (Non-Windows hosts are unaffected — skip this step.)
 3. **Build the first graph — scoped and directed.** Point it at the folder that holds the
    source code, NOT the repo root:

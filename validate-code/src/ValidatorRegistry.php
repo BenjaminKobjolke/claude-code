@@ -6,11 +6,11 @@ namespace Hooks;
 
 class ValidatorRegistry
 {
-    /** @var array<string, array{check_bat: string, extensions: string[], exclude_paths: string[]}> */
+    /** @var array<string, array{check_bat: string, extensions: string[], exclude_paths: string[], http_port?: int}> */
     private array $validators;
 
     /**
-     * @param array<string, array{check_bat: string, extensions: string[], exclude_paths: string[]}> $validators
+     * @param array<string, array{check_bat: string, extensions: string[], exclude_paths: string[], http_port?: int}> $validators
      */
     public function __construct(array $validators)
     {
@@ -20,7 +20,7 @@ class ValidatorRegistry
     /**
      * Get validator config for a file based on its extension.
      *
-     * @return array{check_bat: string, extensions: string[], exclude_paths: string[]}|null
+     * @return array{check_bat: string, extensions: string[], exclude_paths: string[], http_port?: int}|null
      */
     public function getValidatorForFile(string $filePath): ?array
     {

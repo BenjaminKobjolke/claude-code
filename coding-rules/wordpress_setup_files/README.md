@@ -17,6 +17,10 @@ Copy `tools/*` into the project's `tools/` folder, then:
 
 1. Install dev deps:
    ```
+   REM Pre-allow the plugin FIRST — else composer throws an interactive allow-plugins
+   REM prompt that hangs non-interactive shells (CI, agents).
+   composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+
    composer require --dev squizlabs/php_codesniffer wp-coding-standards/wpcs phpcompatibility/phpcompatibility-wp dealerdirect/phpcodesniffer-composer-installer phpunit/phpunit
    ```
    (`dealerdirect/phpcodesniffer-composer-installer` auto-registers the WPCS + PHPCompatibilityWP standards with PHPCS — no manual `installed_paths` step. Confirm current package names before running; some may have moved to the `phpcsstandards/*` vendor.)

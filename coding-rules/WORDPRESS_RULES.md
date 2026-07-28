@@ -2,6 +2,7 @@
 
 See `COMMON_RULES.md` for rules that apply to all languages.
 See `PHP_RULES.md` for general PHP rules — this file only covers WordPress-specific idioms and does not restate them.
+See `WORDPRESS_THEMES.md` for building **custom blocks** when core blocks / FSE templates can't produce the design — block anatomy, the `@wordpress/scripts` build workflow, shared partials, and the pattern-seed gotcha.
 
 These rules cover **block themes (FSE)** and **plugins**. Classic `functions.php`-driven themes are out of scope.
 
@@ -40,6 +41,8 @@ Rules:
 - `theme.json` uses `"version": 3` and the matching `$schema`.
 - Text Domain in `style.css` **must** equal the theme folder slug.
 - Genericize before committing a starter: no real project's `Theme Name` / `Text Domain` baked in.
+
+When the design outruns core blocks and FSE templates, build a **custom block** instead of forcing core blocks — see `WORDPRESS_THEMES.md`.
 
 ---
 
@@ -209,12 +212,30 @@ Reuse the single `Logger` convention from the **Centralized Logger** table in `C
 
 ## Code Quality — WordPress Coding Standards
 
-Lint with PHPCS against the `WordPress` standard. Runners and the `phpcs.xml` template live in [`wordpress_setup_files/tools/`](wordpress_setup_files/tools/) — copy them into the project's `tools/` folder and follow that folder's `README.md`.
+PHPCS + WPCS is **required** on every WordPress project — it is the lint that enforces every rule above (escaping, i18n literals, prefixing, array/spacing style). Not optional.
+
+**Install** — run in the theme/plugin root that holds (or will hold) `composer.json`:
 
 ```
-tools\phpcs.bat     REM report violations
-tools\phpcbf.bat    REM auto-fix what is fixable
+REM 1. Pre-allow the plugin FIRST. dealerdirect/phpcodesniffer-composer-installer is a
+REM    Composer plugin; a plain `composer require` throws an interactive allow-plugins
+REM    prompt that hangs non-interactive shells (CI, agents, this tool).
+composer config --no-plugins allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
+
+REM 2. Install the standards as dev deps.
+composer require --dev squizlabs/php_codesniffer wp-coding-standards/wpcs phpcompatibility/phpcompatibility-wp dealerdirect/phpcodesniffer-composer-installer
 ```
+
+The installer plugin auto-registers the `WordPress` standard with PHPCS — no manual `installed_paths` step. `vendor/` is gitignored; `composer.json` + `composer.lock` are committed.
+
+Runners and the `phpcs.xml` template live in [`wordpress_setup_files/tools/`](wordpress_setup_files/tools/) — copy them into the project's `tools/` folder and follow that folder's `README.md`.
+
+```
+tools\phpcs.bat  [path]   REM report violations (no arg = scan per phpcs.xml)
+tools\phpcbf.bat [path]   REM auto-fix what is fixable
+```
+
+**When to use** — after **every feature / bugfix**, lint the changed files (`tools\phpcs.bat path\to\file.php`), auto-fix the mechanical findings with `tools\phpcbf.bat`, and lint again until clean **before commit**. This is part of the `verify:after-change` step, not a separate pass.
 
 ---
 

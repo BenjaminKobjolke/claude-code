@@ -1,0 +1,5 @@
+---
+description: Tell the FRONTEND_SLUG developer what to do next
+---
+
+Add as first entry to the plan: write a feedback file for the FRONTEND_SLUG developer describing what to implement. Create a new md file (`yyyy_mm_dd_TITLE.md`) in `FRONTEND_FEEDBACK_PATH` (path also in CLAUDE.md Related Projects section).

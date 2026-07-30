@@ -36,6 +36,15 @@ The sync is one-way (`commands/` is the source of truth) and auto-removes stale
 skills whose source command was renamed or deleted. Codex's own `.system/` skills
 and symlinked skills are left untouched.
 
+## frontend-backend-communication
+
+`/frontend-backend-communication:setup` — installs a cross-repo feedback loop between a
+backend (API) repo and a frontend/app repo: feedback commands in both repos'
+`.claude/commands/` plus CLAUDE.md "Related Projects" links. Templates in
+`frontend-backend-communication/setup_files/` (`.md.template` — not plain `.md`, so they
+don't register as commands themselves). Reference implementations: turbo-habits-api ↔
+turbo-habits-app, erp-api ↔ erp-frontend.
+
 ## Future
 
 Document other commands here as they are added.

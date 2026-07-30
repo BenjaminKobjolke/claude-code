@@ -1,0 +1,10 @@
+---
+description: Write feedback for bugs or change requests for the api developer
+---
+
+Check CLAUDE.md for the path to the api (Related Projects section).
+If it doesn't contain it, ask the user for it and store it in CLAUDE.md for next time.
+
+Then in the api directory in the folder `feedback/` write a new md file with `yyyy_mm_dd_TITLE.md` format of what changes you need.
+
+NOTE: This command writes feedback for the API team. If the user wants to IMPLEMENT changes from existing feedback reports, use /feedback:implement-new-api-changes instead.

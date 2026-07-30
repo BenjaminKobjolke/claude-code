@@ -75,6 +75,35 @@ Check if the current project has all applicable analyzers configured and suggest
 }
 ```
 
+### WordPress (block theme / plugin) Defaults
+
+WordPress uses WPCS (tab-indented) with its own escaping/i18n rules. Keep only
+`max_lines_per_file` + `pmd_duplicates`; **disable** the PSR-12 / PHPStan /
+Intelephense rules (PSR-12 fights WPCS tabs; PHPStan floods without WP stubs).
+Enforce WordPress style separately with PHPCS against the `WordPress` standard
+(`tools/phpcs.bat` / `tools/phpcbf.bat`) — never a PSR-12 fixer bat. Exclude the
+generated `build/` dir so compiled blocks don't duplicate against `src/`. See
+`{cli-code-analyzer-path}/docs/setup/WORDPRESS.md`.
+
+```json
+"max_lines_per_file": {
+  "enabled": true,
+  "warning": 300,
+  "error": 500,
+  "exclude_patterns": ["**/vendor/**", "**/node_modules/**", "**/build/**", "**/.git/**"]
+},
+"pmd_duplicates": {
+  "enabled": true,
+  "minimum_tokens": 100,
+  "exclude_patterns": {
+    "php": ["**/vendor/**", "**/node_modules/**", "**/build/**", "**/.git/**"]
+  }
+},
+"phpstan_analyze": { "enabled": false },
+"php_cs_fixer": { "enabled": false },
+"intelephense_analyze": { "enabled": false }
+```
+
 ### Intelephense LSP MCP Server
 
 The `intelephense_analyze` analyzer above uses the cli-code-analyzer. For real-time LSP-based diagnostics via MCP, the **Intelephense LSP MCP Server** can be configured separately.

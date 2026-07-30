@@ -20,6 +20,10 @@ Analyze the current project to determine its primary language:
 - **C#**: Look for `.csproj` or `.sln` files
 - **Python**: Look for `requirements.txt`, `setup.py`, `pyproject.toml`, or `*.py` files
 - **PHP**: Look for `composer.json` or `*.php` files
+- **WordPress theme/plugin** (a specialization of PHP): if PHP **and** any WordPress
+  marker is present — `style.css` with a `Theme Name:` header, `functions.php`,
+  `theme.json`, or a `wp-content/` path — treat it as WordPress. WordPress projects
+  often have **no** `composer.json`, so the markers are what identify them.
 - **AutoHotkey**: Look for `*.ahk`, `*.ah2`, or `*.ahk2` files
 
 If multiple languages are detected, ask the user which one to configure.
@@ -32,6 +36,9 @@ Based on the detected language, read the corresponding setup documentation from 
 - C#: `{cli-code-analyzer-path}/docs/setup/CSHARP.md`
 - Python: `{cli-code-analyzer-path}/docs/setup/PYTHON.md`
 - PHP: `{cli-code-analyzer-path}/docs/setup/PHP.md`
+- WordPress theme/plugin: `{cli-code-analyzer-path}/docs/setup/WORDPRESS.md` — read
+  this **instead of** PHP.md when WordPress markers are detected (it disables the
+  PSR-12 fixer / PHPStan and excludes the generated `build/` dir).
 - AutoHotkey: `{cli-code-analyzer-path}/docs/setup/AUTOHOTKEY.md`
 
 ## Step 4: Create Batch Files

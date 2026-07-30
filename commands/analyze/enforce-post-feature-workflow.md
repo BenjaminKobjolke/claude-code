@@ -98,6 +98,9 @@ First detect project language (same heuristic as `/analyze:setup`):
 - **C#**: `*.csproj` or `*.sln`
 - **Python**: `requirements.txt`, `setup.py`, `pyproject.toml`, or `*.py`
 - **PHP**: `composer.json` or `*.php`
+- **WordPress theme/plugin** (PHP specialization): PHP + a WordPress marker
+  (`style.css` with `Theme Name:`, `functions.php`, `theme.json`, or `wp-content/`).
+  Often has no `composer.json`. See `docs/setup/WORDPRESS.md`.
 - **JavaScript/TypeScript**: `package.json` + `*.ts` / `*.js`
 - **Svelte**: `*.svelte`
 - **AutoHotkey**: `*.ahk` / `*.ah2` / `*.ahk2`

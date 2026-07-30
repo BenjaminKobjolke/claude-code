@@ -98,11 +98,11 @@ Namespaced classes count as prefixed; plain functions and string handles do not.
 Load scripts and styles through the enqueue API with a resolved URL and a version, so cache-busting and dependency order are handled by WordPress. No `<script>` / `<link>` tags in templates.
 
 ```php
-// Theme
+// Theme — enqueue the COMPILED stylesheet, not a hand-written .css.
 add_action( 'wp_enqueue_scripts', function () {
     wp_enqueue_style(
         'acme-main',
-        get_theme_file_uri( 'assets/css/main.css' ),
+        get_theme_file_uri( 'build/theme/style-index.css' ),
         [],
         wp_get_theme()->get( 'Version' )
     );
@@ -119,6 +119,8 @@ wp_enqueue_script(
 ```
 
 Never build asset URLs by string-concatenating `get_stylesheet_directory_uri()` with a hand-written path when the helpers above resolve it.
+
+**No hand-written `assets/css/main.css`.** Theme-global CSS (the chrome no single block owns — header/nav bits a template part needs, a registered block-style's rules, global button/link transitions) is **SCSS-sourced and compiled**, exactly like block styles. Plain `.css` as source is banned (see `SCSS_RULES.md`). Author it once in `src/theme/style.scss`, compile it through `@wordpress/scripts`, and enqueue the built `build/theme/style-index.css` (front end **and** `add_editor_style`). The build wiring — and the `theme.json`-first rule that keeps this sheet minimal — is in `WORDPRESS_THEMES.md` § *Theme-global styles*.
 
 ---
 

@@ -61,6 +61,67 @@ Custom blocks are compiled with **`@wordpress/scripts`** (`wp-scripts`): `src/` 
 `node_modules/` is gitignored; **`build/` is committed** so the server runs without Node. Editing
 `src/` without rebuilding does nothing on the front end — the compiled `build/` copy is what loads.
 
+## Theme-global styles (no plain `main.css`)
+
+Some styling belongs to **no single block**: header/nav chrome a template part needs, the CSS behind
+a registered block-style (`is-style-*`), global button/link transitions. It is tempting to drop it in
+a hand-written `assets/css/main.css` — **don't.** Plain `.css` as source is banned (`SCSS_RULES.md`);
+theme-global styles are SCSS-sourced and compiled just like block styles.
+
+**`theme.json` first — keep this sheet small.** Anything a preset or a `styles.*` entry can express
+does **not** go here:
+
+| Want to style… | Put it in `theme.json`… |
+|---|---|
+| All links / buttons / headings | `styles.elements.{link,button,heading}` |
+| A whole core block (nav color, gap, …) | `styles.blocks.core/<block>` |
+| A color / spacing / font token | `settings` (palette, spacingSizes, fontSizes) |
+
+The SCSS sheet is only for what `theme.json` **can't** express: a custom-drawn control (e.g. a
+3-stripe hamburger built from `linear-gradient`s), pseudo-element decoration, a layout grid, a hover
+`transform`.
+
+**One entry, compiled by the same `wp-scripts` build:**
+
+```
+src/theme/
+  index.js       one line: import './style.scss';   (entry stub — no block here)
+  style.scss     THE theme-global CSS (presets only, no hardcoded hex)
+build/theme/
+  style-index.css   compiled + COMMITTED — this is what you enqueue
+```
+
+`wp-scripts` auto-detects build entries from **`block.json` only**, so a non-block folder like
+`src/theme` is invisible to the default config. Register it with a `webpack.config.js` at the theme
+root that spreads the default and adds the one entry — the `style.scss` import is then extracted to
+`build/theme/style-index.css`, the same `style-index.css` naming blocks get:
+
+```js
+// webpack.config.js
+const defaultConfig = require( '@wordpress/scripts/config/webpack.config' );
+
+module.exports = {
+	...defaultConfig,
+	entry() {
+		const entries =
+			typeof defaultConfig.entry === 'function'
+				? defaultConfig.entry()
+				: defaultConfig.entry;
+		return { ...entries, 'theme/index': './src/theme/index.js' };
+	},
+};
+```
+
+Enqueue the **built** file for the front end and the editor (so a registered block-style previews
+identically in both) — never the `.scss`, never a hand-written `.css`:
+
+```php
+wp_enqueue_style( 'acme-main', get_theme_file_uri( 'build/theme/style-index.css' ), [], $ver );
+add_editor_style( 'build/theme/style-index.css' );
+```
+
+After editing `src/theme/style.scss`, run `tools/build.bat` — same workflow as the blocks.
+
 ## Keep multiple blocks DRY
 
 - **Shared PHP partials live OUTSIDE `src/`** (e.g. `inc/render-cta.php`, `inc/render-heading.php`),

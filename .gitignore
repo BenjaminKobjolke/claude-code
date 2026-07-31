@@ -7,3 +7,4 @@ validate-code/vendor
 claude-plans
 coding-rules/claude-plans
 tmp/commit_msg.tmp
+PLAN.md

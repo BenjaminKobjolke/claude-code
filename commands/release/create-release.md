@@ -4,9 +4,8 @@ description: create new release based on docs/CREATE_NEW_RELEASE.md
 
 Create a new release. The concrete commands (version/build, folder path, build
 script, translator) live in the project's **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`**
-(authoritative) and the per-stack recipe at
-`coding-rules/<lang>_setup_files/CREATE_RELEASE_NOTES.md`. If the project doc is
-missing, stop and ask the user to run `/release:setup`.
+(authoritative) and the per-stack section in `coding-rules/CREATE_RELEASE_NOTES.md`. If
+the project doc is missing, stop and ask the user to run `/release:setup`.
 
 **Build-number model - bump first, ship next.** The build counter (e.g.
 `build_version.txt`) holds the **last shipped** build; `0` means nothing shipped
@@ -15,6 +14,13 @@ match the shipped label.
 
 ## Workflow
 
+### 0. End-user release or internal test build?
+
+Ask the user (if not already stated): is this build shipping to end users (App Store /
+Play production, public exe / download) or is it an internal test build (TestFlight,
+Play internal/beta, dev/test exe)? This decides the commit type in step 7 and whether
+release notes are required in step 2.
+
 ### 1. Compute the next release label
 
 Read the version (per the stack recipe) and the current build number. The release
@@ -22,10 +28,11 @@ ships as `<version>_<currentBuild + 1>`. Call this `<nextLabel>`.
 
 ### 2. Ensure release notes exist for `<nextLabel>`
 
-Check for the notes folder + `en.json` at `<nextLabel>` (path per the recipe). If
-missing, ask the user whether to run `/release:create-release-notes` first - those
-notes must be authored for the **next** label (current build + 1) and translated.
-Do not build without notes for the shipping label.
+Only required for an **end-user** release (skip entirely for an internal test build —
+no notes, no en.json). Check for the notes folder + `en.json` at `<nextLabel>` (path per
+the recipe). If missing, ask the user whether to run `/release:create-release-notes`
+first - those notes must be authored for the **next** label (current build + 1) and
+translated. Do not build an end-user release without notes for the shipping label.
 
 ### 3. Increment the build number
 
@@ -65,5 +72,8 @@ automatically (see the project's `CREATE_NEW_RELEASE.md`).
 
 ### 7. Commit & tag (optional, ask first)
 
-Offer to commit the release and tag it (e.g. `RELEASE: <nextLabel>`), so the next
-`/release:create-release-notes` can diff changes since this release.
+Offer to commit the release and tag it: `RELEASE (<scope>): <nextLabel>` for an
+end-user release, `INTERNAL (<scope>): <nextLabel>` for an internal test build. Only a
+`RELEASE` commit advances the anchor `/release:create-release-notes` diffs against —
+`INTERNAL` builds still bump the build counter but are skipped when locating "the last
+release".

@@ -409,8 +409,8 @@ Set up the release system with `/release:setup`. Reusable pieces live in
 - `tools/build_get.bat`, `tools/build_increment.bat`, `tools/build_decrement.bat`,
   `tools/version_get.bat` — thin `uv run` wrappers over the helper.
 - `CREATE_NEW_RELEASE.template.md` — fill-in-the-blanks for `docs/CREATE_NEW_RELEASE.md`.
-- `CREATE_RELEASE_NOTES.md` — the Python stack recipe read by `/release:create-release-notes`
-  (kept here, not under `commands/`, so it does not register as a slash-command).
+- The Python stack recipe read by `/release:create-release-notes` lives in the shared
+  `coding-rules/CREATE_RELEASE_NOTES.md` (`## Python / uv` section), not here.
 
 Conventions:
 

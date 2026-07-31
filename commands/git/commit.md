@@ -107,7 +107,8 @@ Adhere to the following rules.
  * **IMPROVE** (improvement, e.g. enhanced feature)
  * **TOOLS** (build, tools changes etc.)
  * **GIT** (.gitignore changed, Git configuration changed etc.)
- * **RELEASE**  (created a new .exe, .ipa, .apk etc.) There is no need to add the actual released file. But there should be a commit for every release so it is easier for old projects to track down what the last version was, that was sent to the client
+ * **RELEASE**  (build shipped to end users — App Store / Play production, public exe / download) There is no need to add the actual released file. But there should be a commit for every release so it is easier for old projects to track down what the last version was, that was sent to the client
+ * **INTERNAL**  (internal test build, not shipped to end users — TestFlight, Play internal/beta, dev/test exe) Same subject format as RELEASE (`<versionnumber>`). Bumps the build number and is tracked in history, but does NOT count as a release for release-notes purposes — see `/release:create-release-notes`, which anchors "changes since last release" on the last RELEASE commit and skips INTERNAL ones.
  * **CONTENT** (added images, html, pdf, video etc.)
  * **REFACTOR** (code restructuring without changing external behavior)
  * **PERF** (performance improvements)
@@ -125,6 +126,13 @@ RELEASE (<scope>): <versionnumber>
 <BLANK LINE>
 <footer>
 ```
+
+INTERNAL messages use the same format, just with `INTERNAL` as the type:
+```
+INTERNAL (<scope>): <versionnumber>
+```
+
+If it is unclear whether a release/build commit actually reached end users, ask the user "end-user release or internal test build?" and pick `RELEASE` vs `INTERNAL` accordingly. Do not guess.
 
 #### Allowed `<scope>`
 

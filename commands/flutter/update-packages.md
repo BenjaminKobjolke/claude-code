@@ -1,383 +1,191 @@
 ---
-description: Update flutter packages via fvm, one by one
+description: Preview and update Flutter packages in a verified batch via FVM
 ---
 
-### Step-by-step guide to update Flutter packages one by one with FVM
+# Update Flutter Packages
 
-#### Goal
-
-Upgrade dependencies incrementally, verifying the project after each upgrade, and keeping changes small and reversible.
-
----
+Use the project's tested FVM wrappers to list dependency updates without
+changing files. Apply the selected update scope separately, then run analysis
+and tests once on the completed dependency set.
 
 ## 0) Ask the user: upgrade scope
 
-Before starting, ask the user which upgrade scope they want:
+Before running package commands, ask which scope the user wants:
 
-* **Minor/patch only** — Only upgrade within existing version constraints (e.g. 2.0.7 → 2.0.8, 4.5.4 → 4.7.2). No major version bumps. Safest option, least risk of breaking changes.
-* **All available** — Also attempt major version upgrades (e.g. get_it 8.x → 9.x, google_mobile_ads 6.x → 7.x). Higher risk, may require code changes to fix breaking APIs.
+- **Minor/patch only** - run `tools\packages_get_minor.bat`. This previews
+  `fvm flutter pub upgrade --dry-run` within the current `pubspec.yaml`
+  constraints without changing the manifest or lockfile.
+- **All available, including major versions** - run
+  `tools\packages_get_major.bat`. This previews
+  `fvm flutter pub upgrade --major-versions --dry-run` and lists the constraints
+  that a real major upgrade would rewrite.
 
-Also ask if the user wants to upgrade transitive dependencies:
+Both wrappers list direct and transitive changes as far as the selected
+constraints allow. They never update packages. Do not ask a separate
+transitive-dependency question.
 
-* **Yes (recommended)** — After upgrading direct dependencies, run `fvm flutter pub upgrade` (no package name) to pull up all transitive deps within constraints.
-* **No** — Only upgrade direct dependencies listed in `pubspec.yaml`.
+## 1) Preconditions and setup files
 
-This determines whether to skip or attempt major version bumps in step 4, and whether to run step 4b.
+1. Work from the Flutter project root containing `pubspec.yaml`.
+2. Require a clean Git working tree. Ask the user to commit or stash existing
+   changes before upgrading packages.
+3. Read `docs/STATUS_OUTDATED_PACKAGES.md` when present so known blockers are
+   not retried unnecessarily.
+4. Confirm the project pins Flutter with FVM and that this works:
 
----
-
-## 1) Preconditions
-
-1. You are in the Flutter project root (folder containing `pubspec.yaml`).
-2. Git is clean (no uncommitted changes).
-3. You are using FVM and want all Flutter/Dart commands to run through it.
-
-Commands:
-
-```bash
-git status
+```bat
+git status --short
 fvm flutter --version
 ```
 
-If `git status` is not clean, commit or stash before continuing.
+The project must contain these wrappers:
 
----
-
-## 2) Snapshot current state
-
-1. Check if `docs/STATUS_OUTDATED_PACKAGES.md` exists. If it does, read it to understand what was upgraded previously, what was skipped, and why. This gives you context on known blockers and avoids re-attempting upgrades that are known to fail.
-
-2. Record current dependency state:
-
-```bash
-fvm flutter pub deps --style=compact > /tmp/pub_deps_before.txt
-fvm flutter pub outdated > /tmp/pub_outdated_before.txt
+```text
+tools\packages_get_minor.bat
+tools\packages_get_major.bat
 ```
 
-3. Ensure lockfile is present and up to date:
+If either is missing, copy both from:
 
-```bash
-fvm flutter pub get
+```text
+D:\GIT\BenjaminKobjolke\claude-code\commands\flutter\setup_files
 ```
 
-4. Run baseline checks (so later failures are clearly caused by upgrades):
+Do not replace a project-specific wrapper without inspecting it first.
 
-```bash
-fvm flutter analyze
-fvm flutter test
-```
+## 2) Capture the starting state
 
----
+Record the current dependency state before upgrading:
 
-## 3) Choose the upgrade order
-
-Upgrade “leaf” and test-only dependencies first, then tooling, then bigger plugins.
-
-Suggested order:
-
-1. Small libs: `characters`, `matcher`, `js`, `material_color_utilities`
-2. Test stack: `test_api`, `test_core`, `test`
-3. Codegen: `source_helper`, `json_serializable`
-4. Analyzer/tooling: `analyzer_plugin`, `analyzer`, `_fe_analyzer_shared`
-5. Large plugin: `google_mobile_ads`
-
-Get the current list:
-
-```bash
+```bat
 fvm flutter pub outdated
-```
-
----
-
-## 4) Define the "single package upgrade loop"
-
-For **each** package you upgrade, follow the same loop strictly.
-
-### Loop for one package: `<PKG>`
-
-#### A) Create a branch (optional but recommended)
-
-```bash
-git checkout -b chore/upgrade-<PKG>
-```
-
-#### B) Upgrade the package (pick ONE method)
-
-**Method 1: Upgrade within existing constraints**
-
-```bash
-fvm flutter pub upgrade <PKG>
-```
-
-**Method 2: Upgrade to a specific version (recommended for strict one-by-one control)**
-
-```bash
-fvm flutter pub add <PKG>:^<TARGET_VERSION>
-```
-
-Example:
-
-```bash
-fvm flutter pub add characters:^1.4.1
-```
-
-> Use Method 2 when you want to ensure exactly one dependency change at a time (as much as Pub allows).
-
-#### C) Fetch packages
-
-```bash
-fvm flutter pub get
-```
-
-#### D) Inspect what changed
-
-```bash
-git diff -- pubspec.yaml pubspec.lock
-```
-
-You want to see:
-
-* `pubspec.yaml` updated only for `<PKG>` (if you used `pub add`)
-* `pubspec.lock` changes are expected, but should be reasonably related
-
-#### E) Run verification checks
-
-Minimum:
-
-```bash
-fvm flutter analyze
-fvm flutter test
-```
-
-Optional (recommended if you have integration tests / formatting rules):
-
-```bash
-fvm flutter format --set-exit-if-changed .
-```
-
-#### F) If it fails: fix or revert
-
-* If it’s a simple compile/test issue, fix the code and re-run checks.
-* If it’s too disruptive, revert and try a smaller change.
-
-Revert:
-
-```bash
-git checkout -- pubspec.yaml pubspec.lock
-```
-
-Or discard branch:
-
-```bash
-git checkout main
-git branch -D chore/upgrade-<PKG>
-```
-
-#### G) Commit when green
-
-```bash
-git add pubspec.yaml pubspec.lock
-git commit -m "chore: upgrade <PKG> to <VERSION>"
-```
-
-#### H) Re-check what’s next
-
-```bash
-fvm flutter pub outdated
-```
-
-Merge branch (optional):
-
-```bash
-git checkout main
-git merge --no-ff chore/upgrade-<PKG>
-```
-
-Repeat loop for the next package.
-
----
-
-## 4b) Upgrade transitive dependencies
-
-If the user opted in at step 0, run a blanket upgrade to pull up all transitive dependencies within constraints:
-
-```bash
-fvm flutter pub upgrade
-```
-
-This upgrades all packages (direct + transitive) to the latest version allowed by the constraints in `pubspec.yaml`. Since direct dependencies were already upgraded individually in step 4, this mainly affects transitive deps.
-
-After running, verify with:
-
-```bash
-fvm flutter analyze
-fvm flutter test
-```
-
----
-
-## 5) How to handle packages that are NOT direct dependencies
-
-Some items in `pub outdated` (like `analyzer`, `_fe_analyzer_shared`, `test_core`) might be transitive.
-
-### Finding parent packages
-
-To identify which direct dependency pulls in a held-back transitive package, use:
-
-```bash
 fvm flutter pub deps --style=compact
 ```
 
-This prints every package with its dependencies in brackets, e.g.:
+When `pubspec.lock` is ignored, save a temporary copy if a rollback comparison
+will be needed. Never add an ignored lockfile to Git just for this workflow.
 
-```
-- dart_code_linter 3.2.1 [analyzer analyzer_plugin ...]
-- dartssh2 2.13.0 [asn1lib convert meta pointycastle pinenacl]
-```
+## 3) Preview one batch without changing files
 
-To find what pulls in a specific package, search for it inside the `[...]` brackets:
+Run exactly one wrapper selected from the user's scope:
 
-```bash
-fvm flutter pub deps --style=compact 2>/dev/null | grep -E "\[.*<PACKAGE>.*\]"
+```bat
+tools\packages_get_minor.bat
 ```
 
-Example — find what pulls in `pointycastle`:
+or:
 
-```bash
-fvm flutter pub deps --style=compact 2>/dev/null | grep -E "\[.*pointycastle.*\]"
+```bat
+tools\packages_get_major.bat
 ```
 
-Output: `- dartssh2 2.13.0 [asn1lib convert meta pointycastle pinenacl]`
+The wrappers:
 
-This tells you `dartssh2` is the parent. To unblock `pointycastle`, `dartssh2` needs to release a version that allows the newer `pointycastle`.
+- change to the project root using their own location;
+- verify that `pubspec.yaml` exists;
+- run Flutter Pub through FVM in `--dry-run` mode;
+- return Pub's exit code to the caller.
 
-For a full overview of all outdated packages and their resolvable versions:
+Confirm that `pubspec.yaml` and `pubspec.lock` remain unchanged after either
+preview wrapper.
 
-```bash
+## 4) Apply the selected batch intentionally
+
+After the user confirms the previewed scope, run the corresponding real Pub
+command separately. Do not remove `--dry-run` from the wrapper files.
+
+Minor/patch within current constraints:
+
+```bat
+fvm flutter pub upgrade
+```
+
+Including major-version constraint changes:
+
+```bat
+fvm flutter pub upgrade --major-versions
+```
+
+Do not run analysis or tests between individual packages on the normal path.
+
+## 5) Inspect the resolved batch
+
+After the wrapper succeeds:
+
+```bat
+git diff -- pubspec.yaml pubspec.lock
 fvm flutter pub outdated
 ```
 
-The "Resolvable" column shows the best version achievable within current constraints. If "Resolvable" equals "Current", the package is blocked by a parent constraint.
+Check that:
 
-### Rules
+- the selected scope was respected;
+- local `path:` dependencies were not replaced;
+- no unexplained `dependency_overrides` were introduced;
+- remaining packages are major-version exclusions or constraint-blocked.
 
-* If it’s **directly listed in your `pubspec.yaml`**, upgrade it normally.
-* If it’s **not in `pubspec.yaml`**, it’s transitive:
+For a transitive blocker, use `fvm flutter pub deps --style=compact` to find
+the direct parent rather than forcing an override.
 
-  * Use `fvm flutter pub deps --style=compact` to find the parent dependency.
-  * Prefer upgrading the **direct dependency** that pulls it in (e.g., upgrading `test` may bump `test_core`).
-  * Avoid forcing transitive overrides unless necessary.
+## 6) Analyze and test once
 
-If you must pin a transitive version temporarily:
+Run the project's required verification after the complete batch:
 
-```yaml
-dependency_overrides:
-  analyzer: ^9.0.0
+```bat
+fvm flutter analyze --no-pub
+tools\tests.bat
 ```
 
-Then:
+If the project defines different verification commands in `CLAUDE.md`, use
+those instead. Run builds and changed-file analysis when the project workflow
+requires them.
 
-```bash
-fvm flutter pub get
-fvm flutter analyze
-fvm flutter test
-```
+## 7) Failure handling
 
-Remove overrides once the direct dependencies catch up.
+If dependency resolution fails:
 
----
+1. Read Pub's conflicting constraints.
+2. Restore or pin only the blocked direct package to its prior compatible
+   version.
+3. Run the selected wrapper again for the remaining batch.
+4. Document the blocker and its parent constraint.
 
-## 6) Notes for major upgrades
+If analysis, tests, or builds fail:
 
-If the available version is a major bump (e.g., `google_mobile_ads 6.x -> 7.x`, `analyzer 8.x -> 9.x`):
+1. Apply required compatibility migrations when they are within the selected
+   scope.
+2. Re-run only the failed verification while diagnosing.
+3. If the responsible upgrade cannot be made green, restore that package and
+   resolve the batch again.
 
-1. Upgrade it alone in its own commit.
-2. Expect breaking changes and consult release notes/changelog.
-3. If it breaks, either:
+Avoid `dependency_overrides` unless the user explicitly approves a temporary
+override. For Android plugin upgrades, check compile SDK requirements. After
+changing plugin versions, a stale Kotlin incremental-cache failure on Windows
+can usually be cleared with `fvm flutter clean` before rebuilding.
 
-   * fix code accordingly, or
-   * keep it at the latest minor/patch within the current major for now.
+## 8) Document the result
 
----
+Update `docs/STATUS_OUTDATED_PACKAGES.md` with:
 
-## 7) Minimal command template (copy/paste)
+- the absolute session date;
+- direct dependency changes;
+- transitive dependency changes;
+- skipped major versions and blocked packages with reasons;
+- Flutter/Dart versions;
+- analysis, test, and build results.
 
-Replace `<PKG>` and `<VERSION>`:
+Leave changes committed or uncommitted according to the user's request.
 
-```bash
-git checkout -b chore/upgrade-<PKG>
-fvm flutter pub add <PKG>:^<VERSION>
-fvm flutter pub get
-git diff -- pubspec.yaml pubspec.lock
-fvm flutter analyze
-fvm flutter test
-git add pubspec.yaml pubspec.lock
-git commit -m "chore: upgrade <PKG> to <VERSION>"
-git checkout main
-git merge --no-ff chore/upgrade-<PKG>
-```
+## 9) Windows/FVM troubleshooting
 
----
+If `fvm flutter` hangs or produces no output:
 
-## 8) Suggested first few upgrades from your list
+1. Confirm `.fvmrc` exists and run `fvm doctor`.
+2. Check for stale `fvm`, `flutter`, or `dart` processes from timed-out calls.
+3. In a sandboxed agent environment, retry with permission for FVM to access
+   its SDK, Pub, Git, Gradle, and Android caches outside the project workspace.
+4. Keep project commands routed through FVM. Use the pinned SDK executable
+   directly only as a diagnostic when FVM itself cannot start.
 
-Start with small ones:
-
-* `characters` → `^1.4.1`
-* `matcher` → `^0.12.18`
-* `test_api` → `^0.7.8`
-* `json_serializable` → `^6.11.3`
-
-Then continue.
-
----
-
-## 9) Troubleshooting: `fvm flutter` produces no output
-
-On Windows, `fvm flutter pub outdated` (and other `fvm flutter` commands) may exit with code 0 but produce **no output at all**. This is an FVM bug where the proxy swallows stdout.
-
-### How to diagnose
-
-Run `fvm doctor` and check the output. If you see:
-
-* `Config Present: No`
-* `Pinned Version: None`
-
-Then FVM has no pinned version and is just proxying to the system Flutter, which causes the stdout issue.
-
-### Solution 1: Pin the Flutter version (fixes the root cause)
-
-```bash
-fvm use <VERSION>
-```
-
-Example: `fvm use 3.35.7`. This creates a `.fvmrc` file in the project root. After pinning, `fvm flutter pub outdated` should produce output normally.
-
-### Solution 2: Call Flutter directly (bypass FVM)
-
-If pinning doesn't help, call Flutter without the FVM wrapper:
-
-```bash
-flutter pub outdated
-```
-
-This works when no FVM version is pinned and the system Flutter is the intended SDK.
-
-### Solution 3: Use `pub get` output as a workaround
-
-`fvm flutter pub get` prints lines like `package_name 1.0.0 (2.0.0 available)` as a side effect. This gives the same information in a different format.
-
----
-
-## 10) Final step: Document remaining outdated packages
-
-After all upgrades are complete, document what was upgraded, what was skipped, and why in `docs/STATUS_OUTDATED_PACKAGES.md`. This gives the next upgrade session full context.
-
-The document should include:
-
-* **Upgraded packages** — what was upgraded in this session with version numbers
-* **Skipped direct dependencies** — packages that were intentionally skipped (e.g. major version bumps, dependency conflicts) with the reason
-* **Remaining transitive dependencies** — packages not in `pubspec.yaml` that can only be upgraded by upgrading their parent
-* **Blocked packages** — packages pinned by Flutter SDK or third-party constraints that cannot be upgraded until external updates happen
-
----
+Do not assume a silent command succeeded, and do not begin modifying package
+constraints until FVM health is confirmed.

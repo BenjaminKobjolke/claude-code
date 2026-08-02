@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # Arduino C/C++ Rules (arduino-cli)
 
 See `COMMON_RULES.md` for rules that apply to all languages. The rules below add the

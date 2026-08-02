@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # PHP REST API Rules
 
 These rules apply to PHP REST API projects using Slim 4 + Cycle ORM.

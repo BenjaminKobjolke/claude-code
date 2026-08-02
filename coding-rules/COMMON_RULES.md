@@ -1,7 +1,28 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # Common Rules (All Languages)
 
 These rules apply to all projects, regardless of language. Language-specific rules live in the
 corresponding `*_RULES.md` files.
+
+---
+
+## Keep CLAUDE.md in Sync
+
+When working on a project, copy all relevant rules into the project's `CLAUDE.md` file:
+
+- Always include all rules from `COMMON_RULES.md` and `AI_RULES.md`
+- Also include applicable language-specific, project-type, and supplemental rule files
+- Include optional addon rule files only when the user has opted in to that addon
+- If applicability is unclear, ask the user which rules to include
+- Include each source file's `# Version` block with its copied rules
+- If `CLAUDE.md` already exists, compare each source file's version with the corresponding copied
+  rule block and update only stale or unversioned blocks, keeping the result deduplicated
+- If `CLAUDE.md` contains coding-rule `@import` lines from an earlier run, replace those imports
+  with the corresponding rule content
 
 ---
 

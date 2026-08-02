@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # Svelte Rules
 
 See `COMMON_RULES.md` for rules that apply to all languages.

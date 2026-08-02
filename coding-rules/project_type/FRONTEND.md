@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # Frontend SPA Rules
 
 These rules apply to all frontend single-page application projects, regardless of framework.

@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # graphify Knowledge Graph (Optional Addon)
 
 **Optional.** Before adding this to a project, ASK the user whether they want to use graphify.
@@ -39,13 +44,10 @@ orient before grep and to spot god classes.
    - `--directed` is **required**. Without it the graph is undirected and total edge count blends
      incoming and outgoing — you cannot tell a healthy shared base (high fan-**in**) from a god
      class (high fan-**out**).
-4. **Replace the generic `CLAUDE.md` section** the installer wrote with a single
-   `@import` line:
-   ```
-   @D:\GIT\BenjaminKobjolke\claude-code\coding-rules\ai_rules_addons\graphify_rules.md
-   ```
-   Do not paste the rules text — import `graphify_rules.md` so fixes there propagate
-   to every project without a manual re-sync.
+4. **Customize the `CLAUDE.md` section** the installer wrote: replace generic `.`/`src`
+   references with the actual `<code-dir>`. Replace that section with this file's `# Version`
+   block and document title followed by the "Using" + "Refreshing" rules below. Keeping the
+   version with the copied rules allows `coding-rules:add-or-update` to detect stale copies.
 5. **gitignore the output** — build artifacts + cache, never committed:
    ```
    graphify-out/
@@ -69,7 +71,26 @@ orient before grep and to spot god classes.
 
 ---
 
-## Rules for the project's CLAUDE.md
+## Rules to paste into the project's CLAUDE.md (only if the user opted in)
 
-See `graphify_rules.md` in this folder — `@import` it (step 4 above), never copy its
-text in.
+Prepend this file's `# Version` block and `# graphify Knowledge Graph (Optional Addon)` title
+when copying the following sections.
+
+### Using the graph
+
+- For codebase questions, run `graphify query "<question>"` first when `graphify-out/graph.json`
+  exists. `graphify path "<A>" "<B>"` for relationships; `graphify explain "<concept>"` for a
+  focused node. These return a small scoped subgraph vs. reading GRAPH_REPORT.md or raw grep.
+- Judge coupling by direction: high **fan-in** + low fan-out (shared base / constants / DTO) is
+  healthy; high **fan-out** (>~20 outgoing deps) is god-class risk and a refactor signal.
+- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review, or when
+  query/path/explain do not surface enough context.
+
+### Refreshing after a code change
+
+- After a feature or any code change, rebuild via the **directed skill flow**: re-run
+  `/graphify <code-dir> --directed`, writing to the project-root `graphify-out/`.
+- Do NOT use the bare `graphify update <code-dir>` CLI — it has no `--directed` flag and writes a
+  full UNDIRECTED graph into `<code-dir>/graphify-out/` (wrong location), desyncing the live
+  graph. If that stray graph appears, delete `<code-dir>/graphify-out/graph.json` (keep `cache/`).
+- Verify after rebuild: `graph.json` has `directed: true` and lives in root `graphify-out/`.

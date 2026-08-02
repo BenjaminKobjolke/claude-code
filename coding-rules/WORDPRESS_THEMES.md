@@ -1,3 +1,8 @@
+# Version
+1
+
+Increase this version number whenever this rule file changes.
+
 # WordPress Theme Rules — Custom Blocks
 
 See `WORDPRESS_RULES.md` for the general block-theme / FSE rules (structure, security, i18n, PHPCS).

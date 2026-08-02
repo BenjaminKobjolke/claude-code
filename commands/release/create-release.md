@@ -12,6 +12,35 @@ the project doc is missing, stop and ask the user to run `/release:setup`.
 yet. A release **increments** it and ships that new number. The notes folder must
 match the shipped label.
 
+## Codex agents: run Windows BAT files outside the sandbox
+
+Codex agents must run the project's documented release, translation, signing, and
+publish BAT files with `sandbox_permissions: "require_escalated"`. Use the exact
+working directory and command from `docs/CREATE_NEW_RELEASE.md`; for a BAT that calls
+other BAT files, use `cmd /c call .\script.bat`.
+
+This is required even when the same BAT works in the user's terminal. The managed
+Codex command sandbox can interfere with nested Windows command wrappers such as
+Chocolatey FVM. A typical failure is `fvm.exe` spawning a `cmd.exe` process that
+consumes CPU indefinitely without ever starting Dart, Flutter, Gradle, or Java.
+
+For Flutter release scripts that use FVM:
+
+1. First run `fvm flutter --version` with
+   `sandbox_permissions: "require_escalated"` from the project root.
+2. Run the documented release BAT with
+   `sandbox_permissions: "require_escalated"` from its documented working directory.
+3. Allow the timeout required by the project documentation, yield while it runs, and
+   keep waiting on that original process. Never start a second release build in
+   parallel.
+
+If a sandboxed attempt was started accidentally and stalls, inspect the release lock,
+version file, expected artifacts, and recently started FVM/build processes without
+changing them. Stop only the exact runaway child process from that attempt so the
+release script can execute its rollback. Before retrying outside the sandbox, verify
+that the previous version was restored, the lock was removed, and no release process
+is still running.
+
 ## Workflow
 
 ### 0. End-user release or internal test build?

@@ -6,13 +6,8 @@ Check CLAUDE.md if it contains the path to the coding rules
 If not ask the user for the path then store it in CLAUDE.md
 Check the MD files in that folder. Always identify the common rules file (`COMMON_RULES.md`) and the AI workflow rules file (`AI_RULES.md`) regardless of language, plus the file specific to the language or languages of the current project.
 
-Reference these files via `@import` lines in the project's CLAUDE.md, using absolute paths — do not paste their rule text into CLAUDE.md. Example:
-
-```
-@D:\path\to\claude-code\coding-rules\COMMON_RULES.md
-@D:\path\to\claude-code\coding-rules\AI_RULES.md
-@D:\path\to\claude-code\coding-rules\<LANGUAGE>_RULES.md
-```
+Read the COMMON_RULES.md an AI_Rules.md files.
+They might contain changes how to handle the rule files.
 
 If CLAUDE.md already has rule text copy-pasted in from an earlier run, replace it with the import lines (dedup).
 

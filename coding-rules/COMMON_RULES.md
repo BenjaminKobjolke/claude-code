@@ -7,11 +7,25 @@ corresponding `*_RULES.md` files.
 
 ## Keep CLAUDE.md in Sync
 
-When working on a project, copy all relevant rules into the project's `CLAUDE.md` file:
+When working on a project, reference the shared rules via Claude Code `@import` lines in the
+project's `CLAUDE.md`, using absolute paths into this repo's `coding-rules/` folder:
 
-- Always include the common rules from `COMMON_RULES.md`
-- Also include the language-specific rules for the project's language
-- If `CLAUDE.md` already exists, compare and update it to keep rules current and deduplicated
+```
+@D:\path\to\claude-code\coding-rules\COMMON_RULES.md
+@D:\path\to\claude-code\coding-rules\AI_RULES.md
+@D:\path\to\claude-code\coding-rules\<LANGUAGE>_RULES.md
+```
+
+- Always import `COMMON_RULES.md` and `AI_RULES.md`
+- Also import the language-specific `*_RULES.md` file(s) for the project's language
+- If `CLAUDE.md` already has rule text copy-pasted in, replace it with the import lines instead
+- `@import` is a Claude Code feature resolved from `CLAUDE.md` — absolute paths are required so
+  it works regardless of the project's working directory
+
+**Project overrides.** If the project deviates from any imported rule — overrides, disables, or
+replaces it — state that explicitly in a section **below** the imports in the project's
+`CLAUDE.md`. The imports are the shared baseline; that section is where the project records its
+exceptions, so the deviation is visible without diffing against the shared rule files.
 
 ---
 

@@ -1,56 +1,29 @@
 ---
-description: Post-implementation DRY audit — check changed files for duplication and consolidation opportunities
+description: Run a bounded post-implementation DRY audit on changed code
+argument-hint: "[pathspec]"
+context: fork
+agent: general-purpose
+model: haiku
+effort: low
+disallowed-tools: Edit, Write, NotebookEdit
 ---
 
-Audit recent code changes for DRY violations and consolidation opportunities. Run this after implementing a feature or fix.
+Audit changed code for duplication, missed reuse, and unnecessary complexity. This command is read-only.
 
-Steps:
+Optional scope: $ARGUMENTS
 
-1. **Identify changed files**: Run `git diff --name-only` (staged and unstaged) to see what was modified. If no changes found, ask the user which files to check.
+1. Inventory staged, unstaged, and untracked changes with `git status --short`, `git diff --stat`, and `git diff --cached --stat`. Count lines in untracked text files without loading their contents into context. If a pathspec is supplied, restrict every query, read, and search to it. If nothing matches, ask for a valid pathspec and stop.
+2. Before reading code, enforce the budget. If the scope exceeds 10 files or 500 added/removed lines, do not audit or run Ponytail; ask the user to rerun with a narrower pathspec.
+3. Inspect the changed hunks first. Read surrounding code only when needed to understand a hunk; do not read whole large files.
+4. Look for duplication among the changes and missed existing abstractions. Make at most 3 targeted searches, inspect at most 3 unchanged reference files, and read at most 300 reference lines total. Never run an unrestricted repository survey.
+5. Report only concrete findings supported by file and line references. Do not propose a new abstraction without at least 2 consumers or a clear local convention.
+6. Run `/ponytail:ponytail` inside this same fork, scoped to these changes, for the separate YAGNI/KISS pass. If Ponytail is unavailable, do not install it; report that the YAGNI gate is incomplete.
 
-2. **Scan for duplication across changed files**:
-   - Are similar code blocks repeated across multiple files?
-   - Were multiple templates/files modified with the same pattern?
-   - Could a single shared component, CSS rule, or utility replace per-file changes?
+Return at most 300 words using only applicable headings:
 
-3. **Compare against existing shared resources**:
-   - Check for existing reusable components, Twig partials, SCSS mixins
-   - Check for existing utility functions or helper methods
-   - Check for existing CSS classes that could replace inline or per-file styles
+## Duplication
+## Reuse Opportunities
+## YAGNI/KISS
+## Verdict
 
-4. **Check for over-engineering and complexity (YAGNI + KISS)**:
-   - Are there new abstractions that only have one consumer? (premature abstraction)
-   - Could the change be simpler?
-
-5. **Report findings**:
-
-   ## DRY Audit Results
-
-   ### Duplication Found
-   - List each instance with file paths and line numbers
-   - Suggest how to consolidate (shared component, utility, CSS rule, etc.)
-
-   ### Consolidation Opportunities
-   - Per-file changes that could be a single shared solution
-   - Code that duplicates existing utilities
-
-   ### No Issues Found
-   - If the code is already DRY, confirm it
-
-6. If issues are found, ask the user if they want to fix them now.
-
-This command audits and reports. It does NOT auto-fix unless the user asks.
-
-When done run /ponytail:ponytail for a YAGNI check
-
-If /ponytail:ponytail is not available, install it first:
-
-```
-/plugin marketplace add DietrichGebert/ponytail
-/plugin install ponytail@ponytail
-```
-
-Related commands:
-- /plan:dry — check a plan for DRY (before implementation)
-- /convention:check — pre-implementation convention scanner
-- /simplify — review changed code for reuse and quality
+If issues exist, end by asking whether the user wants them fixed. Do not modify any files.

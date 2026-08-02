@@ -1,61 +1,29 @@
 ---
 description: Run a scoped, token-efficient convention scan before implementing changes
+context: fork
+agent: Explore
+model: haiku
+effort: low
 ---
 
-Pre-implementation convention scanner. Run this before making code changes to identify existing patterns, components, and conventions that MUST be reused.
+Find conventions relevant to this proposed change: $ARGUMENTS
 
-Default to the cheapest useful scan. Do not read whole directories, inspect every similar file, or fill irrelevant checklist sections. Expand only when the first pass does not produce enough evidence to guide the implementation.
+This is a read-only, bounded scan. If `$ARGUMENTS` is empty, do not inspect the repository; ask for a concrete change description.
 
-Steps:
+1. Classify the smallest affected area: UI, backend/service, data/model, translations/content, tests, tooling, or documentation.
+2. Run the first pass:
+   - Derive at most 3 concrete search terms from the request.
+   - Make at most 3 targeted search calls. Prefer Grep/Glob or `rg`, request filenames or counts first, and cap displayed matches at 10. Never dump unrestricted recursive output.
+   - Read at most 3 representative files and at most 200 relevant lines total. Do not read whole directories or large files in full.
+   - Inspect only convention types relevant to the classified area, such as reusable components, service/DI patterns, validation/serialization, translation syntax, tests, or tooling structure.
+3. Stop when either one implementation plus corroborating test/config/usage evidence, or two consistent implementations, establish the convention.
+4. If evidence is missing or conflicting, run one expansion pass only: at most 2 more searches, 2 more files, and 150 more relevant lines. Then stop and report the gap or conflict.
+5. Mention reuse and DRY opportunities found in this evidence. Do not perform a separate DRY search, broad manifest inventory, or unrelated architecture survey.
 
-1. Get the feature or change description from $ARGUMENTS. If not provided, ask the user what they're about to implement.
+Return at most 250 words and cite no more than 3 representative paths. Use only these headings, omitting empty ones:
 
-2. **Classify the change**: Identify the smallest likely area affected by the request, such as UI, backend service, model/schema, translations, styles, tests, build tooling, or documentation.
+## Conventions
+## Reuse
+## Constraints or Gaps
 
-3. **Start from targeted evidence**:
-   - Prefer `rg` over recursive file reads.
-   - Search for 2-5 concrete terms from the request: domain nouns, component names, route names, service names, labels, config keys, or test names.
-   - Inspect manifests, route/config files, or changed files only when they help locate the relevant area.
-   - Read the smallest representative files needed to infer the convention.
-
-4. **Scan only relevant convention types**:
-   - UI changes: look for existing components, widgets, templates, view models, form controls, layout patterns, and styles used for similar UI.
-   - Backend/service changes: look for service registration, dependency injection, repository/client patterns, error handling, logging, and tests around similar behavior.
-   - Data/model changes: look for schema, migration, validation, serialization, naming, and fixture patterns.
-   - Translation/content changes: look for key naming, placeholder syntax, fallback behavior, and locale file organization.
-   - Tooling/docs changes: look for existing scripts, docs structure, naming, and verification commands.
-
-5. **Deepen only when needed**:
-   - If no pattern is found, broaden the search one level and say what was searched.
-   - If multiple incompatible patterns are found, cite the candidates and recommend the one closest to the requested change.
-   - If enough evidence exists, stop. Cite representative files instead of listing every match.
-
-6. **Check for DRY opportunities**:
-   - Note similar implementations that should be reused or extended.
-   - Prefer existing abstractions over per-file duplication.
-   - Do not propose a new abstraction unless at least two concrete consumers or a clear local pattern justify it.
-
-7. **Report compact findings**:
-
-   ## Convention Check Results
-
-   ### Relevant Conventions Found
-   - Summarize only conventions that apply to the requested change.
-
-   ### Files and Patterns to Reuse
-   - List representative file paths and reusable components, helpers, scripts, or tests.
-
-   ### Gaps or Ambiguity
-   - Mention missing evidence or conflicting patterns. Omit this section if there are none.
-
-   ### Implementation Constraints
-   - List concise rules the implementation must follow.
-
-8. Tell the user: "Use these conventions in your implementation. Run /convention:check again after implementation to verify compliance."
-
-This command does NOT make any code changes. It only scans and reports.
-
-Related commands:
-- /plan:feature - uses convention checking during planning
-- /feedback:implement-new-api-changes - has built-in convention checking
-- /dry:check - post-implementation DRY audit
+Do not make any code changes.

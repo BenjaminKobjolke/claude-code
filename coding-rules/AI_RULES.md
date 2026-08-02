@@ -4,7 +4,8 @@ See `COMMON_RULES.md` for rules that apply to all languages.
 
 Unlike the per-language `*_RULES.md` files, these rules are **language-independent** and
 **always apply**. They are not subject to the "some rules may not apply to this project"
-filtering — include them in every project's `CLAUDE.md`.
+filtering — import them into every project's `CLAUDE.md` via `@import` (see
+`COMMON_RULES.md` § Keep CLAUDE.md in Sync).
 
 These rules define the end-to-end workflow an AI agent must follow when planning and
 implementing changes. Each step is an existing skill referenced by its slash name; run the
@@ -17,10 +18,13 @@ skill rather than reimplementing its behavior.
 After a plan is proposed and the user approves it, follow this chain. The DRY
 gate is a precondition for implementing — not just an earlier step.
 
+The approved plan must first exist as an explicit Markdown file. Pass that same
+path to both plan-DRY commands.
+
 ```
 plan approved
-  → /plan:dry            check approved plan for DRY/consolidation BEFORE code
-  → /plan:dry-checked    reload + review the DRY-adjusted plan
+  → /plan:dry <plan-file>         rewrite approved plan for DRY/YAGNI BEFORE code
+  → /plan:dry-checked <plan-file> reload the adjusted plan into the current context
   → /convention:check    scan for existing patterns/components to reuse
   ─────────────────────  DRY GATE — must be cleared to proceed
   → restate Definition-of-Done aloud
@@ -34,8 +38,8 @@ plan approved
 Do not write a single line until ALL are true. Restate this gate aloud at the
 moment you start implementing — if you cannot, the gate is not cleared:
 
-- [ ] `/plan:dry` ran and the plan was adjusted for any duplication found.
-- [ ] `/plan:dry-checked` reloaded and confirmed the adjusted plan.
+- [ ] `/plan:dry <plan-file>` adjusted that file and completed its Ponytail pass.
+- [ ] `/plan:dry-checked <plan-file>` reloaded the same adjusted plan.
 - [ ] `/convention:check` found the existing utilities/patterns to reuse.
 
 The gate survives the `implement` step: if mid-implementation you add a new

@@ -519,8 +519,17 @@ Update all dependencies:
 
 Run the test suite:
 
-- Runs `fvm flutter test`
-- Shows pass/fail summary
+- Runs `fvm flutter test`, redirected to a temp file so the script captures
+  flutter test's own exit code before anything else touches it
+- Shows pass/fail summary based on that captured exit code, then `exit /b`s
+  with it
+- If you add noise filtering for third-party log spam, filter the temp file
+  with PowerShell `Select-String -NotMatch` (see comment in the bat) - never
+  pipe `fvm flutter test` straight into `findstr`. The pipe's exit code
+  becomes the filter's exit code, not flutter test's, so a real failure can
+  silently read as a pass (or vice versa). `findstr` also has a ~8191-char
+  line-length limit and errors on long compact-reporter lines, tripping the
+  same bug even harder.
 
 ### tools/build_debug.bat
 

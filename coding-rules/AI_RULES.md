@@ -62,14 +62,24 @@ path to both plan-DRY commands.
 
 ```
 plan approved
-  → /plan:dry <plan-file>         rewrite approved plan for DRY/YAGNI BEFORE code
-  → /plan:dry-checked <plan-file> reload the adjusted plan into the current context
-  → /convention:check    scan for existing patterns/components to reuse
-  ─────────────────────  DRY GATE — must be cleared to proceed
-  → restate Definition-of-Done aloud
-  → implement
-  → /dry:check           post-implementation DRY audit (template below)
-  → /verify:after-change run tests + code analysis
+
+run
+codex exec --dangerously-bypass-approvals-and-sandbox "FULL PATH TO PLAN - Can you check the plan for DRY opportunities and if you find any, apply them to the original plan file. Add a summary at the end what you changed and why."
+
+run
+codex exec --dangerously-bypass-approvals-and-sandbox "FULL PATH TO PLAN $convention-check - If you want to make any changes, apply them to the original plan file. Add a summary at the end what you changed and why."
+
+/plan:dry-checked    reload the DRY and convention adjusted plan
+
+restate Definition-of-Done aloud
+
+implement
+
+run post-implementation DRY audit
+codex exec --dangerously-bypass-approvals-and-sandbox "FULL PATH TO PLAN - Can you check the plan for DRY opportunities and if you find any, apply them to the original plan file. Add a summary at the end what you changed and why."
+
+Post-Feature Verification + Post-Implementation Code Analysis (project-specific, below)
+
 ```
 
 ### DRY gate (precondition for implementing)

@@ -137,5 +137,7 @@ These live in `ai_rules_addons/` and are **not** always-on. Each is opt-in per p
 the user whether they want it before wiring it into that project's `CLAUDE.md`.
 
 - [`ai_rules_addons/graphify.md`](ai_rules_addons/graphify.md) — graphify knowledge graph:
-  scoped + directed AST build, folder layout, gitignore, and the query/refresh rules to paste
-  into a project's `CLAUDE.md`.
+  scoped + directed AST build, folder layout, gitignore. One-time setup only — not for
+  import. Once set up, the project's `CLAUDE.md` gets a single `@import` line for
+  [`ai_rules_addons/graphify_rules.md`](ai_rules_addons/graphify_rules.md) (query/refresh
+  rules), never pasted text.

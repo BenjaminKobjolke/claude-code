@@ -3,7 +3,6 @@
 The coding rules now live in their own repo, packaged as an installable Claude Code plugin:
 
 https://github.com/BenjaminKobjolke/claude-coding-rules
-(local clone: `D:\GIT\BenjaminKobjolke\claude-coding-rules`)
 
 Install:
 

@@ -18,6 +18,25 @@ Commands using ponytail:
 - `plan/dry.md` — DRY check on a plan, then `/ponytail` YAGNI pass
 - `dry/check.md` — post-implementation DRY audit, then `/ponytail` YAGNI pass
 
+## coding-rules plugin
+
+The coding rules and their commands moved to a dedicated plugin repo:
+https://github.com/BenjaminKobjolke/claude-coding-rules
+(local clone: `D:\GIT\BenjaminKobjolke\claude-coding-rules`)
+
+Install:
+
+```
+/plugin marketplace add BenjaminKobjolke/claude-coding-rules
+/plugin install coding-rules@claude-coding-rules
+```
+
+Skills: `/coding-rules:apply` (was `commands/coding-rules/add-or-update.md`) and
+`/coding-rules:enforce` (was `commands/coding-rules/enforce.md`). The old
+`commands/coding-rules/` folder and the `coding-rules/` rule files were removed
+from this repo; the plugin bundles the rules itself, so projects no longer need
+a rules folder path in CLAUDE.md.
+
 ## Codex sync
 
 These commands are used by Codex too, not just Claude. Claude reads `commands/`

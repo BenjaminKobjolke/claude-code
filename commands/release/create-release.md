@@ -7,6 +7,15 @@ script, translator) live in the project's **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW
 (authoritative) and the per-stack section in `coding-rules/CREATE_RELEASE_NOTES.md`. If
 the project doc is missing, stop and ask the user to run `/release:setup`.
 
+**Arguments.** No arg = **end-user app-store release** (the default). Pass
+`internal` (`/release:create-release internal`) for an internal test build
+(TestFlight, Play internal/beta, dev/test exe).
+
+**Interaction contract.** The default (end-user) path runs unattended with
+**exactly one** interactive question: the publish confirmation in step 6.
+Everything else — release notes, build-number bump, translation, build, commit,
+tag — happens automatically. Do not ask the user to confirm those steps.
+
 **Build-number model - bump first, ship next.** The build counter (e.g.
 `build_version.txt`) holds the **last shipped** build; `0` means nothing shipped
 yet. A release **increments** it and ships that new number. The notes folder must
@@ -43,12 +52,16 @@ is still running.
 
 ## Workflow
 
-### 0. End-user release or internal test build?
+### 0. End-user release or internal test build? (from the arg — do not ask)
 
-Ask the user (if not already stated): is this build shipping to end users (App Store /
-Play production, public exe / download) or is it an internal test build (TestFlight,
-Play internal/beta, dev/test exe)? This decides the commit type in step 7 and whether
-release notes are required in step 2.
+Read the invocation arg instead of asking:
+
+- **No arg** → end-user release (App Store / Play production, public exe / download).
+  Commit type `RELEASE` in step 7; release notes **required** in step 2.
+- **`internal`** → internal test build (TestFlight, Play internal/beta, dev/test exe).
+  Commit type `INTERNAL` in step 7; release notes **skipped** in step 2.
+
+Only ask the user if an arg was passed but is not `internal`.
 
 ### 1. Compute the next release label
 
@@ -59,9 +72,13 @@ ships as `<version>_<currentBuild + 1>`. Call this `<nextLabel>`.
 
 Only required for an **end-user** release (skip entirely for an internal test build —
 no notes, no en.json). Check for the notes folder + `en.json` at `<nextLabel>` (path per
-the recipe). If missing, ask the user whether to run `/release:create-release-notes`
-first - those notes must be authored for the **next** label (current build + 1) and
+the recipe). If missing, **run the release-notes workflow automatically** (follow
+`commands/release/create-release-notes.md`) for `<nextLabel>` — do not ask whether to
+create them. Those notes must be authored for the **next** label (current build + 1) and
 translated. Do not build an end-user release without notes for the shipping label.
+
+The notes workflow may itself prompt in one edge case (zero meaningful user-facing
+changes); that is the notes skill's concern — do not add a duplicate question here.
 
 ### 3. Increment the build number
 
@@ -83,10 +100,18 @@ is signed during the build (before the installer packs it), and the installer ex
 
 ### 6. Publish
 
-If the project's `docs/CREATE_NEW_RELEASE.md` defines a publish command, run it
-after the build (e.g. `tools\publish_release.bat`). Do not invent a publish
-command; use the project doc as the source of truth. If the project has no
-publish command documented, stop after the build and report the artifact path.
+**This is the one interactive gate.** After a successful build, if the project's
+`docs/CREATE_NEW_RELEASE.md` defines a publish command, **ask the user once**
+whether to publish `<nextLabel>` to the target platform — name the platform from
+the project doc (e.g. "Publish `<nextLabel>` to the Google Play Store?").
+
+- **User confirms** → run the documented publish command (e.g.
+  `tools\publish_release.bat`). Do not invent a publish command; use the project
+  doc as the source of truth. Then proceed to step 7 (auto commit + tag).
+- **User declines** → stop, report the built artifact path, and **skip** step 7
+  (no commit, no tag).
+- **No publish command documented** → stop after the build, report the artifact
+  path, and skip step 7.
 
 For Windows installers, publish the installer artifact, not the raw app exe. The
 publish step may sign the artifact, upload it, archive the previous remote file,
@@ -99,10 +124,14 @@ constant download URL), the publish bat copies the versioned installer to the
 stable name; the previous remote file is archived to `versions/<previous>/`
 automatically (see the project's `CREATE_NEW_RELEASE.md`).
 
-### 7. Commit & tag (optional, ask first)
+### 7. Commit & tag (automatic — do not ask)
 
-Offer to commit the release and tag it: `RELEASE (<scope>): <nextLabel>` for an
-end-user release, `INTERNAL (<scope>): <nextLabel>` for an internal test build. Only a
-`RELEASE` commit advances the anchor `/release:create-release-notes` diffs against —
-`INTERNAL` builds still bump the build counter but are skipped when locating "the last
-release".
+After a successful publish, commit the release and tag it automatically:
+`RELEASE (<scope>): <nextLabel>` for an end-user release,
+`INTERNAL (<scope>): <nextLabel>` for an internal test build. Only a `RELEASE`
+commit advances the anchor `/release:create-release-notes` diffs against —
+`INTERNAL` builds still bump the build counter but are skipped when locating "the
+last release".
+
+Skip this step when the user declined to publish or no publish command is
+documented (per step 6): the release was not shipped, so it must not be tagged.

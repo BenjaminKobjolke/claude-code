@@ -133,5 +133,9 @@ commit advances the anchor `/release:create-release-notes` diffs against —
 `INTERNAL` builds still bump the build counter but are skipped when locating "the
 last release".
 
+After committing and tagging, **push to the remote automatically** —
+`git push` followed by `git push --tags` (or `git push --follow-tags`) — so the
+release commit and its tag land upstream.
+
 Skip this step when the user declined to publish or no publish command is
 documented (per step 6): the release was not shipped, so it must not be tagged.

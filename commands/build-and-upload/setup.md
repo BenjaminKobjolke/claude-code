@@ -143,7 +143,7 @@ overwrite without confirming):
 
 | File | Purpose |
 |---|---|
-| `publish_release.bat` | Runs the release-tool against the built artifact + `publish_settings.ini`. Edit `ARTIFACT` (the exe path, e.g. `..\release\<label>\app.exe` or `..\dist\app.exe`) and `PREV_VERSION`. |
+| `publish_release.bat` | Runs the release-tool against the built artifact + `publish_settings.ini`. Edit `ARTIFACT` (the exe path, e.g. `..\release\<label>\app.exe` or `..\dist\app.exe`). The previous version comes from `%1` or `tools\previous_version.txt` — no hand-editing. |
 | `publish_settings.ini.example` | Template for `publish_settings.ini`. |
 
 ## Step 3: Create the real INI
@@ -166,6 +166,9 @@ tools/publish_settings.ini
 
 - Usage: `tools\publish_release.bat` publishes the configured artifact. Add `--dry-run` to the command
   inside the bat to preview FTP operations without uploading.
+- **Previous version** (backup naming) comes from `%1` if passed, else
+  `tools\previous_version.txt` (written by `release_create.bat` when `/release:setup-automated-script`
+  is set up); empty → timestamped backup. No hand-editing per release.
 - It runs **after** the build (e.g. `tools\build_release.bat`) — keep publish a separate, explicit
   step; do not fold it into the build.
 - If `[ReleaseNotes]` is set, new `release_notes/<label>/` folders upload automatically with the exe.

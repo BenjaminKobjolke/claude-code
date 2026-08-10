@@ -8,10 +8,11 @@ files into the project's `tools/` folder:
 - `tools/release_create.ini` — the per-project config (which bats, scope, platform).
 - `tools/release_create.bat` — a launcher that runs the whole release in one command.
 
-This is a **config + launcher** setup — do not modify project source code. The
+This is a **config + launcher** setup — it does not touch application source. It
+does, besides the two files, point the project's `publish_release.bat` at the
+recorded previous-version file and gitignore that file (see step 6b). The
 subcommand itself lives in the `release-tool` package
-(`D:\GIT\BenjaminKobjolke\release-tool`); this command only produces the two
-per-project files that drive it.
+(`D:\GIT\BenjaminKobjolke\release-tool`).
 
 Prerequisite: the project must already have a release system documented in
 `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`. If it is missing, stop and ask the
@@ -44,10 +45,20 @@ names differ from the defaults, record the real paths.
 - `scope` — the commit scope for `RELEASE (<scope>): <label>` (usually the app/tool short name).
 - `publish_platform` — the human name of the publish target from the project doc
   (e.g. "Google Play Store", "Website"). If the project has **no** publish step,
-  omit the `publish` bat entirely (the release then builds and stops — no commit/tag).
+  omit the `publish` bat — the release then just skips the publish gate; the
+  commit/tag/push gate is still offered.
+- `versioning` — `build` (default: `{version}_{build}` with a `build_get` counter)
+  or `semver` (no counter; each release bumps the last version segment, e.g.
+  `0.1.6` → `0.1.7`, driven by `build_increment`/`build_decrement`). Pick `semver`
+  for projects whose release *is* a patch bump of `version.txt`/`pyproject.toml`.
 - `english_only` — `true` if the project ships English-only / has no translator bat.
-- `notes_dir` / `en_file` / `label_format` — only set these if they differ from the
-  defaults (`release_notes`, `en.json`, `{version}_{build}`).
+- `notes_dir` / `en_file` / `label_format` / `previous_version_file` — only set
+  these if they differ from the defaults (`release_notes`, `en.json`,
+  `{version}_{build}`, `tools/previous_version.txt`).
+
+After the build, `create` **asks two independent questions**: run publish? and
+commit + tag + push? It also records the previous (online) version to
+`previous_version_file` so the publish bat can name its backup folder.
 
 ### 3. Write `tools/release_create.ini`
 
@@ -84,7 +95,27 @@ config from step 3 and `"%~dp0.."` is the project root. `%*` forwards
 `--internal` / `--dry-run`. Do not rewrite this pattern — it matches every other
 release/publish bat in these projects.
 
-### 5. Verify
+### 5. Wire the publish bat + gitignore the version file
+
+`create` writes the previous (online) version to `previous_version_file`
+(default `tools/previous_version.txt`) and calls the publish bat with **no
+arguments**. Make the existing `tools/publish_release.bat` read that file (prefer
+an explicit `%1` if the user runs it by hand):
+
+```bat
+set "PREV=%~1"
+if not defined PREV if exist "%~dp0previous_version.txt" set /p "PREV="<"%~dp0previous_version.txt"
+... --previous-version "%PREV%" ...
+```
+
+Replace any hardcoded `--previous-version <x>` with `--previous-version "%PREV%"`.
+Then add the version file to `.gitignore` (it is transient local publish state):
+
+```
+tools/previous_version.txt
+```
+
+### 6. Verify
 
 Run the launcher in dry-run mode:
 
@@ -92,14 +123,16 @@ Run the launcher in dry-run mode:
 tools\release_create.bat --dry-run
 ```
 
-Confirm it prints the expected next label (current version + build + 1) and that
-every configured bat path resolves without error. Fix the config if a path is wrong.
+Confirm it prints the expected next label, logs writing `previous_version_file`,
+shows both prompts (publish? / commit, tag and push?), and that every configured
+bat path resolves without error. Fix the config if a path is wrong.
 
-### 6. Document it
+### 7. Document it
 
 Add a short section to `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md` stating that
 the one-command release is `tools\release_create.bat` (add `--internal` for an
-internal test build), and that `tools/release_create.ini` configures it.
+internal test build), that it asks before publishing and before commit/tag/push,
+and that `tools/release_create.ini` configures it.
 
 ## After setup
 

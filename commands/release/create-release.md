@@ -4,8 +4,10 @@ description: create new release based on docs/CREATE_NEW_RELEASE.md
 
 Create a new release. The concrete commands (version/build, folder path, build
 script, translator) live in the project's **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`**
-(authoritative) and the per-stack section in `coding-rules/CREATE_RELEASE_NOTES.md`. If
-the project doc is missing, stop and ask the user to run `/release:setup`.
+(authoritative) and the optional per-stack section in `tools/CREATE_RELEASE_NOTES.md`
+(copied in by `/release:setup-automated-script`; the project doc always wins and is
+sufficient on its own). If the project doc is missing, stop and ask the user to run
+`/release:setup`.
 
 **Arguments.** No arg = **end-user app-store release** (the default). Pass
 `internal` (`/release:create-release internal`) for an internal test build

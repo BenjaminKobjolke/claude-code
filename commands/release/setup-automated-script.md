@@ -115,7 +115,31 @@ Then add the version file to `.gitignore` (it is transient local publish state):
 tools/previous_version.txt
 ```
 
-### 6. Verify
+### 6. Copy the per-stack release-notes recipe into `tools/`
+
+`create` authors missing release notes by having Codex follow the
+`release-create-release-notes` skill, which reads the per-stack recipe from
+`tools/CREATE_RELEASE_NOTES.md` (relative to the project root, so it resolves for
+Codex, whose cwd is the project root). Put that file in place:
+
+- Locate the shared recipe. Try
+  `D:\GIT\BenjaminKobjolke\claude-coding-rules\plugins\coding-rules\rules\CREATE_RELEASE_NOTES.md`.
+  If that path doesn't exist, **ask the user** where their
+  `CREATE_RELEASE_NOTES.md` lives.
+- Copy it to `$CLAUDE_PROJECT_DIR/tools/CREATE_RELEASE_NOTES.md`.
+- Add it to `.gitignore` (it's a snapshot copy of a shared doc, not project
+  source — same treatment as `tools/previous_version.txt` in step 5):
+
+  ```
+  tools/CREATE_RELEASE_NOTES.md
+  ```
+
+This copy is a **snapshot** — re-run this setup to refresh it if the shared recipe
+changes. The project's `docs/CREATE_NEW_RELEASE.md` always wins over it, so if you
+can't obtain the recipe, skip this step: notes still get created from the project
+doc alone.
+
+### 7. Verify
 
 Run the launcher in dry-run mode:
 
@@ -127,7 +151,7 @@ Confirm it prints the expected next label, logs writing `previous_version_file`,
 shows both prompts (publish? / commit, tag and push?), and that every configured
 bat path resolves without error. Fix the config if a path is wrong.
 
-### 7. Document it
+### 8. Document it
 
 Add a short section to `$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md` stating that
 the one-command release is `tools\release_create.bat` (add `--internal` for an

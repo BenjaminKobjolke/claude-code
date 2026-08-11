@@ -9,24 +9,26 @@ version/build, where the notes folder lives, the `en.json` schema, the translato
 bat) differ per coding language and per project, and live in two places:
 
 1. **`$CLAUDE_PROJECT_DIR/docs/CREATE_NEW_RELEASE.md`** — the project's own,
-   authoritative recipe (produced by `/release:setup`). **This always wins.**
-   If it is missing, stop and ask the user to run `/release:setup`.
-2. **`coding-rules/CREATE_RELEASE_NOTES.md`** — one file, one section per stack,
-   used to fill gaps the project doc leaves open. (Kept out of `commands/` so it
-   does not register as its own slash-command.) Pick the section by detecting the
-   stack from a root marker:
+   authoritative recipe (produced by `/release:setup`). **This always wins** and is
+   sufficient on its own. If it is missing, stop and ask the user to run `/release:setup`.
+2. **`tools/CREATE_RELEASE_NOTES.md`** (optional) — one file, one section per stack,
+   used to fill gaps the project doc leaves open. Copied into the project by
+   `/release:setup-automated-script`. Pick the section by detecting the stack from a
+   root marker:
    - `pubspec.yaml` (Flutter SDK dependency) → `## Flutter`
    - `pyproject.toml` → `## Python / uv`
    - `package.json` → `## JavaScript / npm (+ Android)`
    - any other stack → see "Missing stack recipe" below.
 
-Read **both** before starting: the project doc for specifics, the matching section
-for the stack defaults.
+Read the project doc for specifics. Read `tools/CREATE_RELEASE_NOTES.md` too **if it
+exists** for the stack defaults — **if it is absent, do not error**: proceed with the
+project doc alone (it is authoritative and self-contained). The per-stack recipe also
+lives in the `claude-coding-rules` plugin if you need to consult the shared copy.
 
 ### Missing stack recipe
 
-If `coding-rules/CREATE_RELEASE_NOTES.md` has no section for the detected stack, the
-file's own "Adding a new stack" section at the bottom says what to do: ask the user
+If `tools/CREATE_RELEASE_NOTES.md` is absent or has no section for the detected stack,
+the file's own "Adding a new stack" section at the bottom says what to do: ask the user
 whether to add one, and if so append a new section there (not a new file) filled in
 from this project's `docs/CREATE_NEW_RELEASE.md`. Follow that section directly.
 

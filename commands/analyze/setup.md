@@ -25,8 +25,30 @@ Analyze the current project to determine its primary language:
   `theme.json`, or a `wp-content/` path — treat it as WordPress. WordPress projects
   often have **no** `composer.json`, so the markers are what identify them.
 - **AutoHotkey**: Look for `*.ahk`, `*.ah2`, or `*.ahk2` files
+- **JavaScript/TypeScript**: `package.json` + `*.js` / `*.ts` — read
+  `{cli-code-analyzer-path}/docs/setup/JAVASCRIPT_TYPESCRIPT.md`
 
 If multiple languages are detected, ask the user which one to configure.
+
+### Gotchas learned in practice
+
+- **File discovery follows directory junctions/symlinks** (`Path.rglob`). Projects
+  with a junction like `.omx/reference/opencli` → another repo will pull thousands
+  of foreign files into the run. Discovery excludes come from
+  `max_lines_per_file.exclude_patterns` (that rule's config doubles as the global
+  file filter) — and setting it **replaces** the language defaults, so include the
+  full set (`node_modules/**`, `dist/**`, `build/**`, `coverage/**`, `.git/**`)
+  plus the junction dir (e.g. `.omx/**`) and `code_analysis_results/**`. Mirror the
+  junction dir in the PMD `exclude_patterns` and the ESLint config `ignores` too.
+- **Bun projects**: `bun add -d eslint` creates `node_modules/.bin/eslint.exe`
+  (not `eslint.cmd` like npm). Fixed in cli-code-analyzer `rules/eslint_analyze.py`
+  (checks both) as of 2026-08-20 — if ESLint reports "not installed" despite being
+  present, check that the analyzer is up to date.
+- **PMD CPD cannot lex shebang lines** (`#!/usr/bin/env node`) in `.js` files.
+  Handled since 2026-08-20 in cli-code-analyzer `rules/pmd_base.py`
+  (`sanitize_shebang_files`: temp copy with shebang blanked, paths remapped in
+  output). If a "Lexical error ... '#' at line 1" skip appears for a shebang
+  file, the analyzer checkout is outdated.
 
 ## Step 3: Read Language-Specific Setup Documentation
 

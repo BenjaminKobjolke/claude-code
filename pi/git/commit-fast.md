@@ -1,7 +1,7 @@
 ---
 
 name: commit-fast
-description: GIT commit changed and new files according to XIDA standards, skipping validation
+description: GIT commit and push changed and new files according to XIDA standards, skipping validation
 effort: low
 -----------
 

@@ -1,0 +1,9 @@
+[FTP]
+LOCAL_DIRECTORY = BACKUPROOT\current
+FTP_DIRECTORY = /<remote dir on server to back up>
+FTP_HOST = <host>
+FTP_USER = <user>
+FTP_PASS = <password, literal % must be written as %%>
+DIRECTION = down
+CONCURRENT_UPLOADS_OR_DOWNLOADS = 4
+IGNORE_DIRS = node_modules, .git, vendor

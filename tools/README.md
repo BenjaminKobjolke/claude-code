@@ -39,6 +39,22 @@ Self-test:
 python tools/sync_commands_to_codex.py --self-test
 ```
 
+## create_symlink_for_claude_code
+
+Links `commands/` into `~/.claude/commands` so every command in this repo shows
+up in Claude Code as `/<category>:<name>`. Run once per machine:
+
+```
+tools\create_symlink_for_claude_code.bat
+```
+
+- Tries `mklink /D` (symlink) first, falls back to `mklink /J` (junction) when
+  there are no admin rights and Developer Mode is off. Both work the same here.
+- Re-running replaces an existing link, so it is safe after moving the repo.
+- Refuses to touch `~/.claude/commands` if it is a real folder rather than a
+  link - move it aside yourself first.
+- Restart Claude Code afterwards to pick up the commands.
+
 ## agent-browser-fix
 
 Patch for the `agent-browser` CLI. See `agent-browser-fix/patch.bat`.

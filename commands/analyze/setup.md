@@ -137,8 +137,9 @@ that this setup does not create.
 
 If the user wants it, follow the enable flow in
 `commands/analyze/check-analyzers.md` → "Graphify Fan-Out (special setup)": build the
-graph (`graphify src --directed`), tune `hub_classes`, verify the PreToolUse hook, and
-add the JSON block documented there. It can also be added later via `check-analyzers`.
+graph (`graphify src --directed`), create `tools/graphify_update.bat` for manual
+refresh, tune `hub_classes`, verify the PreToolUse hook, and add the JSON block
+documented there. It can also be added later via `check-analyzers`.
 
 ## Step 6: Update CLAUDE.md
 

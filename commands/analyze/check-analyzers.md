@@ -224,10 +224,19 @@ When it shows up as missing/disabled:
    - **graphify must be installed** (the graph builder).
    - **The graph must be built and kept fresh** — run `graphify src --directed` once (adjust the
      source folder; `--directed` is required for fan-out). Refresh after code changes with
-     `graphify update src`. By default the analyzer only reads the graph — a stale graph gives
-     stale results. To auto-refresh instead, set `auto_build: true` (+ `build_path`) in the block
-     below: it runs `graphify update <build_path>` before each analysis and soft-fails (missing
-     binary / failed build → warning, falls back to the existing graph).
+     `graphify src --directed --update`. By default the analyzer only reads the graph — a stale
+     graph gives stale results. To auto-refresh instead, set `auto_build: true` (+ `build_path`)
+     in the block below: it runs `graphify update <build_path>` before each analysis and soft-fails
+     (missing binary / failed build → warning, falls back to the existing graph).
+   - **Create `tools/graphify_update.bat`** for a one-command manual refresh (create the `tools`
+     folder if it doesn't exist). Assumes the graph was already built once (previous bullet) — if
+     not, run the build command first instead. Replace `src` with the project's actual source
+     folder (same one used to build the graph):
+
+     ```bat
+     @echo off
+     graphify src --directed --update
+     ```
    - **Tune the hub list** — set `hub_classes` to the project's centralized constant registries
      (e.g. endpoints, route names, i18n keys) so healthy edges to them don't count as fan-out.
    - See `{cli-code-analyzer-path}/docs/analyzers/graphify_fanout.md` for full options and the

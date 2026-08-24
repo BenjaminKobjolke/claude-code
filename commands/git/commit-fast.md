@@ -51,6 +51,10 @@ Pick the smallest set of glob patterns that covers the surfaced files without ig
 
 3. If a `claude-plans` folder (or files under it) surfaces in the git added / changed list, add `claude-plans` to `.gitignore`.
 
+4. Always ensure `.claude/` is ignored. If `.gitignore` does not already ignore it, add `.claude/`. This applies whether or not a `.claude` entry currently surfaces in the git status.
+
+5. Always ensure root-level `PLAN_*.md` files are ignored. If `.gitignore` does not already cover them, add `/PLAN_*.md` (anchored to the repo root so nested `PLAN_*.md` in real source trees are untouched). This applies whether or not such a file currently surfaces in the git status.
+
 If a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
 
 The user has to call this command again for feature commit and push requests.

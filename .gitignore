@@ -3,9 +3,10 @@ validate-code/config.php
 validate-code/vendor
 
 /nul
-.claude/settings.local.json
+.claude/
 claude-plans
 coding-rules/claude-plans
 tmp/commit_msg.tmp
 PLAN.md
+/PLAN_*.md
 .aider*

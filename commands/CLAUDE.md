@@ -58,11 +58,17 @@ and symlinked skills are left untouched.
 ## frontend-backend-communication
 
 `/frontend-backend-communication:setup` — installs a cross-repo feedback loop between a
-backend (API) repo and a frontend/app repo: feedback commands in both repos'
-`.claude/commands/` plus CLAUDE.md "Related Projects" links. Templates in
+backend repo and a frontend repo: feedback commands in both repos'
+`.claude/commands/` plus a gitignored `.claude/related-projects.md` in each repo
+holding the counterpart path. Templates in
 `frontend-backend-communication/setup_files/` (`.md.template` — not plain `.md`, so they
 don't register as commands themselves). Reference implementations: turbo-habits-api ↔
 turbo-habits-app, erp-api ↔ erp-frontend.
+
+The skill is re-runnable and syncs stale installs: each template carries
+`<!-- fbc-version: N -->` after its frontmatter, and setup overwrites any installed
+command file whose marker is lower (or absent). **When editing a `setup_files/*.template`,
+bump its `fbc-version`** — otherwise existing installs never pick the change up.
 
 ## Future
 

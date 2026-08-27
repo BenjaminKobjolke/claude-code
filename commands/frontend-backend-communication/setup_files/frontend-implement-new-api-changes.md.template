@@ -1,13 +1,14 @@
 ---
 description: Fix issues and implement features from feedback reports in the feedback/ directory
 ---
+<!-- fbc-version: 1 -->
 
 Read and fix issues documented in feedback reports.
 The feedback documents also contain a link to a md file which contains your initial request for a change on the api.
 This will give you clues why you wanted the feature / change in the first place.
 
 CRITICAL GUARDRAILS:
-- NEVER write feedback files — ONLY implement actual code changes. If the user wants to write feedback for the API team, they will use /feedback:write-api instead.
+- NEVER write feedback files — ONLY implement actual code changes. If the user wants to write feedback for the backend team, they will use /feedback:write-api instead.
 - ALWAYS read feedback files completely before starting. Re-read if content seems incomplete.
 - ALWAYS check existing project components and patterns before implementing. (ADAPT: name this frontend's reuse conventions — e.g. widgets in `lib/widgets/` + Component Gallery for Flutter, or project UI components/translation formats for web. Reuse existing components instead of building new ones.)
 - ALWAYS check for DRY opportunities — prefer a single shared component/service over per-file changes.

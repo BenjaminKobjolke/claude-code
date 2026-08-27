@@ -1,0 +1,6 @@
+---
+description: Tell the frontend developer what to do next
+---
+<!-- fbc-version: 1 -->
+
+Add as first entry to the plan: write a feedback file for the frontend developer describing what to implement. Create a new md file (`yyyy_mm_dd_TITLE.md`) in `FRONTEND_FEEDBACK_PATH` (path also in `.claude/related-projects.md`).

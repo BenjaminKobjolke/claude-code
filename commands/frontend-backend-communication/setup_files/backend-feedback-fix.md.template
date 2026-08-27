@@ -1,6 +1,7 @@
 ---
 description: Fix issues and implement features from feedback reports in the feedback/ directory
 ---
+<!-- fbc-version: 1 -->
 
 Read and fix issues documented in feedback reports.
 
@@ -27,7 +28,7 @@ Steps:
 
 9. After all feedback files are processed, tell the user they can commit with /git:commit.
 
-Check CLAUDE.md for the path to the FRONTEND_SLUG (Related Projects section).
-If it doesn't contain it, ask the user for it and store it in CLAUDE.md for next time.
+Check `.claude/related-projects.md` for the path to the frontend repo.
+If the file or the path is missing, ask the user for it and store it there for next time (the file is gitignored, so it holds machine-local paths).
 
-Then in the FRONTEND_SLUG directory in the folder `feedback/` write a new md file with `yyyy_mm_dd_TITLE.md` format describing what changes the FRONTEND_SLUG now has to implement to get the new features. In that file also mention the initial input file, like `feedback/done/....md`.
+Then in the frontend repo directory in the folder `feedback/` write a new md file with `yyyy_mm_dd_TITLE.md` format describing what changes the frontend now has to implement to get the new features. In that file also mention the initial input file, like `feedback/done/....md`.

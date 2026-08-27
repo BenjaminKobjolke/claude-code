@@ -1,10 +1,11 @@
 ---
-description: Write feedback for bugs or change requests for the api developer
+description: Write feedback for bugs or change requests for the backend developer
 ---
+<!-- fbc-version: 1 -->
 
-Check CLAUDE.md for the path to the api (Related Projects section).
-If it doesn't contain it, ask the user for it and store it in CLAUDE.md for next time.
+Check `.claude/related-projects.md` for the path to the backend repo.
+If the file or the path is missing, ask the user for it and store it there for next time (the file is gitignored, so it holds machine-local paths).
 
-Then in the api directory in the folder `feedback/` write a new md file with `yyyy_mm_dd_TITLE.md` format of what changes you need.
+Then in the backend repo directory in the folder `feedback/` write a new md file with `yyyy_mm_dd_TITLE.md` format of what changes you need.
 
-NOTE: This command writes feedback for the API team. If the user wants to IMPLEMENT changes from existing feedback reports, use /feedback:implement-new-api-changes instead.
+NOTE: This command writes feedback for the backend team. If the user wants to IMPLEMENT changes from existing feedback reports, use /feedback:implement-new-api-changes instead.

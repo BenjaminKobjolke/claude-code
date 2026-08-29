@@ -25,3 +25,24 @@ standard) for style autofix. See `{cli-code-analyzer-path}/docs/setup/WORDPRESS.
 
 Then run command analysis:fix-only
 
+
+## Fix the analyzer, not the symptom
+
+If anything goes wrong that is the **analyzer's** fault — false positive, missed
+detection, crash, wrong path/encoding handling, an analyzer that is not wired up,
+a rule that cannot express the case you need, unclear or wrong output — fix it in
+the cli-code-analyzer repo (`D:\GIT\BenjaminKobjolke\cli-code-analyzer`; the path
+is also in the project's `tools/config.bat`) instead of working around it here.
+
+Do:
+1. Reproduce it directly: `python main.py <args>` inside the analyzer repo.
+2. Fix it there (rule, docs, or setup doc), commit it there.
+3. Re-run the project's bat to confirm the fix.
+4. Tell the user what you changed in the analyzer repo.
+
+Do NOT: disable a rule, add a file exception, hand-edit generated CSVs, wrap the
+bat in a filter script, or skip an analyzer to make a report look clean.
+
+Exception: genuinely project-specific config stays in the project —
+thresholds and justified exceptions in `code_analysis_rules.json`, and per-project
+paths/settings in `tools/config.bat`.

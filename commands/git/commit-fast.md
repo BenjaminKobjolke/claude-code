@@ -29,7 +29,18 @@ If a message needs a backtick, `$` or `"`, use the temp file regardless of lengt
 
 IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands directly (e.g. `git add`, `git commit`, `git push`) without `cd`. The working directory is already correct. Combining `cd` with git triggers a "bare repository attack" security prompt.
 
-Never commit PLAN.md or HANDOFF.md.
+Never commit PLAN.md or HANDOFF.md — add them to `.gitignore` instead (see "Files to ignore automatically").
+
+## Nothing to do — stop immediately
+
+Run this check FIRST, before grouping, inspecting or anything else:
+
+1. `git status --short` — drop every entry that the ignore rules below cover (`PLAN.md`, `HANDOFF.md`, `PLAN_*.md`, `claude-plans`, `.claude/`, `tmp/commit_msg.tmp`, debug/test artifacts). Those are not eligible changes.
+2. `git log --oneline @{u}..` (or `git status -sb` and read the `ahead` count) — are there local commits not yet on the remote?
+
+If nothing is eligible to commit AND nothing is ahead of the remote: **do not push, do not run any other git command.** Reply with one line — "nothing to commit, already up to date" — and stop. Do not push "to synchronize", do not explain which files were skipped and why.
+
+If nothing is eligible to commit but local commits ARE ahead: push, report one line, stop.
 
 Validation is intentionally skipped in this variant. Do NOT run `/validate:pre-commit`. The caller is responsible for having already run tests/validators before invoking this command.
 
@@ -96,7 +107,11 @@ Pick the smallest set of glob patterns that covers the surfaced files without ig
 
 5. Always ensure root-level `PLAN_*.md` files are ignored. If `.gitignore` does not already cover them, add `/PLAN_*.md` (anchored to the repo root so nested `PLAN_*.md` in real source trees are untouched). This applies whether or not such a file currently surfaces in the git status.
 
+6. Always ensure `PLAN.md` and `HANDOFF.md` are ignored. If `.gitignore` does not already cover them, add both. They are Claude working files — never commit them, and ignoring them stops them surfacing as untracked on every single run.
+
 If a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
+
+If the ONLY change in the repo is a `.gitignore` edit you just made for these files, that is still a real commit — make it (`GIT (ignore): update ignore list`) and push.
 
 The user has to call this command again for feature commit and push requests.
 Which means to not automatically commit or push no changes the user requested after this commit request.
@@ -124,7 +139,7 @@ When it does trigger: if `.gitattributes` is missing, or has an LF catch-all (`*
 
 The `*.bat`/`*.cmd` override is mandatory whenever the repo contains batch files: an LF-only catch-all silently checks them out with LF endings, and cmd.exe then misparses them (broken `set` lines, empty variables). After adding the override, convert existing working-tree `.bat`/`.cmd` files to CRLF (`unix2dos`) — the stored blobs stay LF, so this normally produces no content diff. Keep any additional sensible rules the project already has (binary markers etc.); do not overwrite an existing policy, only add the missing override.
 
-Automatically push at the end.
+Push automatically at the end — but only if commits were actually made or the branch is ahead of the remote. Never push just to "synchronize" when there is nothing to send.
 
 ---
 

@@ -15,8 +15,22 @@ Commit and push local changes. Skip validation/tests/linters/builds, no
 2. Never put ignore rules in `.gitattributes` (it can't ignore files — line endings/binary/diff
    only). Ignore rules go only in `.gitignore`.
 3. Never `git add .` — stage explicitly, per logical commit.
-4. Never commit `PLAN.md`, `HANDOFF.md`, or real credentials.
+4. Never commit `PLAN.md`, `HANDOFF.md`, or real credentials. `PLAN.md`/`HANDOFF.md` → `.gitignore`.
 5. Fast-path group (table below) = fixed message, no body, no diff read. Don't overthink it.
+6. Nothing eligible to commit AND nothing ahead of remote → stop. No push, no explanation.
+
+## FIRST — is there anything to do?
+
+Before grouping, before inspecting:
+```
+git status --short   # drop entries the ignore table covers — they are NOT eligible
+git status -sb       # read the "ahead N" count
+```
+- Nothing eligible AND not ahead → say "nothing to commit, already up to date" and STOP.
+  Do NOT push "to synchronize". Do NOT explain which files were skipped.
+- Nothing eligible but ahead → push, one line, stop.
+- Only untracked `PLAN.md`/`HANDOFF.md`/`PLAN_*.md` → `.gitignore` them, commit that as
+  `GIT (ignore): update ignore list`, push. That is a real commit.
 
 ## LOOP — do not stop early
 
@@ -31,6 +45,9 @@ You are DONE only when BOTH are true:
 
 One commit is NOT done. Do not hand back, summarize, or stop until both hold.
 
+Exception: the "FIRST" check above found nothing to do — then you were already done before
+the loop started.
+
 ## Ignore decision table
 
 | Matches | Action |
@@ -38,7 +55,7 @@ One commit is NOT done. Do not hand back, summarize, or stop until both hold.
 | source/docs/config/prompt/skill/command file, `pi/`, `commands/**`, `scripts/`, `tools/`, `docs/` | inspect → commit |
 | `tmp/commit_msg.tmp`, `claude-plans/` | `.gitignore` it, don't commit |
 | `*_test.txt`, `*_test.log`, `debug*.log`, `*.debug.log`, `test_output.*` | grouped pattern in `.gitignore` |
-| `PLAN.md`, `HANDOFF.md` | never commit, never ignore |
+| `PLAN.md`, `HANDOFF.md` | never commit; add to `.gitignore` |
 | root-level `PLAN_*.md` | add `/PLAN_*.md` to `.gitignore` (anchored), don't commit |
 | `.claude/` | ensure `.claude/` in `.gitignore`, don't commit |
 | `.env*`, `*.pem`, `*.key`, `credentials*.json`, `secrets*.json`, `service-account*.json` w/ real secrets | don't stage; ask user re `.gitignore` |
@@ -113,8 +130,10 @@ mis-grouped — split it, then re-check.
    no credentials/temp artifacts, no PLAN.md/HANDOFF.md/claude-plans/tmp/commit_msg.tmp,
    gitignore/gitattributes changes are their own `GIT` commit. (No second `git status` — the
    loop already exited on a clean one.)
-8. Push once, at the end: `git branch --show-current`, `git push` (`-u origin <branch>` if no
-   upstream). Never `--force`/`--force-with-lease` unless explicitly requested.
+8. Push once, at the end — only if commits were made or the branch is ahead:
+   `git branch --show-current`, `git push` (`-u origin <branch>` if no upstream).
+   Never push just to "synchronize" when nothing is ahead.
+   Never `--force`/`--force-with-lease` unless explicitly requested.
 
 ## Commit message format
 
@@ -190,7 +209,8 @@ docs → content → release. Deviate if actual dependencies demand it.
 - Separate `GIT` commit for `.gitignore`/`.gitattributes` changes.
 - `.gitattributes` audit only on a line-ending warning or `.bat`/`.cmd` with no `.gitattributes`.
 - Never commit `PLAN.md`, `HANDOFF.md`, `claude-plans/`, `tmp/commit_msg.tmp`, real credentials,
-  debug/test artifacts.
+  debug/test artifacts. `PLAN.md`/`HANDOFF.md`/`PLAN_*.md` → `.gitignore` so they stop surfacing.
+- Nothing eligible + nothing ahead → one line, no push, stop.
 - Don't auto-ignore unfamiliar files — inspect, use the table.
 - Loop until `git status --short` is clean AND pushed — one commit is not done.
 - Never invent commit content or BREAKING CHANGE — use the actual diff.

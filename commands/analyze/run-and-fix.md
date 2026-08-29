@@ -46,3 +46,14 @@ bat in a filter script, or skip an analyzer to make a report look clean.
 Exception: genuinely project-specific config stays in the project —
 thresholds and justified exceptions in `code_analysis_rules.json`, and per-project
 paths/settings in `tools/config.bat`.
+
+## Pre-existing issues — write them down, do not fix them
+
+A full-codebase run surfaces violations in code the current task never touched.
+Those are **out of scope**: do not fix them here, record them in
+`open-issues/YYYY_MM_DD.md` (project root, today's date, e.g.
+`open-issues/2026_08_29.md`) — create the folder/file if missing, append if it
+already exists. Format and details: `/analyze:fix-only` and
+`/bugs:plan-fix-prexisting`.
+
+Work them off later with `/bugs:work` (oldest file first).

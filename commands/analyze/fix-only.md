@@ -141,3 +141,18 @@ bat in a filter script, or skip an analyzer to make a report look clean.
 Exception: genuinely project-specific config stays in the project —
 thresholds and justified exceptions in `code_analysis_rules.json`, and per-project
 paths/settings in `tools/config.bat`.
+
+## Pre-existing issues — write them down, do not fix them
+
+Violations in code the current task never touched are **out of scope**. Do not
+fix them in this run and do not let them grow the diff. Record them instead:
+
+`open-issues/YYYY_MM_DD.md` — project root, today's date, e.g. `open-issues/2026_08_29.md`
+
+Create `open-issues/` and the file if missing; **append** if the file already
+exists (earlier runs today may have written to it). One `##` section per issue
+with file:line, the rule/message, why it is out of scope, and a short fix
+sketch — see `/bugs:plan-fix-prexisting` for the format.
+
+Fix in this run only what belongs to the current task. Work the recorded issues
+off later with `/bugs:work` (oldest file first).

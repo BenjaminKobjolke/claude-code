@@ -8,5 +8,6 @@ claude-plans
 coding-rules/claude-plans
 tmp/commit_msg.tmp
 PLAN.md
+HANDOFF.md
 /PLAN_*.md
 .aider*

@@ -12,11 +12,20 @@ Before staging, group changed files by logical concern. If changes span multiple
 ## How to execute the commit
 
 IMPORTANT: Do NOT use the HEREDOC/command-substitution pattern `$(cat <<'EOF' ... EOF)` for commit messages.
-Instead, always use a temporary file approach to avoid the "$() command substitution" security prompt:
+
+**One-line message (no body): commit directly, no temp file.**
+
+```
+git commit -m "<message>"
+```
+
+**Message with a body:** use the temporary file approach to avoid the "$() command substitution" security prompt:
 
 1. Write the commit message to `tmp/commit_msg.tmp` using the Write tool
 2. Run: `git commit -F tmp/commit_msg.tmp`
 3. Delete `tmp/commit_msg.tmp` after a successful commit
+
+If a message needs a backtick, `$` or `"`, use the temp file regardless of length.
 
 IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands directly (e.g. `git add`, `git commit`, `git push`) without `cd`. The working directory is already correct. Combining `cd` with git triggers a "bare repository attack" security prompt.
 
@@ -29,6 +38,38 @@ Also do not confirm GIT commit message in prompt or slash commands.
 Commit changes that you didnt do in this session too. Research those files to figure out what changed.
 
 Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files.
+
+## Fast path — canonical commit messages
+
+Check this BEFORE grouping and before reading any diff. If EVERY file in a commit group matches one row, use that message verbatim, write NO body, and read only `--stat` — never the full patch. Do not explain what was ignored or which docs changed; the canonical subject already says it.
+
+| Whole group is | Message |
+| --- | --- |
+| `.gitignore` | `GIT (ignore): update ignore list` |
+| `.gitattributes` | `GIT (attributes): update line ending rules` |
+| `.gitignore` + `.gitattributes` | `GIT (config): update git config files` |
+| `README.md` | `DOCS (readme): update readme` |
+| `*.md`, none of them prompt files (see carve-out) | `DOCS (docs): update documentation` |
+
+**Carve-out — markdown that is a prompt, not documentation.** A `.md` file under `commands/`, `pi/`, `skills/`, `.claude/`, `.codex/`, or any `*/SKILL.md` is an AI prompt. Those take type `AI` with a real scope and subject (e.g. `AI (bugs): add pre-existing bug planning command`) — they never take the `DOCS` fast path.
+
+The fast path applies per group, not per run. A group holding `.gitignore` AND source code is mis-grouped: split it, then re-check the table.
+
+## How much to inspect
+
+Three commands, not more:
+
+```
+git status --short                  # full picture, untracked (??) entries included
+git --no-pager diff HEAD --stat     # sizes, to decide what is worth reading
+git --no-pager diff HEAD -- <paths> # full patch, only where needed
+```
+
+Do not also run the long-form `git status`, a bare `git diff`, `git diff --cached` for inspection, or `git ls-files --others --exclude-standard` — `git status --short` already covers them.
+
+Read `--stat` only, never the full patch, for: lockfiles (`package-lock.json`, `composer.lock`, `yarn.lock`, `uv.lock`, `pubspec.lock`), generated / minified / build output, binaries, and any file with more than ~300 changed lines. The message then describes the file ("regenerate lockfile"), not its lines — which is also the honest answer for a diff you did not read.
+
+Untracked files outside a fast-path row: read enough to classify them and write the subject, not the whole file.
 
 ## Files to ignore automatically
 
@@ -64,7 +105,12 @@ If Git reports line-ending warnings (for example, `LF will be replaced by CRLF` 
 
 ## Required .gitattributes setup
 
-Before committing, check the repo has a `.gitattributes`. If it is missing, or if it has an LF catch-all (`* text=auto eol=lf`) without a Windows-script override, fix it and commit that as a separate `GIT` commit. Required baseline:
+This check is REACTIVE — do NOT audit `.gitattributes` on every run. Run it only when one of these is true:
+
+- git emits a line-ending warning (`LF will be replaced by CRLF` or the reverse), or
+- the repo contains `.bat` / `.cmd` files and has no `.gitattributes` at all.
+
+When it does trigger: if `.gitattributes` is missing, or has an LF catch-all (`* text=auto eol=lf`) without a Windows-script override, fix it and commit that as a separate `GIT` commit. Required baseline:
 
 ```
 # Normalize all text files to LF in the repository
@@ -147,6 +193,8 @@ Examples:
 > Subject line contains description of the change.
 
 #### Allowed Message `<body>`
+
+The body is OPTIONAL. Write one only when it records a *why* or an old-vs-new that the subject cannot carry. Subject-only is correct and preferred for: fast-path commits, renames and moves, single-file obvious changes, and dependency bumps. Never restate the subject as a body.
 
  * just as in <subject> use imperative, present tense: _change_ not _changed_ nor _changes_ or _changing_
  * include motivation for the change and contrast it with previous behavior

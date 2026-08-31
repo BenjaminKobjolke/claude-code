@@ -176,6 +176,13 @@ Update `docs/STATUS_OUTDATED_PACKAGES.md` with:
 
 Leave changes committed or uncommitted according to the user's request.
 
+## 8b) Pinned packages
+
+Exact pins and `dependency_overrides` carry a
+`# PIN <date> | checked <date> | <why>` comment in `pubspec.yaml`. When this
+workflow pins a package to resolve a blocker, add that comment. Retrying a pin
+later is a separate command: `/flutter:update-packages-retry-pinned`.
+
 ## 9) Windows/FVM troubleshooting
 
 If `fvm flutter` hangs or produces no output:

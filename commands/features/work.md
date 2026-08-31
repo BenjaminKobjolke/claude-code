@@ -22,6 +22,8 @@ If `$ARGUMENTS` is given, filter to files whose name contains it
 (case-insensitive) and take the oldest match; if none match, list what is there
 and ask. If the folder is missing or empty, report "no open features" and stop.
 
+Ask the user if he wants you to work on that feature. Or postpone it. If the user wants to postpone, rename it so it becomes the newst file. And therefore will not be checked again until all other feature files are done.
+
 ### 2. Read it and plan
 
 Read the file. Check `docs/` for documentation of the affected areas before
@@ -69,7 +71,11 @@ powershell -Command "New-Item -ItemType Directory -Force 'features\done' | Out-N
 If the feature was dropped instead (invalid, already implemented), title it
 `# [DROPPED] Feature: <title>` with a one-line reason and archive it the same way.
 
-### 7. Summary
+### 7. Document
+
+Document the feature in a new md file in /docs/features
+
+### 8. Summary
 
 Report: which feature was worked, what changed, whether it was archived, and
 what is left for the next run. Do NOT auto-commit — suggest `/git:commit`.

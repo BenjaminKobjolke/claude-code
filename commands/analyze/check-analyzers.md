@@ -176,6 +176,19 @@ These patterns filter diagnostics from the output. The LSP still indexes `vendor
 }
 ```
 
+`ruff_analyze` runs `ruff check` over `.py` files only, so nothing here touches Markdown.
+A project that *also* runs `ruff format --check .` itself (update.bat, CI) needs one more
+line in its `pyproject.toml`, because ruff formats fenced Python blocks inside `.md`:
+
+```toml
+[tool.ruff.format]
+exclude = ["*.md"]
+```
+
+Without it, every doc and generated rule file with a Python snippet reports format drift
+and buries the real `.py` findings. See the gotcha in `/analyze:setup` for why the
+formatter-only scope is the right one.
+
 ### Dart/Flutter Defaults
 ```json
 "dart_analyze": {

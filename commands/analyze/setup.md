@@ -44,6 +44,24 @@ If multiple languages are detected, ask the user which one to configure.
   (not `eslint.cmd` like npm). Fixed in cli-code-analyzer `rules/eslint_analyze.py`
   (checks both) as of 2026-08-20 — if ESLint reports "not installed" despite being
   present, check that the analyzer is up to date.
+- **Ruff formats Markdown too** (confirmed on ruff 0.16). `ruff format` reaches into
+  fenced `python` / `py` code blocks inside `.md`, so a project-wide
+  `ruff format --check .` reports drift in docs, READMEs, and generated rule files
+  whose snippets are illustrative prose, not executed code. Exclude Markdown from the
+  **formatter only**, in the project's `pyproject.toml`:
+
+  ```toml
+  [tool.ruff.format]
+  exclude = ["*.md"]
+  ```
+
+  Do **not** reach for the broader alternatives: `[tool.ruff] extend-exclude` also
+  disables linting, and `include = ["*.py"]` silently drops `.pyi` stubs and notebooks
+  if the project ever adds them. This does not affect the analyzer's own `ruff_analyze`
+  rule (it runs `ruff check` over `.py` only) — it matters for a project's own
+  `ruff format --check` step in `update.bat` / CI, where the Markdown noise otherwise
+  buries real Python drift. Verify the exclusion is not over-broad by writing one
+  deliberately misformatted `.py` and confirming `ruff format --check` still flags it.
 - **PMD CPD cannot lex shebang lines** (`#!/usr/bin/env node`) in `.js` files.
   Handled since 2026-08-20 in cli-code-analyzer `rules/pmd_base.py`
   (`sanitize_shebang_files`: temp copy with shebang blanked, paths remapped in

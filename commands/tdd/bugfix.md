@@ -34,6 +34,6 @@ Steps:
 8. Present the final diff to the user and tell them they can commit with /git:commit.
 
 Related commands:
-- /bugs:fix — structured bug fix from BUGS.md (now includes TDD steps)
+- /bugs:fix — structured bug fix from open-issues/ (now includes TDD steps)
 - /bugs:collect — document bugs for later fixing
 - /testing:run — run tests independently

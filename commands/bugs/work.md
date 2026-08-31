@@ -5,7 +5,7 @@ description: Work off the oldest open-issues file, then move it to open-issues/d
 Fix the issues collected in the **oldest** `open-issues/` file, then archive it.
 One file per run, then stop.
 
-Those files are written by `/analyze:run-and-fix`, `/analyze:fix-only` and
+Those files are written by `/bugs:collect`, `/analyze:run-and-fix`, `/analyze:fix-only` and
 `/bugs:plan-fix-prexisting` — pre-existing issues that were deliberately left
 out of scope at the time.
 

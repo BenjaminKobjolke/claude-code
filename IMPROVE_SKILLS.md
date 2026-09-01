@@ -26,15 +26,29 @@ summary.
 
 | Skill behavior | Recommended execution |
 | --- | --- |
-| Read-only repository research | `context: fork`, `agent: Explore` |
-| Read-only audit that invokes another skill | Forked `general-purpose` agent with write tools disabled |
-| Rewrite exactly one supplied file | Forked `general-purpose` agent with strict path validation |
+| Broad read-only repository research | Fresh spawned subagent, `Explore` |
+| Bounded scan with a fixed evidence cap | Fresh spawned subagent, `general-purpose` |
+| Read-only audit that invokes another skill | Fresh spawned subagent, write tools disabled |
+| Rewrite exactly one supplied file | Keep inline with strict path validation |
 | Needs the current conversation or active plan | Keep inline, or redesign it to accept an explicit file |
 | Simple deterministic instruction | Keep inline and avoid agent overhead |
 
-`context: fork` does not provide the subagent with the current conversation. Do not
-add it to a skill that says "check the plan above" or otherwise depends on session
-history. First save the input to a file and pass that path through `$ARGUMENTS`.
+**`context: fork` inherits the entire parent conversation** - history, system prompt,
+tools, and model. It is a copy of the current session, not a clean slate. A command
+that runs late in a long session therefore starts near the context limit before it
+reads a single line, which is exactly how a bounded audit still overflows 200k.
+
+There is no `fresh` or `isolated` value; `fork` is the only one. To get a clean
+context, drop `context:`/`agent:` from the frontmatter and have the command body spawn
+one fresh subagent with a self-contained brief. The command keeps a thin wrapper in the
+main thread that gates the request and returns the subagent's report unchanged.
+
+Use `context: fork` only when the skill genuinely needs the session so far. A skill
+that says "check the plan above" is better redesigned to take an explicit file path
+through `$ARGUMENTS`.
+
+Do not pick `Explore` for a bounded scan. Its own charter is broad fan-out across many
+files and directories, which works against a command that caps its evidence.
 
 ## Use focused frontmatter
 
@@ -43,19 +57,25 @@ A bounded read-only research command can use:
 ```yaml
 ---
 description: Run a scoped repository check
-context: fork
-agent: Explore
 model: haiku
 effort: low
+disallowed-tools: Edit, Write, NotebookEdit
 ---
 ```
 
-If the fork must invoke another skill, use `general-purpose`. For an audit that
-must remain read-only, remove its write tools:
+No `context:` and no `agent:`. The wrapper stays in the main thread; the body spawns
+one fresh `general-purpose` subagent and returns its report unchanged. `disallowed-tools`
+keeps the wrapper read-only, and the brief restates the tool restriction for the
+subagent, which does not inherit the frontmatter.
 
-```yaml
-agent: general-purpose
-disallowed-tools: Edit, Write, NotebookEdit
+To gate before spending any context, inject the measurement into the prompt with
+`` !`command` ``. The output is substituted before the model runs, so the gate reads
+facts instead of calling a tool that can return a large payload. Injection needs no
+`allowed-tools` entry:
+
+```markdown
+- tracked changes vs HEAD: !`git diff --shortstat HEAD`
+- untracked files: !`git ls-files --others --exclude-standard | wc -l`
 ```
 
 For file-based commands, add a clear argument hint:
@@ -76,8 +96,23 @@ before 2.1.218 is required; those versions already wait for forked skills.
 
 ## Replace vague guidance with hard budgets
 
+A budget is only real when something other than the model enforces it. The model has
+no counter for lines it already read, so a number in prose is intent, not enforcement.
+Back every limit with a mechanism:
+
+- a tool parameter: `Grep` `head_limit`, `Read` `limit` and `offset`
+  (the defaults are 250 matches and 2000 lines - always override them explicitly);
+- a shell truncation: `| head -50` on every command;
+- a tool restriction, so the dumping path does not exist. Bash caps nothing: a `cat`
+  or an unrestricted `rg` defeats any instruction not to dump.
+
+Prefer a one-line measurement over a listing when gating. `git diff --shortstat` and
+`git ls-files --others --exclude-standard | wc -l` size a change in two lines, where
+`git status --short` can be thousands in a repository with build output. Gate on the
+measurement *before* anything is read, or the gate can no longer refuse in time.
+
 Instructions such as "search only what is relevant" are too subjective. State
-measurable limits instead:
+measurable limits alongside the mechanism:
 
 - Maximum number of search calls.
 - Maximum displayed matches per search.
@@ -109,10 +144,19 @@ A skill that rewrites a file should:
 An output cap applies only to the chat summary. Say this explicitly so the agent
 does not shorten or truncate the underlying plan to satisfy the response limit.
 
-## Keep secondary skills inside the fork
+## Bound secondary skills
 
-When a workflow intentionally keeps a second review such as Ponytail, invoke it
-inside the same fork. Its searches and reasoning then stay out of the main context.
+When a workflow intentionally keeps a second review such as Ponytail, invoke it inside
+the same subagent so its searches and reasoning stay out of the main context.
+
+**A secondary skill does not inherit the primary command's budget.** Limits written for
+steps 1-5 do not reach a hand-off in step 6, so that pass scans freely unless the scope
+is restated. Name the exact paths in the invocation and forbid anything wider: review
+only these paths, do not search the repository, do not read a file outside this list.
+
+Invoke the skill that does the work, not the one that sets a mode. `/ponytail:ponytail`
+switches persona and then re-audits from scratch; `/ponytail:ponytail-review` is the
+reviewer that returns findings directly.
 
 State what happens if the dependency is unavailable. For audit commands in this
 repository, report the gate as incomplete and do not install plugins automatically.
@@ -158,12 +202,18 @@ git diff --check
 - Confirm read-only commands cannot edit files.
 - Confirm file-rewriting commands touch only the explicit target.
 - Confirm response limits do not truncate persisted files.
-- Compare usage in fresh sessions so earlier context does not distort the result.
+- Confirm the gate refuses an over-limit scope with zero reads and no subagent spawned.
+- Confirm a secondary skill pass touches only the paths named in its hand-off.
+- Compare usage in a long session as well as a fresh one: a command that inherits
+  context only fails once the parent conversation is already large.
 
 ## Examples in this repository
 
-- `commands/convention/check.md`: isolated Explore scan with bounded evidence.
-- `commands/dry/check.md`: bounded read-only audit with a secondary Ponytail pass.
+- `commands/convention/check.md`: thin wrapper that gates on `$ARGUMENTS`, then hands a
+  self-contained brief to one fresh subagent.
+- `commands/dry/check.md`: injected one-line size measurement, a gate that spawns
+  nothing when the change is too large, then one fresh subagent with a scoped Ponytail
+  pass.
 - `commands/plan/dry.md`: explicit file input, isolated rewrite, and compact handoff.
 - `commands/plan/dry-checked.md`: reloads the complete reviewed plan without repeating
   the analysis.

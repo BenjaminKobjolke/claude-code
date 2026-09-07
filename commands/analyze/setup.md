@@ -32,6 +32,14 @@ If multiple languages are detected, ask the user which one to configure.
 
 ### Gotchas learned in practice
 
+- **Generating `.bat` files from a Bash heredoc eats `\v`.** A Python heredoc run via
+  the Bash tool turned `"%CLI_ANALYZER_PATH%\\venv\\Scripts\\python.exe"` into
+  `%CLI_ANALYZER_PATH%<VT>env\...` (byte `0x0B`, invisible in output) — the bat then
+  fails with "The filename, directory name, or volume label syntax is incorrect."
+  Write bats with the Write tool (CRLF is handled by `.gitattributes` `*.bat eol=crlf`)
+  or build the backslash as `chr(92)` in Python. Same for `\r` (`\ruff_fixer.py`),
+  `\a` (`\apple-...`), `\t` (`\tools`) — including the CLAUDE.md command lines. Verify
+  every generated file with a control-byte scan (`cat -A`, look for `^K`/`^M`/`^G`/`^I`).
 - **File discovery follows directory junctions/symlinks** (`Path.rglob`). Projects
   with a junction like `.omx/reference/opencli` → another repo will pull thousands
   of foreign files into the run. Discovery excludes come from
@@ -62,6 +70,20 @@ If multiple languages are detected, ask the user which one to configure.
   `ruff format --check` step in `update.bat` / CI, where the Markdown noise otherwise
   buries real Python drift. Verify the exclusion is not over-broad by writing one
   deliberately misformatted `.py` and confirming `ruff format --check` still flags it.
+- **ESLint already present transitively** (e.g. via `web-ext`): `npm i -D eslint @eslint/js globals`
+  without versions fails with `ERESOLVE` because npm picks the latest tags (eslint 10) which
+  conflict with the installed 9.x tree. Read the installed versions from
+  `node_modules/<pkg>/package.json` and pin them exactly (`eslint@9.39.4 @eslint/js@9.39.4
+  globals@14.0.0`) — zero downloads, lockfile stays consistent. Plain-JS projects need no
+  `@typescript-eslint`; use `js.configs.recommended` + `globals` and add extension globals
+  (`messenger`, `browser` for Thunderbird/WebExtensions) so `no-undef` stays useful.
+- **tsc on plain-JS projects works** (`tsc_analyze` + `tsconfig.json` with `allowJs`,
+  `checkJs`, `noEmit`, `strict: false`). Extension globals need a stub
+  (`types/globals.d.ts`: `declare const messenger: any;`) listed in tsconfig `include`.
+  ESLint (no TS parser) then chokes on the `.d.ts` — add `types/**` to both
+  `eslint.config.js` `ignores` and `eslint_analyze.exclude_patterns`. Expect
+  `getElementById(...).value` errors (TS2339); fix with JSDoc casts
+  `/** @type {HTMLInputElement} */ (document.getElementById("x"))`.
 - **PMD CPD cannot lex shebang lines** (`#!/usr/bin/env node`) in `.js` files.
   Handled since 2026-08-20 in cli-code-analyzer `rules/pmd_base.py`
   (`sanitize_shebang_files`: temp copy with shebang blanked, paths remapped in

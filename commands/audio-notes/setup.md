@@ -2,7 +2,7 @@
 description: Record audio-notes folder paths in docs/AUDIO_NOTES.md
 ---
 
-Set up the audio-notes paths this project needs so `/audio-notes:work` knows
+Set up the audio-notes paths this project needs so `/audio-notes:prepare` knows
 where to find dictated notes. Paths are stored in `docs/AUDIO_NOTES.md` at the
 project root (`$CLAUDE_PROJECT_DIR/docs/AUDIO_NOTES.md`).
 
@@ -52,9 +52,11 @@ Notes are read from the top level of the project note folder only. Subfolders:
 
 - `processing/` — notes currently being worked on (lock). If any file is here,
   another process is already running; a new run must stop instead of starting.
+- `ready-to-implement/` — notes with a researched `## Plan`, waiting for implementation.
 - `done/` — archive of handled notes. Never read.
 
-Run `/audio-notes:work` to process the notes.
+Run `/audio-notes:prepare` then `/audio-notes:implement` to process the notes,
+or `/audio-notes:work` for both in one run.
 ````
 
 If a partial file already exists, update the path values in place rather than
@@ -63,4 +65,4 @@ duplicating sections.
 ### 5. Confirm
 
 Print a ✓ summary showing the base path and project note folder saved, and note
-that `/audio-notes:work` is now ready.
+that `/audio-notes:prepare` is now ready.

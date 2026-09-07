@@ -56,4 +56,4 @@ Those are **out of scope**: do not fix them here, record them in
 already exists. Format and details: `/analyze:fix-only` and
 `/bugs:plan-fix-prexisting`.
 
-Work them off later with `/bugs:work` (oldest file first).
+Work them off later with `/bugs:prepare` then `/bugs:implement` (oldest file first), or `/bugs:work` for both at once.

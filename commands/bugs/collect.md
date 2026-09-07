@@ -3,7 +3,7 @@ description: Collect bugs as open issues in open-issues/
 ---
 
 Document the bugs I found — do NOT fix them now. Implementation happens later
-via `/bugs:fix` or `/bugs:work`.
+via `/bugs:prepare` + `/bugs:implement` (or `/bugs:work` for both at once, `/bugs:fix` for one bug).
 
 Append them to today's open-issues file:
 
@@ -27,5 +27,7 @@ Keep it a base plan, not a full investigation.
 
 Related commands:
 - /bugs:fix — fix one documented bug with a structured TDD workflow
-- /bugs:work — work off a whole open-issues file, then archive it
+- /bugs:prepare — research one open-issues file and plan each fix
+- /bugs:implement — fix a prepared file, then archive it
+- /bugs:work — prepare + implement in one run
 - /tdd:bugfix — fix any bug using test-driven development

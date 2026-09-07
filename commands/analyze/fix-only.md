@@ -155,4 +155,5 @@ with file:line, the rule/message, why it is out of scope, and a short fix
 sketch — see `/bugs:plan-fix-prexisting` for the format.
 
 Fix in this run only what belongs to the current task. Work the recorded issues
-off later with `/bugs:work` (oldest file first).
+off later with `/bugs:prepare` then `/bugs:implement` (oldest file first), or
+`/bugs:work` for both at once.

@@ -26,4 +26,4 @@ One `##` section per issue:
 
 Keep it a base plan, not a full investigation.
 
-Work them off later with `/bugs:work` (oldest file first).
+Work them off later with `/bugs:prepare` then `/bugs:implement` (oldest file first), or `/bugs:work` for both at once.

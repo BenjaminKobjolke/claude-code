@@ -3,7 +3,8 @@ description: Collect a feature request as a file in features/
 ---
 
 Document a feature request and its implementation plan. Do **not** implement
-anything — the work happens later via `/features:work`.
+anything — the work happens later via `/features:prepare` + `/features:implement`
+(or `/features:work` for both at once).
 
 ## Steps
 
@@ -43,9 +44,12 @@ works it off researches the details.
 ### 5. Stop
 
 Report the file path. Do NOT edit any project source file. Work it off later
-with `/features:work` (oldest file first).
+with `/features:prepare` then `/features:implement` (oldest file first), or
+`/features:work` for both at once.
 
 Related commands:
-- `/features:work` — implement the oldest open feature and archive it
+- `/features:prepare` — research the oldest open feature and write its plan
+- `/features:implement` — build a prepared feature and archive it
+- `/features:work` — prepare + implement in one run
 - `/plan:feature` — full research-heavy plan in `plan/` for one big feature
 - `/bugs:collect` — same idea for bugs

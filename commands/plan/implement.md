@@ -6,7 +6,7 @@ Pick up a plan file from `plan/` and implement it step by step.
 
 Steps:
 
-1. List all `.md` files in the `plan/` directory, excluding any files inside `plan/done/`. If no plan files exist, tell the user there are no plans to implement and suggest they create one with `/plan:feature`.
+1. List all `.md` files directly in the `plan/` directory (top level only — ignore `plan/done/` and any subfolders; subfolders are multi-step plans, implement those with `/plan:implement-phase`). If no plan files exist, tell the user there are no plans to implement and suggest they create one with `/plan:feature`.
 
 2. If `$ARGUMENTS` is provided, filter the list to files whose name contains the argument as a partial match (case-insensitive). If exactly one plan matches, auto-select it. If multiple plans match, list them and ask the user to choose. If none match, show available plans and ask the user to pick one.
 

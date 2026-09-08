@@ -70,6 +70,28 @@ The skill is re-runnable and syncs stale installs: each template carries
 command file whose marker is lower (or absent). **When editing a `setup_files/*.template`,
 bump its `fbc-version`** — otherwise existing installs never pick the change up.
 
+## Multi-step plans
+
+Plan mode produces one large plan. For big features, split it into ordered phase files that a
+fresh session implements one at a time, each phase green + committable. Format originated from
+the hand-made `android/tickets-app/plans-implementation/`.
+
+```
+plan/<feature-name>/
+  00-context.md        shared reference (decisions, facts, phase index) — never implemented
+  01-<kebab>.md …      phases, ordered by dependency, each with a ## Verify section
+  original.md          the source plan if it was a top-level plan/<x>.md (moved by split)
+  done/                finished phases
+```
+
+- `/plan:multi-step <feature>` — research like `/plan:feature`, write the phase folder directly.
+- `/plan:split [path]` — turn an existing plan file (or the current session plan) into a phase folder.
+- `/plan:implement-phase [feature] [NN|all]` — implement the next (or given, or all) phase,
+  validate, move it to `done/`. When no phase remains the folder moves to `plan/done/YYYYMMDD_<name>/`.
+
+`/plan:implement` handles single top-level `plan/*.md` files only; folders are for
+`/plan:implement-phase`.
+
 ## Future
 
 Document other commands here as they are added.

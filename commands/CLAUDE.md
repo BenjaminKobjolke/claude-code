@@ -55,20 +55,27 @@ The sync is one-way (`commands/` is the source of truth) and auto-removes stale
 skills whose source command was renamed or deleted. Codex's own `.system/` skills
 and symlinked skills are left untouched.
 
-## frontend-backend-communication
+## feedback
 
-`/frontend-backend-communication:setup` — installs a cross-repo feedback loop between a
-backend repo and a frontend repo: feedback commands in both repos'
-`.claude/commands/` plus a gitignored `.claude/related-projects.md` in each repo
-holding the counterpart path. Templates in
-`frontend-backend-communication/setup_files/` (`.md.template` — not plain `.md`, so they
-don't register as commands themselves). Reference implementations: turbo-habits-api ↔
-turbo-habits-app, erp-api ↔ erp-frontend.
+Cross-repo feedback loop between a backend repo and a frontend repo. The commands are
+**global** (they live here, nothing is copied into projects), so an edit in `feedback/` is
+live in every project on the next session. Role-agnostic — same names in both repos:
 
-The skill is re-runnable and syncs stale installs: each template carries
-`<!-- fbc-version: N -->` after its frontmatter, and setup overwrites any installed
-command file whose marker is lower (or absent). **When editing a `setup_files/*.template`,
-bump its `fbc-version`** — otherwise existing installs never pick the change up.
+- `/feedback:implement [name]` — process `feedback/*.md`, verify with the workflow the
+  project's CLAUDE.md describes, move to `feedback/done/`. If the repo is the backend, write a
+  follow-up feedback file into the frontend's `feedback/`.
+- `/feedback:write` — write a `yyyy_mm_dd_TITLE.md` request into the counterpart's
+  `feedback/`. During planning it is the first plan entry.
+- `/feedback:setup` — record the counterpart path in both repos and migrate old per-project
+  copies (deletes the old `.claude/commands/feedback/*` files, rewrites old command names in
+  CLAUDE.md).
+
+Project-specific facts are read at runtime, never baked in: the counterpart path from
+`.claude/related-projects.md` or CLAUDE.md `## Related Projects` (the entry label
+`Frontend`/`App` vs `Backend`/`API` tells the repo's role), verify commands and conventions
+from CLAUDE.md / CODING_RULES.md. This replaced the earlier
+`frontend-backend-communication` template-copy + `fbc-version` sync design. Reference
+pairs: turbo-habits-api ↔ turbo-habits-app, erp-api ↔ erp-frontend.
 
 ## Multi-step plans
 

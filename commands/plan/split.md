@@ -1,9 +1,9 @@
 ---
-description: Split an existing plan (file or current session plan) into ordered phase files in plan/<feature-name>/
+description: Split an existing plan (file or current session plan) into ordered phase files in plan/YYYYMMDD_<feature-name>/
 argument-hint: [plan-path]
 ---
 
-IMPORTANT: This is a PLANNING-ONLY command. You MUST NOT edit, create, or modify any project source files. The ONLY files you may create or write to are inside `plan/<feature-name>/`. Do NOT implement any code.
+IMPORTANT: This is a PLANNING-ONLY command. You MUST NOT edit, create, or modify any project source files. The ONLY files you may create or write to are inside `plan/YYYYMMDD_<feature-name>/`. Do NOT implement any code.
 
 Turn one large plan into ordered phase files that can be implemented one at a time with `/plan:implement-phase`. Each phase must be independently implementable by a fresh session and leave the build green.
 
@@ -14,9 +14,9 @@ Turn one large plan into ordered phase files that can be implemented one at a ti
    - If no argument is given, use the plan currently held in this session (the plan-mode plan or the plan just discussed).
    - If neither exists, tell the user there is nothing to split and stop.
 
-2. Derive a short kebab-case `<feature-name>` from the plan title (fallback: the source filename, stripping any `YYYYMMDD_` or `NN_` prefix and the `.md` extension).
+2. Derive a short kebab-case `<feature-name>` from the plan title (fallback: the source filename, stripping any `YYYYMMDD_` or `NN_` prefix and the `.md` extension). The folder name is that name prefixed with today's date in `YYYYMMDD_` format (e.g. `20260908_dark-mode-toggle`) — strip the source prefix first so the date is never doubled.
 
-3. Ensure `plan/` exists in the project root. If `plan/<feature-name>/` already exists, ask the user whether to replace it or choose a different name.
+3. Ensure `plan/` exists in the project root. If `plan/YYYYMMDD_<feature-name>/` already exists, ask the user whether to replace it or choose a different name.
 
 4. **Cut the plan into phases** by dependency and area. Phase rules:
    - A fresh session with only `00-context.md` + one phase file can implement that phase. No research may be lost: everything the source plan learned (file traces, patterns to reuse with paths, decisions and why, gotchas, integration points) must land in `00-context.md` or the phase that needs it.
@@ -28,12 +28,12 @@ Turn one large plan into ordered phase files that can be implemented one at a ti
 5. **Write the files** in this exact layout:
 
    ```
-   plan/<feature-name>/
+   plan/YYYYMMDD_<feature-name>/
      00-context.md        shared reference — never implemented, always read first
      01-<kebab>.md        phase 1
      02-<kebab>.md        …
      NN-<kebab>.md        last phase: end-to-end verification + out of scope
-     done/                created later by /plan:implement-phase
+   (finished phases move to plan/done/YYYYMMDD_<feature-name>/ — created later by /plan:implement-phase)
    ```
 
    `00-context.md`:
@@ -71,6 +71,6 @@ Turn one large plan into ordered phase files that can be implemented one at a ti
    <what must be green before the next phase: analyze / tests / build / manual check>
    ```
 
-6. **Source handling**: if the source was a top-level `plan/<x>.md`, move it to `plan/<feature-name>/original.md` so `/plan:implement` no longer lists it. Any other source (session plan, `PLAN.md`, `claude-plans/…`) is left untouched.
+6. **Source handling**: if the source was a top-level `plan/<x>.md`, move it to `plan/YYYYMMDD_<feature-name>/original.md` so `/plan:implement` no longer lists it. Any other source (session plan, `PLAN.md`, `claude-plans/…`) is left untouched.
 
-7. Present a summary: the phase table from `00-context.md` and where the source went. Suggest `/plan:implement-phase <feature-name>`. Then STOP — do NOT implement any part of the plan.
+7. Present a summary: the phase table from `00-context.md` and where the source went. Suggest `/plan:implement-phase <feature-name>` (the bare name is enough — the date prefix does not have to be typed). Then STOP — do NOT implement any part of the plan.

@@ -1,5 +1,5 @@
 ---
-description: Implement the next phase of a multi-step plan in plan/<feature-name>/ — or a given phase, or all remaining
+description: Implement the next phase of a multi-step plan in plan/YYYYMMDD_<feature-name>/ — or a given phase, or all remaining
 argument-hint: [feature] [NN|all]
 ---
 
@@ -7,8 +7,8 @@ Implement phases of a multi-step plan (created by `/plan:multi-step` or `/plan:s
 
 ## Steps
 
-1. **Resolve the plan folder**: candidates are subdirectories of `plan/` that contain a `00-context.md` (ignore `plan/done/`).
-   - If the first `$ARGUMENTS` token is given, filter candidates whose folder name contains it (case-insensitive, partial match). Exactly one match → select it. Several → list them and ask. None → show the candidates and ask.
+1. **Resolve the plan folder**: candidates are subdirectories of `plan/` that contain a `00-context.md` (ignore `plan/done/`), sorted by folder name (dated folders sort oldest first). The folder name is `YYYYMMDD_<feature-name>`; call it `<folder-name>` below. Older undated folders are valid candidates too.
+   - If the first `$ARGUMENTS` token is given, filter candidates whose folder name contains it (case-insensitive, partial match — so `tickets-watcher` matches `20260908_tickets-watcher`). When listing, show the full folder names. Exactly one match → select it. Several → list them and ask. None → show the candidates and ask.
    - If no token is given: one candidate → auto-select. Several → list and ask. None → tell the user there are no multi-step plans and suggest `/plan:multi-step` or `/plan:split`, then stop.
 
 2. **Resolve which phase(s)**: remaining phases are the `NN-*.md` files directly in the folder (exclude `00-context.md`, `original.md`, and `done/`), sorted by their `NN` prefix.
@@ -27,7 +27,7 @@ Implement phases of a multi-step plan (created by `/plan:multi-step` or `/plan:s
 
 7. Run the phase's `## Verify` checks, then `/validate:pre-commit`. If anything fails, fix it and re-run until it passes. This happens per phase — every phase must be green on its own.
 
-8. Ensure `plan/<feature-name>/done/` exists and move the phase file there (keep the filename — the `NN-` prefix preserves order). Report which phases remain and suggest committing with `/git:commit`. Do NOT auto-commit.
+8. Ensure `plan/done/<folder-name>/` exists and move the phase file there (keep the filename — the `NN-` prefix preserves order). Report which phases remain and suggest committing with `/git:commit`. Do NOT auto-commit.
    - In `all` mode, continue with the next remaining phase from step 3. Suggest a commit between phases but keep going.
 
-9. When no `NN-*.md` remains in the folder, ensure `plan/done/` exists and move the whole folder to `plan/done/YYYYMMDD_<feature-name>/` (today's date). Tell the user the multi-step plan is complete and suggest reviewing and committing with `/git:commit`.
+9. When no `NN-*.md` remains in the folder, move the leftovers (`00-context.md`, `original.md`) into `plan/done/<folder-name>/` too and delete the now-empty `plan/<folder-name>/`. Tell the user the multi-step plan is complete and suggest reviewing and committing with `/git:commit`.

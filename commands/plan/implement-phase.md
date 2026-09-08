@@ -27,7 +27,7 @@ Implement phases of a multi-step plan (created by `/plan:multi-step` or `/plan:s
 
 7. Run the phase's `## Verify` checks, then `/validate:pre-commit`. If anything fails, fix it and re-run until it passes. This happens per phase — every phase must be green on its own.
 
-8. Ensure `plan/done/<folder-name>/` exists and move the phase file there (keep the filename — the `NN-` prefix preserves order). Report which phases remain and suggest committing with `/git:commit`. Do NOT auto-commit.
+8. Ensure `plan/done/<folder-name>/` exists and move the phase file there (keep the filename — the `NN-` prefix preserves order). Move its sidecar files too: any file in `plan/<folder-name>/` whose name starts with the phase file's basename plus `-` (e.g. `02-foo-changed-files.md`, `02-foo-post-impl-delegate.log`) goes to the same `done/` folder, keeping its filename. Report which phases remain and suggest committing with `/git:commit`. Do NOT auto-commit.
    - In `all` mode, continue with the next remaining phase from step 3. Suggest a commit between phases but keep going.
 
 9. When no `NN-*.md` remains in the folder, move the leftovers (`00-context.md`, `original.md`) into `plan/done/<folder-name>/` too and delete the now-empty `plan/<folder-name>/`. Tell the user the multi-step plan is complete and suggest reviewing and committing with `/git:commit`.

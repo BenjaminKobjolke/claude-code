@@ -28,7 +28,7 @@ Steps:
    - **Open Questions gate**: if the plan has an "Open Questions" section with unresolved questions, present each to the user, wait for answers to ALL of them, write the answers back into the file, and only then continue.
    - Implement the plan step by step. Announce which step you are starting and report what was done before moving to the next step.
    - **On failure**: stop immediately, explain what went wrong, and ask the user whether to attempt a fix or create a handoff via `/handoff:create`. Do NOT move the file to `done/` if implementation is incomplete.
-   - When the plan is fully implemented, ensure `claude-plans/todos/done/` exists and move the file there, prefixing the filename with today's date in `YYYYMMDD_` format (e.g. `01_dark-mode-toggle.md` becomes `claude-plans/todos/done/20260529_01_dark-mode-toggle.md`).
+   - When the plan is fully implemented, ensure `claude-plans/todos/done/` exists and move the file there, prefixing the filename with today's date in `YYYYMMDD_` format (e.g. `01_dark-mode-toggle.md` becomes `claude-plans/todos/done/20260529_01_dark-mode-toggle.md`). Move its sidecar files too: any file in `claude-plans/todos/` whose name starts with the plan's basename plus `-` (e.g. `01_dark-mode-toggle-changed-files.md`, `01_dark-mode-toggle-post-impl-delegate.log`) moves to `done/` with the same `YYYYMMDD_` prefix.
 
 4. **Only after ALL selected todos are implemented and moved to `done/`**, run analysis/code-checking ONCE: `/validate:pre-commit`. If validation fails, fix the issues and re-run until it passes. Do NOT run analysis or code-checking between individual todos — only this single pass at the end.
 

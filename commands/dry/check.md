@@ -13,12 +13,18 @@ Optional scope: $ARGUMENTS
 
 Changed-scope size:
 
-- tracked changes vs HEAD: !`git diff --shortstat HEAD`
-- untracked files: !`git ls-files --others --exclude-standard | wc -l`
+- tracked changes vs HEAD: !`git diff --shortstat HEAD 2>/dev/null || echo "NOT A GIT REPO"`
+- untracked files: !`git ls-files --others --exclude-standard 2>/dev/null | wc -l`
 
 If those two lines already carry values, they were substituted for you - do not re-run
 them. If they still show the literal commands, run exactly those two and nothing else.
 Both return one line; never substitute `git status --short` or `git diff --stat` here.
+
+Not a git repo (the first line says `NOT A GIT REPO`): the only valid scope is the supplied
+pathspec — size it by counting its entries. Without a pathspec, stop and ask for one (a
+changed-files list, one path per line). Never widen the scope with git in that case. The
+`2>/dev/null || echo` guard exists because a failing frontmatter substitution aborts the
+whole command before any of this text loads.
 
 ## Step 1 - gate, before reading anything
 
@@ -61,7 +67,8 @@ support a finding with a file and line reference.
 
 1. List the changed paths with `git diff HEAD --name-only` and, if relevant,
    `git ls-files --others --exclude-standard`. For untracked files use `wc -l` to size
-   them; do not load a large one.
+   them; do not load a large one. If the repository is not a git repo, skip every git
+   command: the scope pathspec IS the changed list, and each listed file is read whole.
 2. Read the changed hunks. Read surrounding code only when a hunk is unclear.
 3. Look for duplication among the changes, and for existing abstractions the changes
    missed. Do not propose a new abstraction without at least 2 consumers or a clear

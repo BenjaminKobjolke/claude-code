@@ -7,8 +7,9 @@ Implement phases of a multi-step plan (created by `/plan:multi-step` or `/plan:s
 
 ## Steps
 
-1. **Resolve the plan folder**: candidates are subdirectories of `plan/` that contain a `00-context.md` (ignore `plan/done/`), sorted by folder name (dated folders sort oldest first). The folder name is `YYYYMMDD_<feature-name>`; call it `<folder-name>` below. Older undated folders are valid candidates too.
+1. **Resolve the plan folder**: candidates are subdirectories of `plan/` that contain a `00-context.md` (ignore `plan/done/`, `plan/implementing/` and `plan/errors/` — those hold a running, a finished or a failed plan), sorted by folder name (dated folders sort oldest first). The folder name is `YYYYMMDD_<feature-name>`; call it `<folder-name>` below. Older undated folders are valid candidates too.
    - If the first `$ARGUMENTS` token is given, filter candidates whose folder name contains it (case-insensitive, partial match — so `tickets-watcher` matches `20260908_tickets-watcher`). When listing, show the full folder names. Exactly one match → select it. Several → list them and ask. None → show the candidates and ask.
+   - `plan-implementer` names the phase file and its folder explicitly in the prompt; when it does, use that path instead of resolving — the folder is `plan/implementing/<folder-name>/` for the duration of the run, and every `plan/<folder-name>/` below means that path.
    - If no token is given: one candidate → auto-select. Several → list and ask. None → tell the user there are no multi-step plans and suggest `/plan:multi-step` or `/plan:split`, then stop.
 
 2. **Resolve which phase(s)**: remaining phases are the `NN-*.md` files directly in the folder (exclude `00-context.md`, `original.md`, and `done/`), sorted by their `NN` prefix.

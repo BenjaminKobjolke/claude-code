@@ -55,6 +55,45 @@ The sync is one-way (`commands/` is the source of truth) and auto-removes stale
 skills whose source command was renamed or deleted. Codex's own `.system/` skills
 and symlinked skills are left untouched.
 
+### Write command bodies host-neutral
+
+The sync copies each command **body byte-for-byte**; only Claude-only *frontmatter* keys are
+dropped (`DROP_KEYS` in `sync_commands_to_codex.py`). So a body written against Claude Code's
+tool names ships to Codex as a broken skill.
+
+This is not theoretical. `convention/check.md` used to say "use only Read, Grep, and Glob. Do
+not use Bash" and "spawn exactly one Agent". Codex has neither Read/Grep/Glob nor subagents -
+shell is its only tool, and the skill forbade it. Run as the coding-rules delegate, Codex
+declared itself blocked, wrote `## DELEGATE QUESTIONS` into the plan, and returned no findings
+at all. A Claude-ism in a delegated command does not degrade the result, it produces nothing.
+
+Rules for every command body:
+
+- **Describe the capability, not the tool.** "Search the repo read-only", not "use Grep".
+  Where naming tools helps, name both hosts on one line: "Claude: `Read`/`Grep`/`Glob` -
+  shell-only hosts: `rg` / `sed -n 'START,ENDp'`".
+- **Never mandate a Claude-only mechanism.** Subagents (`Agent`, `subagent_type`, `Task`),
+  plugin skills (`/ponytail:*`), MCP servers and hooks are Claude-side. Make each conditional:
+  "if the host provides subagents, run it there; otherwise run the brief inline" / "if
+  `/ponytail:ponytail-review` exists, run it; otherwise apply the same judgement yourself and
+  say so". Never let the absence of one be a reason to stop.
+- **Never forbid a host's only tool.** "Do not use Bash" is fatal in Codex. Forbid the
+  *outcome* instead: "read-only: never edit, create or delete a file", "do not use the web".
+- **Express budgets as numbers with a shell equivalent.** Not "`head_limit: 20`" alone but "at
+  most 20 matches per search (`head_limit: 20`, or `rg ... | head -20`)". Not "`limit: 80` +
+  `offset`" alone but "never read more than ~80 lines at a time (`limit: 80` + `offset`, or
+  `sed -n`)".
+- **Frontmatter `!`command`` substitution is Claude-only.** Codex ships the literal text, so
+  every such line needs the "if it still shows the literal command, run exactly that" fallback
+  that `dry/check.md` carries.
+- Windows paths and `.bat` wrappers are fine - both hosts run on this machine.
+
+The three commands invoked **as** the Codex delegate by `CODING_RULES.md` -
+`convention/check.md`, `plan/dry.md`, `dry/check.md` - are the ones where this matters most.
+
+`tools/sync_commands_to_codex.bat` prints a `WARNING:` line per Claude-only phrase it finds in
+a body. Treat a warning as a bug in the command, not noise.
+
 ## feedback
 
 Cross-repo feedback loop between a backend repo and a frontend repo. The commands are

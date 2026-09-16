@@ -35,13 +35,17 @@ Read the numbers above. Do not run `git diff`, `git status`, or any search yet.
 - No changes at all, or a supplied pathspec that matches nothing: stop and say so.
 - Otherwise continue to step 2.
 
-## Step 2 - delegate to one fresh subagent
+## Step 2 - run the audit once, in a fresh context if the host has one
 
-Spawn exactly **one** Agent (`subagent_type: general-purpose`, `model: haiku`). Do not
-fork this conversation - the audit needs none of it. Do not spawn a second agent. Pass
-the brief below verbatim, substituting the pathspec if one was supplied.
+If the host provides subagents, spawn exactly **one** (`subagent_type: general-purpose`,
+`model: haiku`) and pass the brief below verbatim, substituting the pathspec if one was
+supplied. Do not fork this conversation - the audit needs none of it. Never spawn a second
+one.
 
-Return the agent's report as your answer. Add nothing to it.
+If the host has no subagent mechanism (Codex and other shell-only hosts), follow the brief
+yourself, inline, in this session. Do not report the audit as blocked.
+
+Return the report as your answer. Add nothing to it.
 
 ---
 
@@ -50,16 +54,20 @@ Return the agent's report as your answer. Add nothing to it.
 You are running a bounded, read-only DRY audit on the uncommitted changes in this
 repository. Scope: PATHSPEC_OR_ALL_CHANGES. You may not edit any file.
 
-Tools: use only Read, Grep, Glob, and `git` through Bash. Do not use WebSearch or
-WebFetch. Do not `cat`, `rg`, or `find` through Bash - Grep and Glob replace them and
-they cap their own output.
+**Read-only: never edit, create, or delete a file.** Do not use the web. Use whatever
+read/search tools the host has - Claude: `Read`/`Grep`/`Glob` plus `git` through Bash;
+shell-only hosts: `rg`, `sed -n 'START,ENDp'` and `git`. Prefer a capped tool over a raw
+shell command where the host offers one.
 
-Every read is capped by a tool parameter, not by your own counting:
+Every read is capped, by a tool parameter where one exists and by the shell otherwise:
 
-- `Grep` always with `head_limit: 20`. Start with `output_mode: files_with_matches`.
-  Escalate at most one term to `output_mode: content` with `-C 2`.
-- `Read` always with an explicit `limit: 80` and an `offset`. Never read a whole file.
-- Any Bash command ends in `| head -50`.
+- At most 20 matches per search (`head_limit: 20`, or `rg ... | head -20`). Start with
+  filenames only (`output_mode: files_with_matches`, or `rg -l`); escalate at most one term
+  to matching lines with 2 lines of context (`output_mode: content` with `-C 2`, or
+  `rg -C 2`).
+- Never read more than ~80 lines of a file at a time (`limit: 80` plus an `offset`, or
+  `sed -n '1,80p'`). Never read a whole file.
+- Every shell command ends in `| head -50`.
 - Read diffs one path at a time: `git diff HEAD -- <path>`. Never diff the whole tree.
 
 Budget: at most 3 searches, at most 3 unchanged reference files. Stop when you can
@@ -73,10 +81,11 @@ support a finding with a file and line reference.
 3. Look for duplication among the changes, and for existing abstractions the changes
    missed. Do not propose a new abstraction without at least 2 consumers or a clear
    local convention.
-4. Run `/ponytail:ponytail-review` scoped to exactly the changed paths from step 1.
-   State in the invocation: review only these paths, do not search the repository, do
-   not read any file outside this list. If Ponytail is unavailable, do not install it;
-   report that the YAGNI gate is incomplete.
+4. If the host has `/ponytail:ponytail-review`, run it scoped to exactly the changed paths
+   from step 1. State in the invocation: review only these paths, do not search the
+   repository, do not read any file outside this list. If it is unavailable, do not install
+   it - apply the same YAGNI/KISS judgement to those paths yourself and say in the verdict
+   that Ponytail was not available.
 5. Report only concrete findings, each with a file and line reference.
 
 Return at most 300 words using only the applicable headings:

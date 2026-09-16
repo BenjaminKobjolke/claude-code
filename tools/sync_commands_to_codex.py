@@ -20,6 +20,17 @@ MARKER = ".synced-from-claude"
 # Claude-only frontmatter keys that Codex skills don't use.
 DROP_KEYS = {"effort", "allowed-tools", "argument-hint", "model", "name"}
 
+# Body phrases that are fatal in Codex, which gets the body verbatim and has only a
+# shell. Mentioning a Claude tool or subagent is fine when the body makes it
+# conditional, so only the unconditional forms are listed. See "Write command bodies
+# host-neutral" in commands/CLAUDE.md.
+CLAUDE_ONLY_PHRASES = (
+    "Do not use Bash",
+    "use only Read",
+    "Spawn exactly **one** Agent",
+    "Use the Task tool",
+)
+
 
 def parse_frontmatter(text):
     """Return (description, body). description is None if absent.
@@ -53,6 +64,11 @@ def build_skill_md(name, description, body):
     return f"---\nname: {name}\ndescription: {desc}\n---\n\n{body}"
 
 
+def claude_only_warnings(body):
+    """Return the Claude-only phrases present in a command body."""
+    return [phrase for phrase in CLAUDE_ONLY_PHRASES if phrase in body]
+
+
 def remove_stale(skills_dir):
     """Delete previously-synced skill folders (those carrying the marker)."""
     removed = 0
@@ -75,6 +91,7 @@ def sync():
     # Resource files per category = non-.md siblings (e.g. setup-files/).
     written = 0
     resource_copies = 0
+    warnings = 0
     for cat_dir in sorted(p for p in COMMANDS_DIR.iterdir() if p.is_dir()):
         cat = cat_dir.name
         md_files = [f for f in sorted(cat_dir.glob("*.md")) if f.name != "CLAUDE.md"]
@@ -99,9 +116,16 @@ def sync():
                 print(f"  resource: {cat}/{res.name} -> {name}/")
             written += 1
             print(f"skill: {md.relative_to(COMMANDS_DIR)} -> {name}/SKILL.md")
+            for phrase in claude_only_warnings(body):
+                warnings += 1
+                print(f"  WARNING: {name} contains Claude-only instruction: '{phrase}'")
 
     print(f"\nDone. {written} skills written, {removed} stale removed, "
-          f"{resource_copies} resource copies. Target: {SKILLS_DIR}")
+          f"{resource_copies} resource copies, {warnings} warnings. "
+          f"Target: {SKILLS_DIR}")
+    if warnings:
+        print("Claude-only instructions break the Codex copy - see "
+              "'Write command bodies host-neutral' in commands/CLAUDE.md.")
 
 
 def self_test():
@@ -125,6 +149,15 @@ def self_test():
     assert desc2 is None and body2 == "Just a body.\n"
     out2 = build_skill_md("x-y", desc2, body2)
     assert "description: x-y" in out2
+    # Claude-only body phrases are flagged; a host-neutral body is not.
+    assert claude_only_warnings(
+        "Tools: use only Read, Grep, Glob. Do not use Bash.") == [
+        "Do not use Bash", "use only Read"]
+    # A conditional mention of a Claude-only mechanism is correct, not a warning.
+    assert claude_only_warnings(
+        "If the host has subagents, spawn one (subagent_type: general-purpose); "
+        "otherwise run inline. Claude: Grep; shell-only hosts: rg.") == []
+
     print("self-test OK")
 
 

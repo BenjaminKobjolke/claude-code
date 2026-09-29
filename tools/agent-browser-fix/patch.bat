@@ -24,3 +24,4 @@ if %ERRORLEVEL% equ 0 (
     echo ERROR: Failed to copy patch file.
     exit /b 1
 )
+exit /b 0

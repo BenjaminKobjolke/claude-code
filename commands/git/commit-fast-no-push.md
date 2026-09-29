@@ -1,0 +1,257 @@
+---
+description: GIT commit changed and new files according to XIDA standards, skipping validation, without pushing
+effort: low
+
+---
+
+Git commit local changes and new files. Never push — the caller pushes after this command.
+Create separate commits for fixes, code improvements and new features.
+
+Before staging, group changed files by logical concern. If changes span multiple unrelated concerns (e.g. a bug fix + a new feature + a style change), propose separate commits and stage only relevant files per commit. Do not bundle unrelated changes into a single commit.
+
+## How to execute the commit
+
+IMPORTANT: Do NOT use the HEREDOC/command-substitution pattern `$(cat <<'EOF' ... EOF)` for commit messages.
+
+**One-line message (no body): commit directly, no temp file.**
+
+```
+git commit -m "<message>"
+```
+
+**Message with a body:** use the temporary file approach to avoid the "$() command substitution" security prompt:
+
+1. Write the commit message to `tmp/commit_msg.tmp` using the Write tool
+2. Run: `git commit -F tmp/commit_msg.tmp`
+3. Delete `tmp/commit_msg.tmp` after a successful commit
+
+If a message needs a backtick, `$` or `"`, use the temp file regardless of length.
+
+IMPORTANT: Never prefix git commands with `cd /path &&`. Run all git commands directly (e.g. `git add`, `git commit`) without `cd`. The working directory is already correct. Combining `cd` with git triggers a "bare repository attack" security prompt.
+
+Never commit PLAN.md or HANDOFF.md — add them to `.gitignore` instead (see "Files to ignore automatically").
+
+## Nothing to do — stop immediately
+
+Run this check FIRST, before grouping, inspecting or anything else:
+
+1. `git status --short` — drop every entry that the ignore rules below cover (`PLAN.md`, `HANDOFF.md`, `PLAN_*.md`, `claude-plans`, `.claude/`, `tmp/commit_msg.tmp`, debug/test artifacts). Those are not eligible changes.
+
+If nothing is eligible to commit: reply `nothing to commit` and stop.
+
+Validation is intentionally skipped in this variant. Do NOT run `/validate:pre-commit`. The caller is responsible for having already run tests/validators before invoking this command.
+
+Also do not confirm GIT commit message in prompt or slash commands.
+
+Commit changes that you didnt do in this session too. Research those files to figure out what changed.
+
+Make sure to not commit files with credentials, like .env, settings.json. Only if those are just test credentials. Ask the useer if he wants to ignore thosee files.
+
+## Fast path — canonical commit messages
+
+Check this BEFORE grouping and before reading any diff. If EVERY file in a commit group matches one row, use that message verbatim, write NO body, and read only `--stat` — never the full patch. Do not explain what was ignored or which docs changed; the canonical subject already says it.
+
+| Whole group is | Message |
+| --- | --- |
+| `.gitignore` | `GIT (ignore): update ignore list` |
+| `.gitattributes` | `GIT (attributes): update line ending rules` |
+| `.gitignore` + `.gitattributes` | `GIT (config): update git config files` |
+| `README.md` | `DOCS (readme): update readme` |
+| `*.md`, none of them prompt files (see carve-out) | `DOCS (docs): update documentation` |
+
+**Carve-out — markdown that is a prompt, not documentation.** A `.md` file under `commands/`, `pi/`, `skills/`, `.claude/`, `.codex/`, or any `*/SKILL.md` is an AI prompt. Those take type `AI` with a real scope and subject (e.g. `AI (bugs): add pre-existing bug planning command`) — they never take the `DOCS` fast path.
+
+The fast path applies per group, not per run. A group holding `.gitignore` AND source code is mis-grouped: split it, then re-check the table.
+
+## How much to inspect
+
+Three commands, not more:
+
+```
+git status --short                  # full picture, untracked (??) entries included
+git --no-pager diff HEAD --stat     # sizes, to decide what is worth reading
+git --no-pager diff HEAD -- <paths> # full patch, only where needed
+```
+
+Do not also run the long-form `git status`, a bare `git diff`, `git diff --cached` for inspection, or `git ls-files --others --exclude-standard` — `git status --short` already covers them.
+
+Read `--stat` only, never the full patch, for: lockfiles (`package-lock.json`, `composer.lock`, `yarn.lock`, `uv.lock`, `pubspec.lock`), generated / minified / build output, binaries, and any file with more than ~300 changed lines. The message then describes the file ("regenerate lockfile"), not its lines — which is also the honest answer for a diff you did not read.
+
+Untracked files outside a fast-path row: read enough to classify them and write the subject, not the whole file.
+
+## Files to ignore automatically
+
+Before staging, scan the changed / added list for files that should never be committed and add them to `.gitignore` instead.
+
+1. Debug / test output files that are clearly throwaway artifacts (e.g. `output_test.txt`, `debug_test.log`, `test_output.json`, `debug.log`). Do NOT add one rule per file. Prefer a single grouped glob pattern that catches the current files and future ones with similar names, e.g.:
+
+```
+# Debug / test output artifacts
+*_test.txt
+*_test.log
+debug*.log
+*.debug.log
+test_output.*
+```
+
+Pick the smallest set of glob patterns that covers the surfaced files without ignoring real source files. If a debug file does not fit an existing pattern, extend the group rather than listing it verbatim.
+
+2. If `tmp/commit_msg.tmp` surfaces in the git added / changed list, add `tmp/commit_msg.tmp` to `.gitignore`.
+
+3. If a `claude-plans` folder (or files under it) surfaces in the git added / changed list, add `claude-plans` to `.gitignore`.
+
+4. Always ensure `.claude/` is ignored. If `.gitignore` does not already ignore it, add `.claude/`. This applies whether or not a `.claude` entry currently surfaces in the git status.
+
+5. Always ensure root-level `PLAN_*.md` files are ignored. If `.gitignore` does not already cover them, add `/PLAN_*.md` (anchored to the repo root so nested `PLAN_*.md` in real source trees are untouched). This applies whether or not such a file currently surfaces in the git status.
+
+6. Always ensure `PLAN.md` and `HANDOFF.md` are ignored. If `.gitignore` does not already cover them, add both. They are Claude working files — never commit them, and ignoring them stops them surfacing as untracked on every single run.
+
+If a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
+
+If the ONLY change in the repo is a `.gitignore` edit you just made for these files, that is still a real commit — make it (`GIT (ignore): update ignore list`).
+
+The user has to call this command again for feature commit requests.
+Which means to not automatically commit changes the user requested after this commit request.
+
+If Git reports line-ending warnings (for example, `LF will be replaced by CRLF` or `CRLF will be replaced by LF`) or files show as modified only because of line-ending changes, run the `/git:fix-line-endings` skill to diagnose and permanently resolve it, then continue with the original requested commits. That skill ensures a `.gitattributes` exists, sets repo-local `core.autocrlf=false` so the attributes win, and renormalizes/commits the content only if needed.
+
+## Required .gitattributes setup
+
+This check is REACTIVE — do NOT audit `.gitattributes` on every run. Run it only when one of these is true:
+
+- git emits a line-ending warning (`LF will be replaced by CRLF` or the reverse), or
+- the repo contains `.bat` / `.cmd` files and has no `.gitattributes` at all.
+
+When it does trigger: if `.gitattributes` is missing, or has an LF catch-all (`* text=auto eol=lf`) without a Windows-script override, fix it and commit that as a separate `GIT` commit. Required baseline:
+
+```
+# Normalize all text files to LF in the repository
+* text=auto eol=lf
+
+# Windows batch files must be CRLF - cmd.exe misparses LF-only scripts
+# (e.g. "set" lines break into fragments, vars stay empty)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+```
+
+The `*.bat`/`*.cmd` override is mandatory whenever the repo contains batch files: an LF-only catch-all silently checks them out with LF endings, and cmd.exe then misparses them (broken `set` lines, empty variables). After adding the override, convert existing working-tree `.bat`/`.cmd` files to CRLF (`unix2dos`) — the stored blobs stay LF, so this normally produces no content diff. Keep any additional sensible rules the project already has (binary markers etc.); do not overwrite an existing policy, only add the missing override.
+
+Never run `git push`, not even when the branch is ahead of the remote.
+
+---
+
+Adhere to the following rules.
+
+# Git commit guidelines
+
+## Format of the commit message
+
+```
+<type> (<scope>): <subject>
+<BLANK LINE>
+<body>
+<BLANK LINE>
+<footer>
+```
+
+>Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub as well as in various Git tools.
+
+#### Allowed `<type>`
+
+ * **FEATURE** (feature)
+ * **FIX** (bug fix)
+ * **DOCS** (documentation)
+ * **STYLE** (formatting, missing semi-colons, etc.)
+ * **TEST** (when creating tests)
+ * **CLEANUP** (remove unnecessary code, files)
+ * **IMPROVE** (improvement, e.g. enhanced feature)
+ * **TOOLS** (build, tools changes etc.)
+ * **GIT** (.gitignore changed, Git configuration changed etc.)
+ * **RELEASE**  (created a new .exe, .ipa, .apk etc.) There is no need to add the actual released file. But there should be a commit for every release so it is easier for old projects to track down what the last version was, that was sent to the client
+ * **CONTENT** (added images, html, pdf, video etc.)
+ * **REFACTOR** (code restructuring without changing external behavior)
+ * **PERF** (performance improvements)
+ * **CI** (CI/CD pipeline changes, GitHub Actions, etc.)
+ * **CHORE** (maintenance tasks, dependency updates, configs)
+ * **AI** (prompt templates, model configurations, AI agent settings etc.)
+ * **EXAMPLE** (sample code, demo projects, usage demonstrations)
+
+
+Release messages need to have the following format:
+```
+RELEASE (<scope>): <versionnumber>
+<BLANK LINE>
+<body>
+<BLANK LINE>
+<footer>
+```
+
+#### Allowed `<scope>`
+
+Scope could be anything specifying place or element of the commit change(s).
+
+Examples:
+ * **Component names:** `header`, `sidebar`, `login-form`, `user-profile`
+ * **Feature areas:** `auth`, `payments`, `notifications`, `search`
+ * **File types:** `api`, `ui`, `database`, `config`
+ * **Layers:** `service`, `controller`, `model`, `view`
+
+#### Allowed `<subject>` text
+
+ * use imperative, present tense: _change_ not _changed_ nor _changes_ or _changing_
+ * do not capitalize first letter
+ * do not append dot (.) at the end
+
+> Subject line contains description of the change.
+
+#### Allowed Message `<body>`
+
+The body is OPTIONAL. Write one only when it records a *why* or an old-vs-new that the subject cannot carry. Subject-only is correct and preferred for: fast-path commits, renames and moves, single-file obvious changes, and dependency bumps. Never restate the subject as a body.
+
+ * just as in <subject> use imperative, present tense: _change_ not _changed_ nor _changes_ or _changing_
+ * include motivation for the change and contrast it with previous behavior
+ * if commit is list use dash (-) to list items in a separate line
+
+### Message Footer
+
+#### Breaking changes
+
+All breaking changes have to be mentioned in footer with the description of the change, justification and migration notes
+
+```
+BREAKING CHANGE: Id editing feature temporarily removed
+As a work around, change the id in XML using replace all or friends
+```
+#### Referencing issues
+
+Closed bugs / feature requests / issues should be listed on a separate line in the footer prefixed with "Closes" keyword like this:
+ 
+    Closes #234
+
+or in case of multiple issues:
+ 
+    Closes #123, #245, #992
+    
+### Good commit message examples:
+
+```
+STYLE (notifications): change notifications
+
+change warning notification colors:
+- error notifications are now red
+- warning and info notifications are now dark-yellow
+```
+
+or
+
+```
+FEATURE (editor): add emmet plug-in to editor
+
+- add emmet plug-in to editor
+- add emmet plug-in settings
+
+Closes #351
+```
+
+Also check .gitmodules if there are submodules.
+Then process with the same workflow for those submodules.

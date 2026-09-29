@@ -12,3 +12,6 @@ HANDOFF.md
 /PLAN_*.md
 .aider*
 tickets/
+
+# graphify generated output (caches, graph reports)
+graphify-out/

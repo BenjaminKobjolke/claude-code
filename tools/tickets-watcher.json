@@ -1,5 +1,8 @@
 {
   "files": {
     "TICKETS_WATCHER_COMMANDS.md": 1
-  }
+  },
+  "analysis_commands": [
+    "python tools/sync_commands_to_codex.py --self-test"
+  ]
 }

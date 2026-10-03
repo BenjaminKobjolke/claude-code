@@ -50,6 +50,16 @@ that contract.
   (e.g. "Google Play Store", "Website"). If the project has **no** publish step,
   omit the `publish` bat — the release then just skips the publish gate; the
   commit/tag/push gate is still offered.
+  **GitHub Releases is not a `publish` bat.** The publish gate runs *before*
+  commit/tag/push, and `gh release create` on a tag that is not pushed yet creates
+  that tag itself, on the remote default-branch head instead of the release commit.
+  Use the `[GitHubRelease]` section instead (it runs after the push); pin `repo`
+  when the project is a fork, or `gh` may resolve to the upstream parent. The
+  pushed tag is the label, so an existing `v<version>` tag convention changes.
+- **The `build` bat must work on a dirty tree** — `create` has already bumped the
+  counter and authored notes when it calls it. A build command that refuses
+  uncommitted changes (fbs `python build.py release` does, and exits 0 while doing
+  so) needs a wrapper command without that check.
 - `versioning` — `build` (default: `{version}_{build}` with a `build_get` counter)
   or `semver` (no counter; each release bumps the last version segment, e.g.
   `0.1.6` → `0.1.7`, driven by `build_increment`/`build_decrement`). Pick `semver`

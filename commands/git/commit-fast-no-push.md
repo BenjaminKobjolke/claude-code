@@ -35,7 +35,7 @@ Never commit PLAN.md or HANDOFF.md — add them to `.gitignore` instead (see "Fi
 
 Run this check FIRST, before grouping, inspecting or anything else:
 
-1. `git status --short` — drop every entry that the ignore rules below cover (`PLAN.md`, `HANDOFF.md`, `PLAN_*.md`, `claude-plans`, `.claude/`, `tmp/commit_msg.tmp`, debug/test artifacts). Those are not eligible changes.
+1. `git status --short` — drop every entry that the ignore rules below cover (`PLAN.md`, `HANDOFF.md`, `PLAN_*.md`, `claude-plans`, `.claude/`, untracked root `tickets/`, `tmp/commit_msg.tmp`, debug/test artifacts). Those are not eligible changes.
 
 If nothing is eligible to commit: reply `nothing to commit` and stop.
 
@@ -105,6 +105,8 @@ Pick the smallest set of glob patterns that covers the surfaced files without ig
 5. Always ensure root-level `PLAN_*.md` files are ignored. If `.gitignore` does not already cover them, add `/PLAN_*.md` (anchored to the repo root so nested `PLAN_*.md` in real source trees are untouched). This applies whether or not such a file currently surfaces in the git status.
 
 6. Always ensure `PLAN.md` and `HANDOFF.md` are ignored. If `.gitignore` does not already cover them, add both. They are Claude working files — never commit them, and ignoring them stops them surfacing as untracked on every single run.
+
+7. Always ensure the root-level `tickets` folder is ignored. If `.gitignore` does not already cover it, add `/tickets/` (anchored to the repo root so nested `tickets` folders in real source trees are untouched). It holds working files of an external ticket tool, not project content. This applies whether or not the folder currently surfaces in the git status. If the folder was committed by accident (`git ls-files tickets` lists tracked files), the ignore rule alone has no effect: also run `git rm -r --cached tickets` (untracks, keeps the files on disk) and commit the removal together with the `.gitignore` change as `GIT (ignore): update ignore list`.
 
 If a matching ignore rule already exists in `.gitignore`, do not duplicate it. Commit the `.gitignore` change as a separate `GIT` commit.
 

@@ -15,3 +15,5 @@ tickets/
 
 # graphify generated output (caches, graph reports)
 graphify-out/
+code_analysis_results/
+.reasonix/

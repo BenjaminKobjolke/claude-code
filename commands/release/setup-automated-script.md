@@ -108,12 +108,58 @@ and preserves its exit code when restoring the working directory:
 ```bat
 @echo off
 setlocal
+if not exist "%~dp0publish_settings.ini" (
+  echo ERROR: "%~dp0publish_settings.ini" is missing. Copy publish_settings_example.ini and configure it.
+  exit /b 1
+)
+if not exist "D:\GIT\BenjaminKobjolke\release-tool\ftp_profiles.ini" (
+  echo ERROR: "D:\GIT\BenjaminKobjolke\release-tool\ftp_profiles.ini" is missing. Copy examples\ftp_profiles.ini and add the FTP profile.
+  exit /b 1
+)
 cd /d D:\GIT\BenjaminKobjolke\release-tool
 call uv run python -m release_tool create "%~dp0release_create.ini" --project-root "%~dp0.." %*
 set "RELEASE_EXIT_CODE=%ERRORLEVEL%"
 cd /d "%~dp0"
 endlocal & exit /b %RELEASE_EXIT_CODE%
 ```
+
+The `if not exist` blocks are a **preflight**: they must run before anything else
+so a missing publish config stops the release before the counter is bumped and an
+artifact is built, not at the publish gate after the build. Read the publish bat
+and add one such check per local, untracked file it requires (publish settings
+INI, shared FTP profiles, keystore properties), using the real file names. Keep
+the publish bat's own checks too — it can be run by hand. Omit the blocks only
+when no `publish` bat is configured, and the `ftp_profiles.ini` one when the
+publish INI names no `profile`.
+
+### 4a. Publish credentials come from a shared FTP profile
+
+Projects do not carry their own FTP credentials. They live once in
+`D:\GIT\BenjaminKobjolke\release-tool\ftp_profiles.ini` (gitignored there, see
+`release-tool/docs/FTP_PROFILES.md`), and the project's publish INI selects a
+section by name and adds only what is specific to the project:
+
+```ini
+[FTP]
+profile = kobjolke.com - apps
+remote_path = /downloads/myapp/
+```
+
+Keys in the project's `[FTP]` override the profile.
+
+- List the section names of `ftp_profiles.ini` and ask the user which profile
+  this project publishes with. Never print or copy a password into the
+  conversation — read names only.
+- If the file or a fitting profile is missing, ask the user to create it from
+  `release-tool/examples/ftp_profiles.ini`. If the project's publish INI still
+  holds inline `host`/`username`/`password`, offer to move them into a profile
+  with a script that does not echo the values, then remove them from the project
+  INI. Do not leave the same credentials in both places.
+- Write the tracked `publish_settings_example.ini` the same way: `profile` plus
+  the project-specific keys, no `host`/`port`/`username`/`password`.
+- A profile covers `[FTP]` only. `[PreSigning]`, `[OldFileHandling]` and
+  `[ReleaseNotes]` stay in the project INI, which therefore stays gitignored
+  while it holds machine-specific signing paths.
 
 `%~dp0` is the bat's own folder (`…\tools\`): `"%~dp0release_create.ini"` is the
 config from step 3 and `"%~dp0.."` is the project root. `%*` forwards
@@ -204,6 +250,9 @@ Confirm it prints the expected next label, logs writing `previous_version_file`,
 shows both prompts (publish? / commit, tag and push?), and that every configured
 bat path resolves without error. Fix the config if a path is wrong. A dry run
 only previews orchestration; it does not execute the build/publish handoff.
+The launcher preflight applies to dry runs too: with the publish config absent,
+confirm the launcher exits nonzero with the missing-file error before printing
+any label, then have the user create the config before continuing.
 
 For changed wrappers, leave one runnable isolated check using fake build/upload
 commands and temporary artifacts. For Flutter projects with combined Android/AAB

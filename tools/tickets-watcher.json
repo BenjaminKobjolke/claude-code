@@ -4,5 +4,16 @@
   },
   "analysis_commands": [
     "python tools/sync_commands_to_codex.py --self-test"
-  ]
+  ],
+  "command_check_scripts": [
+    "create_symlink_for_claude_code.bat",
+    "sync_commands_to_codex.bat"
+  ],
+  "analysis_commands_seen": {
+    "scripts": [
+      "create_symlink_for_claude_code.bat",
+      "sync_commands_to_codex.bat"
+    ],
+    "tests": true
+  }
 }

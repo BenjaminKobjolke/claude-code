@@ -1,10 +1,10 @@
 ---
-description: Set up the ftp-sync based build + upload tooling (bats + INIs) in this project's tools folder
+description: Set up the build + upload tooling (ftp-sync or release-tool; bats + INIs) in this project's tools folder
 ---
 
 # Build & Upload Setup
 
-Installs a reusable FTP publish system into the current project's `tools/` folder. There are **two
+Installs a reusable FTP publish system into the current project's `tools/` folder. There are **four
 backends — pick by artifact type:**
 
 - **Backend A — ftp-sync (Flutter Android APK).** Syncs APKs in **no-delete** mode with live
@@ -18,6 +18,11 @@ backends — pick by artifact type:**
   to an FTP webroot in **delete** mode (remote files absent locally are removed), with excludes driven
   by a `.deployignore` file instead of a long inline list. This is the rclone-`sync` replacement. See
   "Backend C" below. Use for deploying PHP/web apps where the whole tree ships.
+- **Backend D — release-tool android (APK under a fixed name).** One launcher bat bumps the build
+  number, builds the APK and uploads it under a fixed `remote_filename`, replacing the previous one
+  in place, plus a `<remote_filename>.json` version sidecar. Use when the download URL must stay
+  constant and no release notes are needed. See "Backend D" below. Backend A stays the choice for
+  accumulating versioned APKs.
 
 The reusable template files live next to this command in `setup-files/`, reachable at
 `~/.claude/commands/build-and-upload/setup-files/` (symlink to
@@ -264,6 +269,114 @@ Expect the file count to look sane and **zero** excluded paths printed. Only the
 - Frontend projects: keep the `build_css.bat` / `build_js.bat` calls **before** the ftp-sync step so
   built assets are current.
 - Remind the user `tools\mirror.ini` is gitignored.
+
+---
+
+# Backend D — release-tool android (APK under a fixed name)
+
+Build + upload in one step via `release-tool android`: bump the build number (release builds only),
+build, verify the APK, upload it as `[FTP] remote_filename`, then upload the
+`<remote_filename>.json` version sidecar. No ftp-sync, no release notes, no per-version files on the
+server. Reference: `<release-tool dir>\docs\ANDROID_COMMAND.md`.
+
+## Step 1: Gather inputs
+
+Ask the user (sensible defaults; only ask what you can't infer):
+
+1. **release-tool directory** — default `D:\GIT\BenjaminKobjolke\release-tool`. Verify
+   `<dir>\pyproject.toml` exists; if not, tell the user to check it out and run `uv sync` in it
+   (needs Python 3.11+ and [uv](https://docs.astral.sh/uv/)). The path is machine-specific: it goes
+   into the gitignored `tools/config.bat` (Step 2), never into the launcher.
+2. **FTP profile** — a section name from `<release-tool dir>\ftp_profiles.ini`. The profile supplies
+   host, login, `remote_path` and `public_url_base`; the project never holds credentials. List the
+   section headers of that file (headers only — do not print the passwords) and let the user pick;
+   there is no default. If the wanted server has no profile yet, have the user add a section to
+   `ftp_profiles.ini` (template: `<release-tool dir>\examples\ftp_profiles.ini`, see
+   `docs\FTP_PROFILES.md`) — do **not** fall back to writing host / username / password into the
+   project INI.
+3. **`remote_filename`** — the fixed name the APK gets on the server. Default `<name>.apk`, with
+   `<name>` from `pubspec.yaml`. Bare filename only; the directory belongs in `remote_path`.
+4. **Non-Flutter project?** — then the `[Build]` keys (`command`, `command_debug`, `apk`,
+   `apk_debug`, `version_file`, `version_file_format`). A standard Flutter project needs no `[Build]`
+   section.
+
+## Step 2: Copy the launcher and create `config.bat`
+
+Copy these from `~/.claude/commands/build-and-upload/setup-files/release-tool-android/` into
+`$CLAUDE_PROJECT_DIR/tools/` (create `tools/` if missing). Do not overwrite an existing file without
+confirming with the user first. Note the **subfolder** — `setup-files/build_and_upload_android.bat`
+one level up is Backend A's different file of the same name.
+
+| File | Purpose |
+|---|---|
+| `build_and_upload_android.bat` | Launcher: loads `config.bat`, runs `release-tool android` against `android_release.ini`. Copy verbatim — it holds no project- or machine-specific value. |
+| `config_example.bat` | Tracked template for `config.bat` (`RELEASE_TOOL_DIR`). |
+
+Then create `$CLAUDE_PROJECT_DIR/tools/config.bat` as a copy of `config_example.bat`, with
+`RELEASE_TOOL_DIR` set to the directory from Step 1. Keep CRLF line endings on all three bats.
+
+If the project already has a `tools/config.bat`, add or update only its `RELEASE_TOOL_DIR` line —
+do not overwrite unrelated settings — and mirror the line into its tracked example if one exists.
+
+The launcher exits 2 with a copy hint when `config.bat` is missing, and with an error naming
+`RELEASE_TOOL_DIR` when the path is not a release-tool checkout.
+
+## Step 3: Create the INIs
+
+From `<release-tool dir>\examples\android_release.ini` create two files in
+`$CLAUDE_PROJECT_DIR/tools/`:
+
+- `android_release_example.ini` — tracked template.
+- `android_release.ini` — the real config, gitignored for local overrides.
+
+Both are identical and hold no credentials — drop the example's host / port / username / password /
+`remote_path` / `public_url_base` keys, the profile supplies them:
+
+```ini
+[FTP]
+profile = <profile name>
+remote_filename = <name>.apk
+
+[OldFileHandling]
+policy = delete
+```
+
+Any `[FTP]` key set here overrides the profile's value. Add `[Build]` only for values that differ
+from the defaults.
+
+If an existing `android_release.ini` still carries host / username / password, replace them with
+the `profile` line — after confirming the same login exists as a profile.
+
+**Important:** values are parsed by Python `configparser` — inline `;` / `#` comments are **not**
+stripped, so keep comments on their own lines. `[PreSigning]` is rejected by `android`.
+
+## Step 4: Gitignore the local files
+
+Ensure `$CLAUDE_PROJECT_DIR/.gitignore` ignores the real INI and the machine-specific `config.bat`
+(both examples stay tracked):
+
+```
+tools/android_release.ini
+tools/config.bat
+```
+
+## Step 5: Verify before the first upload
+
+```
+tools\build_and_upload_android.bat --dry-run --verbose
+```
+
+Logs every resolved step (variant, bump, build command, APK path, remote name, public URL) and
+writes nothing, builds nothing, uploads nothing. Exit code 2 = configuration error, 3 = FTP error.
+
+## Step 6: Confirm
+
+- `tools\build_and_upload_android.bat` — bump, build and upload the release APK.
+- `tools\build_and_upload_android.bat debug` — debug build, no bump, uploads as `<name>-debug.apk`.
+- **Every release build bumps the build number** in the version file; a failed build rolls the bump
+  back. The version name is never touched — edit it by hand.
+- Remind the user `tools\android_release.ini` and `tools\config.bat` are gitignored — a fresh clone
+  needs both copied from their examples.
 
 ---
 

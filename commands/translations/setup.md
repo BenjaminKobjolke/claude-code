@@ -34,7 +34,7 @@ Two shapes both work (recursive mode handles both):
 
 ## Prerequisites (one-time, machine-wide)
 
-- Clone **GPT-json-translator** at `D:\GIT\BenjaminKobjolke\GPT-json-translator`, run its
+- Clone **GPT-json-translator** (default `D:\GIT\BenjaminKobjolke\GPT-json-translator`), run its
   `install.bat` to create the `.venv`.
 - Put a valid OpenAI API key + model in that repo's `settings.ini`.
   **Never copy the API key into a project or into these bats** — it stays in `settings.ini`.
@@ -45,7 +45,22 @@ Two shapes both work (recursive mode handles both):
    - `translator_app_texts.bat`
    - `translator_remove_json_attribute_app-texts.bat`
 2. In **each** bat, edit the `REM <<< EDIT` line — set the i18n/locales absolute path for this
-   project. The `GPT-json-translator` repo path is stable; leave it.
+   project. Do not put the translator checkout path in the bats: they read it from
+   `tools\config.bat` (next step).
+2a. Machine path in `tools/config.bat` (gitignored, same convention as
+   `/release:setup-automated-script` and `/build-and-upload:setup`):
+   - Use `D:\GIT\BenjaminKobjolke\GPT-json-translator` if it contains `json_translator.py` and
+     `.venv\Scripts\python.exe`. Otherwise **ask the user** for the path (AskUserQuestion) — do
+     not guess.
+   - Copy `setup-files/config_example.bat` to `tools/config_example.bat` (tracked) and create
+     `tools/config.bat` from it with that path. If either file exists, add or update only the
+     `GPT_JSON_TRANSLATOR_DIR` line — keep other settings (e.g. `RELEASE_TOOL_DIR`).
+   - Ensure `$CLAUDE_PROJECT_DIR/.gitignore` has `tools/config.bat`.
+   - Keep CRLF line endings on the bats.
+   - Migrate existing translator bats that hardcode `d:\GIT\BenjaminKobjolke\GPT-json-translator`
+     to the config load of the templates.
+   - Tell the user `tools\config.bat` is gitignored — a fresh clone must copy it from
+     `config_example.bat`.
 3. In the remover bat, keep `--exclude-source de.json`. Drop `--exclude-source modules.json` unless
    the project actually uses a `modules.json` manifest.
 4. Create `tools\attributes_to_remove.json` with `{}` (the remover reads it as its 2nd arg).
@@ -81,5 +96,7 @@ localization library (JSON, dot-notation nested keys, `:name` placeholders, fall
 
 - After editing this command, run `tools/sync_commands_to_codex.bat` in the claude-code repo to
   propagate it to Codex as `~/.codex/skills/translations-setup/SKILL.md`.
-- The bats end with `pause`/prompts; when running unattended feed stdin from `nul`
-  (`cmd /c '...\translator_app_texts.bat < nul'`).
+- The remover bat ends with `pause` (skipped when `TICKETS_WATCHER_COMMAND_RUN` is set); when
+  running unattended feed stdin from `nul` (`cmd /c '...\translator_app_texts.bat < nul'`).
+- Both bats exit 1 when `tools\config.bat` is missing or `GPT_JSON_TRANSLATOR_DIR` is not a
+  translator checkout.

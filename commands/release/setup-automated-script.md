@@ -99,24 +99,63 @@ publish_platform = Google Play Store
 publish = tools/publish_release.bat
 ```
 
+### 3a. Machine paths in `tools/config.bat`
+
+Checkout paths are machine-specific, so they live in a gitignored
+`tools/config.bat`, never in a tracked bat or in an environment variable nobody
+sets (same convention as `/build-and-upload:setup`). It always holds
+`RELEASE_TOOL_DIR` (read by the step 4 launcher); `GPT_JSON_TRANSLATOR_DIR` only
+when a `translate` bat is configured (drop that line for `english_only`).
+
+- Find the release-tool checkout: use `D:\GIT\BenjaminKobjolke\release-tool` if
+  it contains `pyproject.toml`. Otherwise **ask the user** for the path.
+- Find the GPT-json-translator checkout: use
+  `D:\GIT\BenjaminKobjolke\GPT-json-translator` if it contains `json_translator.py`
+  and `.venv\Scripts\python.exe`. Otherwise **ask the user** for the path
+  (AskUserQuestion) — do not guess.
+- Copy `setup_files/config_example.bat` to `tools/config_example.bat` (tracked)
+  and create `tools/config.bat` from it with both paths set. If either file
+  exists, add or update only the `RELEASE_TOOL_DIR` / `GPT_JSON_TRANSLATOR_DIR`
+  lines — keep other settings.
+- Ensure `$CLAUDE_PROJECT_DIR/.gitignore` has `tools/config.bat`.
+- The translate bat must `call` `config.bat` and validate the path, as
+  `setup_files/translator_app-release-notes.bat` does: exit 1 with a copy hint
+  when `config.bat` is missing, and with an error naming `GPT_JSON_TRANSLATOR_DIR`
+  when the path is not a translator checkout. Migrate an existing translate bat
+  that hardcodes the path or reads an undefined env var.
+- Keep CRLF line endings on the bats.
+- Tell the user `tools\config.bat` is gitignored — a fresh clone must copy it
+  from `config_example.bat`.
+
 ### 4. Write `tools/release_create.bat`
 
-Use this launcher. It cd's into the release-tool repo so `uv run` resolves
+Use this launcher. It loads `RELEASE_TOOL_DIR` from `config.bat` (step 3a), then
+cd's into the release-tool repo so `uv run` resolves
 that tool's venv (it is not on `PATH`), then points `create` back at this project
 and preserves its exit code when restoring the working directory:
 
 ```bat
 @echo off
 setlocal
+REM Machine-specific paths are kept out of git: config.bat is a local copy of config_example.bat.
+if not exist "%~dp0config.bat" (
+  echo ERROR: tools\config.bat not found. Copy tools\config_example.bat to tools\config.bat and adjust it.
+  exit /b 1
+)
+call "%~dp0config.bat"
+if not exist "%RELEASE_TOOL_DIR%\pyproject.toml" (
+  echo ERROR: RELEASE_TOOL_DIR in tools\config.bat is not a release-tool checkout: "%RELEASE_TOOL_DIR%"
+  exit /b 1
+)
 if not exist "%~dp0publish_settings.ini" (
   echo ERROR: "%~dp0publish_settings.ini" is missing. Copy publish_settings_example.ini and configure it.
   exit /b 1
 )
-if not exist "D:\GIT\BenjaminKobjolke\release-tool\ftp_profiles.ini" (
-  echo ERROR: "D:\GIT\BenjaminKobjolke\release-tool\ftp_profiles.ini" is missing. Copy examples\ftp_profiles.ini and add the FTP profile.
+if not exist "%RELEASE_TOOL_DIR%\ftp_profiles.ini" (
+  echo ERROR: "%RELEASE_TOOL_DIR%\ftp_profiles.ini" is missing. Copy examples\ftp_profiles.ini and add the FTP profile.
   exit /b 1
 )
-cd /d D:\GIT\BenjaminKobjolke\release-tool
+cd /d "%RELEASE_TOOL_DIR%"
 call uv run python -m release_tool create "%~dp0release_create.ini" --project-root "%~dp0.." %*
 set "RELEASE_EXIT_CODE=%ERRORLEVEL%"
 cd /d "%~dp0"

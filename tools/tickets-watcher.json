@@ -7,6 +7,7 @@
   ],
   "command_check_scripts": [
     "create_symlink_for_claude_code.bat",
+    "graphify_update.bat",
     "sync_commands_to_codex.bat"
   ],
   "analysis_commands_seen": {
@@ -15,5 +16,10 @@
       "sync_commands_to_codex.bat"
     ],
     "tests": true
+  },
+  "analysis_command_states": {
+    "python tools/sync_commands_to_codex.py --self-test": {
+      "test": "green"
+    }
   }
 }

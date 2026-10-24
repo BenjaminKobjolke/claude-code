@@ -29,3 +29,30 @@ they are intentionally referenced, not imported.
 
 This project's code directory is commands/ (tools/ and validate-code/ are not in the graph).
 
+## Post-Implementation Code Analysis
+
+After **any** of the following events, run the changed-file analyzer and fix every reported issue that applies to your changes before considering the work complete:
+
+- A new feature has been implemented
+- A plan from `claude-plans/` has been finished
+- A bug has been fixed
+
+### How to run
+
+```bash
+powershell -Command "cd 'D:\GIT\BenjaminKobjolke\claude-code'; cmd /c '.\tools\analyze_changed_and_new_files.bat'"
+```
+
+This runs cli-code-analyzer with `--only-changed`, so it reports only files new or modified vs git `HEAD` (including untracked, excluding deletes).
+
+### When to run the full analyzer instead
+
+Run `tools/analyze_code.bat` (whole tree) for an explicit audit request (`/analyze:run-and-fix`), exception maintenance (`/analyze:improve-exceptions`), before a release or merge, after refactors that touch shared code, or when the working tree is clean vs `HEAD`.
+
+### Workflow
+
+1. Run the changed-files batch file above.
+2. Read the per-rule CSV reports under `code_analysis_results/`; a missing CSV means that rule found nothing.
+3. Fix every error and warning that applies to your changes.
+4. Re-run until clean. The analyzer's result cache self-invalidates when source files change.
+

@@ -10,7 +10,12 @@
     "tools/analyze_changed_and_new_files.bat": "code_quality"
   },
   "command_check_scripts": [
+    "analyze_changed_and_new_files.bat",
+    "analyze_code.bat",
+    "analyze_code_config.bat",
+    "analyze_code_config.example.bat",
     "create_symlink_for_claude_code.bat",
+    "fix_ruff_issues.bat",
     "graphify_update.bat",
     "sync_commands_to_codex.bat"
   ],
@@ -24,6 +29,9 @@
   "analysis_command_states": {
     "python tools/sync_commands_to_codex.py --self-test": {
       "test": "green"
+    },
+    "tools/analyze_changed_and_new_files.bat": {
+      "code_quality": "green"
     }
   },
   "analysis_code_quality_answered": true

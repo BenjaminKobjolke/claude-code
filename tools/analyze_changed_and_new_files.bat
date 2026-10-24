@@ -15,7 +15,7 @@ if not defined LANGUAGE (
     exit /b 1
 )
 cd /d "%~dp0.."
-"%CLI_ANALYZER_PATH%\venv\Scripts\python.exe" "%CLI_ANALYZER_PATH%\main.py" --language %LANGUAGE% --path "." --only-changed --verbosity minimal --output "code_analysis_results" --rules "code_analysis_rules.json"
+"%CLI_ANALYZER_PATH%\venv\Scripts\python.exe" "%CLI_ANALYZER_PATH%\main.py" --language %LANGUAGE% --path "." --only-changed --fail-on-warnings --verbosity minimal --output "code_analysis_results" --rules "code_analysis_rules.json"
 set "ANALYZER_EXIT_CODE=%ERRORLEVEL%"
 cd /d "%~dp0"
 exit /b %ANALYZER_EXIT_CODE%

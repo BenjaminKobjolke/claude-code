@@ -21,5 +21,6 @@
     "python tools/sync_commands_to_codex.py --self-test": {
       "test": "green"
     }
-  }
+  },
+  "analysis_code_quality_answered": true
 }

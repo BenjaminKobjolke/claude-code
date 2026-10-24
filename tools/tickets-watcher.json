@@ -3,8 +3,12 @@
     "TICKETS_WATCHER_COMMANDS.md": 2
   },
   "analysis_commands": [
-    "python tools/sync_commands_to_codex.py --self-test"
+    "python tools/sync_commands_to_codex.py --self-test",
+    "tools/analyze_changed_and_new_files.bat"
   ],
+  "analysis_command_kinds": {
+    "tools/analyze_changed_and_new_files.bat": "code_quality"
+  },
   "command_check_scripts": [
     "create_symlink_for_claude_code.bat",
     "graphify_update.bat",

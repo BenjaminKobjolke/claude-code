@@ -4,10 +4,10 @@
   },
   "analysis_commands": [
     "python tools/sync_commands_to_codex.py --self-test",
-    "tools/analyze_changed_and_new_files.bat",
-    "tools\\analyze_code.bat"
+    "tools/analyze_changed_and_new_files.bat"
   ],
   "analysis_command_kinds": {
+    "python tools/sync_commands_to_codex.py --self-test": "test",
     "tools/analyze_changed_and_new_files.bat": "code_quality"
   },
   "command_check_scripts": [

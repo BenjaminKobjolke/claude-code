@@ -4,3 +4,5 @@ REM Checkout of https://github.com/BenjaminKobjolke release-tool (run `uv sync` 
 set "RELEASE_TOOL_DIR=D:\GIT\BenjaminKobjolke\release-tool"
 REM Checkout of GPT-json-translator (with its .venv set up).
 set "GPT_JSON_TRANSLATOR_DIR=D:\GIT\BenjaminKobjolke\GPT-json-translator"
+REM Section of release-tool\signing_profiles.ini used by tools\sign_exe.bat.
+set "SIGNING_PROFILE=xida remote"

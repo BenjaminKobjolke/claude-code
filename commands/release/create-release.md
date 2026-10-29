@@ -18,10 +18,12 @@ sufficient on its own). If the project doc is missing, stop and ask the user to 
 Everything else — release notes, build-number bump, translation, build, commit,
 tag — happens automatically. Do not ask the user to confirm those steps.
 
-**Build-number model - bump first, ship next.** The build counter (e.g.
-`build_version.txt`) holds the **last shipped** build; `0` means nothing shipped
-yet. A release **increments** it and ships that new number. The notes folder must
-match the shipped label.
+**Version model - bump first, ship next.** The default is plain semver labels: the
+version (e.g. `pyproject.toml`) holds the **last shipped** version, and a release
+**bumps its last segment** (`0.1.3` -> `0.1.4`) and ships that. Older projects (and
+Android/Flutter, which need an integer build) instead keep a build counter (e.g.
+`build_version.txt`, `0` = nothing shipped) and ship `<version>_<build + 1>`. The
+project doc says which one applies. The notes folder must match the shipped label.
 
 ## Codex agents: run Windows BAT files outside the sandbox
 
@@ -67,8 +69,9 @@ Only ask the user if an arg was passed but is not `internal`.
 
 ### 1. Compute the next release label
 
-Read the version (per the stack recipe) and the current build number. The release
-ships as `<version>_<currentBuild + 1>`. Call this `<nextLabel>`.
+Read the version (per the stack recipe). With plain semver labels the release ships
+as the version with its last segment + 1 (`0.1.3` -> `0.1.4`); with a build counter
+it ships as `<version>_<currentBuild + 1>`. Call this `<nextLabel>`.
 
 ### 2. Ensure release notes exist for `<nextLabel>`
 
@@ -76,16 +79,18 @@ Only required for an **end-user** release (skip entirely for an internal test bu
 no notes, no en.json). Check for the notes folder + `en.json` at `<nextLabel>` (path per
 the recipe). If missing, **run the release-notes workflow automatically** (follow
 `commands/release/create-release-notes.md`) for `<nextLabel>` — do not ask whether to
-create them. Those notes must be authored for the **next** label (current build + 1) and
+create them. Those notes must be authored for the **next** label (`<nextLabel>`) and
 translated. Do not build an end-user release without notes for the shipping label.
 
 The notes workflow may itself prompt in one edge case (zero meaningful user-facing
 changes); that is the notes skill's concern — do not add a duplicate question here.
 
-### 3. Increment the build number
+### 3. Bump the version
 
-Bump the counter to the next build (e.g. `tools/build_increment.bat`). Now the
-current build equals the about-to-ship build, and matches the notes folder.
+Bump to `<nextLabel>`: the version bat for semver labels (e.g.
+`tools/version_increment.bat`), or the counter for build labels (e.g.
+`tools/build_increment.bat`). Now the current version equals the about-to-ship
+label, and matches the notes folder.
 
 ### 4. Translate
 
@@ -132,7 +137,7 @@ After a successful publish, commit the release and tag it automatically:
 `RELEASE (<scope>): <nextLabel>` for an end-user release,
 `INTERNAL (<scope>): <nextLabel>` for an internal test build. Only a `RELEASE`
 commit advances the anchor `/release:create-release-notes` diffs against —
-`INTERNAL` builds still bump the build counter but are skipped when locating "the
+`INTERNAL` builds still bump the version (or build counter) but are skipped when locating "the
 last release".
 
 After committing and tagging, **push to the remote automatically** —

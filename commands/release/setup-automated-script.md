@@ -29,9 +29,9 @@ the project root). The conventional names / defaults are:
 | Config key | Default | Purpose |
 |---|---|---|
 | `version_get` | `tools/version_get.bat` | prints the version (bare `1.0.0` or full `1.0.0_21`) |
-| `build_get` | `tools/build_get.bat` | prints the current build integer |
-| `build_increment` | `tools/build_increment.bat` | bumps the build counter |
-| `build_decrement` | `tools/build_decrement.bat` | rolls the build counter back (used on build failure) |
+| `build_get` | `tools/build_get.bat` | prints the current build integer (`versioning = build` only) |
+| `build_increment` | `tools/build_increment.bat` | bumps the counter; with `versioning = semver` the version bump bat, e.g. `tools/version_increment.bat` |
+| `build_decrement` | `tools/build_decrement.bat` | rolls back on build failure; with `semver` e.g. `tools/version_decrement.bat` |
 | `translate` | `tools/translator_app-release-notes.bat` | generates non-English locales |
 | `build` | `tools/build_release.bat` | builds + bundles the artifact |
 | `publish` | *(none)* | publishes; **omit to build-and-stop** |
@@ -56,14 +56,24 @@ that contract.
   Use the `[GitHubRelease]` section instead (it runs after the push); pin `repo`
   when the project is a fork, or `gh` may resolve to the upstream parent. The
   pushed tag is the label, so an existing `v<version>` tag convention changes.
+  `[GitHubRelease] assets` is a literal path (no `{label}` placeholder), so it
+  must name a stable file: have the **build** bat write the stable-name copy of
+  the versioned artifact (not only the publish bat — the GitHub gate also runs
+  when publish is declined), and sign it in the build so FTP and GitHub ship the
+  same signed file (`[PreSigning] enabled = false` then).
 - **The `build` bat must work on a dirty tree** — `create` has already bumped the
   counter and authored notes when it calls it. A build command that refuses
   uncommitted changes (fbs `python build.py release` does, and exits 0 while doing
   so) needs a wrapper command without that check.
-- `versioning` — `build` (default: `{version}_{build}` with a `build_get` counter)
-  or `semver` (no counter; each release bumps the last version segment, e.g.
-  `0.1.6` → `0.1.7`, driven by `build_increment`/`build_decrement`). Pick `semver`
-  for projects whose release *is* a patch bump of `version.txt`/`pyproject.toml`.
+- `versioning` — **use `semver` for new setups** (our default): no build counter,
+  the label is the plain version, and each release bumps its last segment
+  (`0.1.6` → `0.1.7`). Map `build_increment`/`build_decrement` to the version
+  bump/rollback bats (`tools/version_increment.bat` / `tools/version_decrement.bat`
+  from `/release:setup`). release-tool's own default is still `build`, so always
+  write `versioning = semver` into the INI. Keep `build` (`{version}_{build}` with a
+  `build_get` counter) only for projects that already ship `_<build>` labels and
+  should not change, or platforms that need an integer build (Android
+  `versionCode`, Flutter `+build`).
 - `build_self_contained` — set `true` when the build bat already owns the
   version bump, translation, and rollback. Then omit `build_increment`,
   `build_decrement`, and `translate`: `create` must not run them again. Otherwise

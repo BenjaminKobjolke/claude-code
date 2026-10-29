@@ -39,10 +39,10 @@ default for next time.
 
 ### 1. Determine the next release label
 
-Read the version + build number and form the folder label (commonly
-`<version>_<build>`) per the project doc / language file. Confirm whether this
-release bumps the build (most stacks) or reuses the current one (first release,
-or an explicit no-bump build).
+Read the version and form the folder label per the project doc / language file:
+by default the plain next version (last segment + 1, e.g. `0.1.4`); projects with a
+build counter use `<version>_<build + 1>`. Confirm whether this release bumps
+(normal) or reuses the current label (first release, or an explicit no-bump build).
 
 ### 2. Find changes since the last release
 

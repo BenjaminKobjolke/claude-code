@@ -123,22 +123,37 @@ If yes:
    chosen `{{OUTFILE}}`. The NSI has no version info on purpose — the versioned
    filename is the version stamp.
 5. **Signing: when the installer is used, BOTH exes get signed** — the
-   project's app exe and the installer exe. Signing uses the existing
-   network-share handshake (drop exe on the signing share, wait for the signed
-   copy, verify signer CN) — no local signtool, no new signing code.
+   project's app exe and the installer exe — through a **release-tool signing
+   profile** (a section of `release-tool\signing_profiles.ini`, e.g.
+   `xida remote` = SafeNet signer, `method = remote`). No local signtool, no new
+   signing code, and never an inline `PreSignConfig(...)` call: release-tool owns
+   the signing method and its config field order.
+   - Copy `python_setup_files/tools/sign_exe.bat` and
+     `python_setup_files/tools/config_example.bat` from the coding-rules plugin.
+     `sign_exe.bat <absolute-exe>` runs
+     `uv run python -m release_tool sign "<exe>" "%SIGNING_PROFILE%"` from
+     `RELEASE_TOOL_DIR`; both values live in the gitignored `tools/config.bat`.
+     List the profile names of `signing_profiles.ini` (names only) and ask the
+     user which one this project uses.
+   - Verify once before wiring it in: sign a temp copy of
+     `release-tool\examples\dummy.exe` with `tools\sign_exe.bat` and check the
+     signer (`Get-AuthenticodeSignature`) — or run release-tool's
+     `tools\test_signing.bat "<profile>"`.
    - **App exe**: must be signed **before** `makensis` runs, otherwise the
-     installer packs an unsigned exe. Add this signing step to the build bat
-     between the app build and the `makensis` call (same handshake the
-     release-tool uses; see `publish_settings.ini` `[PreSigning]` for the share
-     paths and expected signer).
-   - **Installer exe**: signed at publish time by the build-and-upload /
-     release-tool pipeline (`tools/publish_release.bat` + `publish_settings.ini`
-     `[PreSigning]`) — the artifact passed to it must be the **installer exe**.
-     If publishing gets set up later, that is the file to point at the
-     installer.
+     installer packs an unsigned exe. Call `sign_exe.bat` in the build bat
+     between the app build and the `makensis` call.
+   - **Installer exe**: sign it in the **build bat** too, right after
+     `makensis`. Every channel (FTP publish, GitHub Release asset) then ships
+     the same signed file, so set `[PreSigning] enabled = false` in the publish
+     INI. Only when the project publishes to FTP alone may the installer instead
+     be signed at publish time with `[PreSigning] profile = <name>`.
 6. **Publish under a STABLE filename** (constant download URL): the publish bat
-   copies the versioned installer to a stable name (e.g. `<app>.exe`) and hands
-   THAT to release-tool — never upload the `<app>_v<label>.exe` name. release-tool
+   copies the versioned installer to a stable name (e.g. `<app>Setup.exe`) and hands
+   THAT to release-tool — never upload the `<app>_v<label>.exe` name. The stable
+   name must **differ from the app exe** (`{{MAIN_EXE}}`): the installer's
+   `taskkill /F /IM "<app>.exe"` (close running instance before install) also
+   matches an installer called `<app>.exe`, which then kills itself — it reports
+   installing, closes, and writes no files. release-tool
    uploads under the source filename and archives the previous remote file into
    `versions/<--previous-version>/` (`[OldFileHandling]` policy=rename,
    subfolder_naming=version), so server-side versioning lives in backup
@@ -152,16 +167,23 @@ When a project has no release system, set it up with these conventions (proven i
 `pdf-toolkit`). Reusable templates live in
 `coding-rules/python_setup_files/` (Python) — copy them instead of reinventing.
 
-- **Release label** = `<version>_<build>` (e.g. `0.1.0_22`).
-  - `version` = the project's existing semver source of truth (e.g. `pyproject.toml`
-    `[project] version`). Bump by hand.
-  - `build` = a plain integer stored in **`build_version.txt`** at the **project root**.
-    Get/increment/decrement via `tools/build_get.bat`, `tools/build_increment.bat`,
-    `tools/build_decrement.bat`. `tools/version_get.bat` prints the full label.
-- **Release notes folder** = `release_notes/<version>_<build>/`, one JSON file per
-  locale. Schema:
+- **Release label** = the plain version `<major>.<minor>.<patch>` (e.g. `0.1.4`) —
+  **no build number** (`0.1.4`, never `0.1.4_22`).
+  - The version lives in the project's existing semver source of truth (e.g.
+    `pyproject.toml` `[project] version`) and holds the **last shipped** version.
+  - Each release bumps the **last segment** (`0.1.3` -> `0.1.4`) via
+    `tools/version_increment.bat`; `tools/version_decrement.bat` rolls it back on a
+    failed build; `tools/version_get.bat` prints it. Python: copy these plus
+    `tools/release/version_number.py` from `python_setup_files/`.
+  - For a new minor/major line, the user sets e.g. `0.2.0` by hand after a release;
+    the next release ships `0.2.1`.
+  - `/release:setup-automated-script` wires this as `versioning = semver`.
+  - Exception: platforms that need an integer build (Android `versionCode`, Flutter
+    `+build`) keep their build counter.
+- **Release notes folder** = `release_notes/<version>/`, one JSON file per locale.
+  Schema:
   ```json
-  {"version": "0.1.0", "build": 22, "date": "YYYY-MM-DD", "title": "Headline",
+  {"version": "0.1.4", "date": "YYYY-MM-DD", "title": "Headline",
    "notes": ["bullet one", "bullet two"]}
   ```
   The actual release text is the **`notes`** array. Author **only `en.json`**.
@@ -170,7 +192,8 @@ When a project has no release system, set it up with these conventions (proven i
   the English source. See [Translation system](#translation-system) for the tool,
   the recursive command, and the example wrapper bat to copy.
 - **Bundle `release_notes/` into the build** (don't just copy it beside the exe), so
-  the in-app view ships with the binary. For PyInstaller add it (and `build_version.txt`)
-  to the spec `datas`, plus `copy_metadata(<pkg>)` so the version is readable when frozen.
-- **In-app view** loads all releases, sorts **newest first**, shows the latest first
+  the in-app view ships with the binary. For PyInstaller add it to the spec `datas`,
+  plus `copy_metadata(<pkg>)` if the app shows its own version when frozen.
+- **In-app view** loads all releases, sorts **newest first** by the numeric version
+  segments (`0.1.10` after `0.1.9`, never a string sort), shows the latest first
   with Older/Newer navigation, and falls back to `en.json` when a locale is missing.

@@ -9,9 +9,9 @@ allowed-tools: Bash(agent-browser:*)
 ## Setup
 
 1. **Install**: `npm install -g agent-browser` then `agent-browser install`
-2. **Windows patch**: Run `D:\GIT\BenjaminKobjolke\claude-code\tools\agent-browser-fix\patch.bat` (this claude-code repo — NOT the project repo you are working in) to fix daemon auto-start on Windows. Re-run after each `npm update -g agent-browser`.
+2. **Windows patch**: Run `D:\GIT\BenjaminKobjolke\claude-code\tools\agent-browser-fix\patch.bat` (this claude-code repo — NOT the project repo you are working in) to patch the Node wrapper and the PowerShell/cmd launchers so they all start the daemon on Windows. Re-run after every `npm install -g agent-browser` or `npm update -g agent-browser`; npm's postinstall rewrites the PowerShell and cmd launchers to call the native executable directly.
    - Required until upstream PR #362 is merged.
-   - Symptom when unpatched: every command fails with `Daemon failed to start (socket: ...\.agent-browser\default.sock)`.
+   - If commands fail with `Daemon failed to start` from PowerShell or cmd but work from bash, an update reset the launchers; re-run the patch.
    - Fallback without the patch (PowerShell): start the daemon manually, then commands work:
      `$root = npm root -g; Start-Process node -ArgumentList "`"$root\agent-browser\dist\daemon.js`"" -WindowStyle Hidden`
 3. **Windows eval quoting**: double quotes inside `eval '...'` can get mangled even from a PowerShell single-quoted string (symptom: `document.getElementById("x")` is null / `SyntaxError: Unexpected token` while the page is clearly loaded). Use `eval -b <base64>` for anything containing quotes; for elements with an `id`, the implicit global (`window.f` for `id="f"`) avoids quoting entirely.

@@ -34,6 +34,9 @@
     "tests": true
   },
   "analysis_command_states": {
+    "tools/fix_ruff_issues.bat": {
+      "code_quality": "green"
+    },
     "python tools/sync_commands_to_codex.py --self-test": {
       "test": "green"
     },

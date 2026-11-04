@@ -57,4 +57,4 @@ tools\create_symlink_for_claude_code.bat
 
 ## agent-browser-fix
 
-Patch for the `agent-browser` CLI. See `agent-browser-fix/patch.bat`.
+Patch for the `agent-browser` CLI; it covers the Node wrapper and the `.cmd`/`.ps1` launchers. See `agent-browser-fix/patch.bat`.

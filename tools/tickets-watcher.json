@@ -4,10 +4,12 @@
   },
   "analysis_commands": [
     "python tools/sync_commands_to_codex.py --self-test",
+    "python tools/install_commands.py --self-test",
     "tools/analyze_changed_and_new_files.bat"
   ],
   "analysis_command_kinds": {
     "python tools/sync_commands_to_codex.py --self-test": "test",
+    "python tools/install_commands.py --self-test": "test",
     "tools/analyze_changed_and_new_files.bat": "code_quality"
   },
   "command_check_scripts": [
@@ -15,9 +17,9 @@
     "analyze_code.bat",
     "analyze_code_config.bat",
     "analyze_code_config.example.bat",
-    "create_symlink_for_claude_code.bat",
     "fix_ruff_issues.bat",
     "graphify_update.bat",
+    "install_commands.bat",
     "sync_commands_to_codex.bat"
   ],
   "analysis_commands_seen": {
@@ -38,6 +40,9 @@
       "code_quality": "green"
     },
     "python tools/sync_commands_to_codex.py --self-test": {
+      "test": "green"
+    },
+    "python tools/install_commands.py --self-test": {
       "test": "green"
     },
     "tools/analyze_changed_and_new_files.bat": {

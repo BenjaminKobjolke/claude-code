@@ -11,9 +11,20 @@ Test: python sync_commands_to_codex.py --self-test
 
 import shutil
 import sys
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
-COMMANDS_DIR = Path(__file__).resolve().parent.parent / "commands"
+from command_categories import (
+    CATEGORIES_FILE,
+    COMMANDS_DIR,
+    SELECTION_FILE,
+    list_categories,
+    load_descriptions,
+    load_selection,
+    selected_categories,
+)
+
 SKILLS_DIR = Path.home() / ".codex" / "skills"
 MARKER = ".synced-from-claude"
 
@@ -84,6 +95,17 @@ def remove_stale(skills_dir):
 def sync():
     if not COMMANDS_DIR.is_dir():
         sys.exit(f"commands dir not found: {COMMANDS_DIR}")
+
+    available_categories = list_categories(COMMANDS_DIR)
+    load_descriptions(available_categories, CATEGORIES_FILE)
+    saved_selection = load_selection(SELECTION_FILE)
+    categories = selected_categories(available_categories, SELECTION_FILE)
+    if saved_selection is None:
+        print("Syncing all command categories (no selection saved).")
+    else:
+        selected = ", ".join(categories) if categories else "none"
+        print(f"Syncing selected command categories: {selected}")
+
     SKILLS_DIR.mkdir(parents=True, exist_ok=True)
 
     removed = remove_stale(SKILLS_DIR)
@@ -92,8 +114,8 @@ def sync():
     written = 0
     resource_copies = 0
     warnings = 0
-    for cat_dir in sorted(p for p in COMMANDS_DIR.iterdir() if p.is_dir()):
-        cat = cat_dir.name
+    for cat in categories:
+        cat_dir = COMMANDS_DIR / cat
         md_files = [f for f in sorted(cat_dir.glob("*.md")) if f.name != "CLAUDE.md"]
         resources = [r for r in sorted(cat_dir.iterdir()) if r.suffix != ".md"]
         for md in md_files:
@@ -157,6 +179,46 @@ def self_test():
     assert claude_only_warnings(
         "If the host has subagents, spawn one (subagent_type: general-purpose); "
         "otherwise run inline. Claude: Grep; shell-only hosts: rg.") == []
+
+    from command_categories import load_selection, save_selection, selected_categories
+
+    with tempfile.TemporaryDirectory() as tmp:
+        selection_file = Path(tmp) / "installed_categories.json"
+        available = ["analyze", "git"]
+        assert selected_categories(available, selection_file) == available
+        save_selection(["retired", "git"], selection_file)
+        assert load_selection(selection_file) == ["git", "retired"]
+        assert selected_categories(available, selection_file) == ["git"]
+
+        commands_dir = Path(tmp) / "commands"
+        skills_dir = Path(tmp) / "skills"
+        for category in available:
+            category_dir = commands_dir / category
+            category_dir.mkdir(parents=True)
+            (category_dir / "one.md").write_text(
+                f"---\ndescription: {category} command\n---\n\nBody.\n",
+                encoding="utf-8",
+            )
+        descriptions_file = commands_dir / "categories.json"
+        descriptions_file.write_text(
+            '{"analyze": "Analyze code.", "git": "Manage Git."}\n',
+            encoding="utf-8",
+        )
+        save_selection(["git"], selection_file)
+        stale_skill = skills_dir / "old-command"
+        stale_skill.mkdir(parents=True)
+        (stale_skill / MARKER).write_text("generated\n", encoding="utf-8")
+        with patch.multiple(
+            __name__,
+            COMMANDS_DIR=commands_dir,
+            CATEGORIES_FILE=descriptions_file,
+            SELECTION_FILE=selection_file,
+            SKILLS_DIR=skills_dir,
+        ):
+            sync()
+        assert (skills_dir / "git-one" / "SKILL.md").is_file()
+        assert not (skills_dir / "analyze-one").exists()
+        assert not stale_skill.exists()
 
     print("self-test OK")
 

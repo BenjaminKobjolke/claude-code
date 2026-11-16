@@ -4,9 +4,11 @@ Helper scripts for maintaining this repo.
 
 ## sync_commands_to_codex
 
-Syncs `commands/` into Codex skills. Claude reads `commands/` directly (symlinked
-into `~/.claude/commands`), but Codex loads **skills** from `~/.codex/skills/<name>/SKILL.md`.
-This generator makes the Codex copies.
+Syncs the installed command categories into Codex skills. Claude reads each selected
+category through a link in `~/.claude/commands`; Codex loads **skills** from
+`~/.codex/skills/<name>/SKILL.md`. Both use the saved selection from
+`tools/installed_categories.json` when it exists. Without a selection file, all categories
+are synced, preserving the previous behavior.
 
 Run after adding, editing, or removing any command:
 
@@ -32,6 +34,8 @@ What it does:
 - Auto-removes stale skills: every generated folder carries a `.synced-from-claude`
   marker; each run deletes all marked folders first, then regenerates. Codex's own
   `.system/` skills and symlinked skills (no marker) are never touched.
+- Categories that were deselected are removed from Codex during this cleanup. Run the
+  installer below to change the saved category selection.
 
 Self-test:
 
@@ -39,21 +43,26 @@ Self-test:
 python tools/sync_commands_to_codex.py --self-test
 ```
 
-## create_symlink_for_claude_code
+## install_commands
 
-Links `commands/` into `~/.claude/commands` so every command in this repo shows
-up in Claude Code as `/<category>:<name>`. Run once per machine:
+Choose which command categories to install into Claude Code. The installer shows each
+category's description from `commands/categories.json`, remembers your choices in the
+per-machine `tools/installed_categories.json`, and links selected categories into
+`~/.claude/commands`. Run it once per machine, then again whenever you want to change
+the selection or install a newly added category:
 
 ```
-tools\create_symlink_for_claude_code.bat
+tools\install_commands.bat
 ```
 
-- Tries `mklink /D` (symlink) first, falls back to `mklink /J` (junction) when
-  there are no admin rights and Developer Mode is off. Both work the same here.
-- Re-running replaces an existing link, so it is safe after moving the repo.
-- Refuses to touch `~/.claude/commands` if it is a real folder rather than a
-  link - move it aside yourself first.
+- On the first run, every category defaults to yes. Later runs use the saved choice as
+  each prompt's default; press Enter to keep it.
+- Re-running updates category links and removes deselected category links. It does not
+  remove real folders or files you added under `~/.claude/commands`.
+- The installer can start the Codex sync after saving your choices. You can also run the
+  sync separately with `tools\sync_commands_to_codex.bat`.
 - Restart Claude Code afterwards to pick up the commands.
+- Check the installer with `python tools/install_commands.py --self-test`.
 
 ## agent-browser-fix
 

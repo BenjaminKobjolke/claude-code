@@ -39,9 +39,16 @@ a rules folder path in CLAUDE.md.
 
 ## Codex sync
 
-These commands are used by Codex too, not just Claude. Claude reads `commands/`
-directly (symlinked into `~/.claude/commands`), but Codex loads **skills** from
-`~/.codex/skills/<name>/SKILL.md`.
+These commands are used by Codex too, not just Claude. The installer links each selected
+category from `commands/` into `~/.claude/commands`; Codex loads **skills** from
+`~/.codex/skills/<name>/SKILL.md`. Both use the per-machine selection saved in
+`tools/installed_categories.json` when it exists. With no saved selection, the Codex sync
+continues to include every category.
+
+Run `tools/install_commands.bat` to choose categories. It shows the one-line descriptions
+in `commands/categories.json`, saves the selection, and can sync those categories to Codex.
+New command categories need a description in that file; rerun the installer to add the new
+category to the saved selection.
 
 After adding, editing, or removing any command, run:
 
@@ -52,8 +59,8 @@ tools/sync_commands_to_codex.bat
 This regenerates the Codex copies: each `commands/<cat>/<name>.md` becomes a skill
 `~/.codex/skills/<cat>-<name>/SKILL.md` (e.g. `git/commit.md` -> `git-commit`).
 The sync is one-way (`commands/` is the source of truth) and auto-removes stale
-skills whose source command was renamed or deleted. Codex's own `.system/` skills
-and symlinked skills are left untouched.
+skills whose source command was renamed, deleted, or deselected. Codex's own `.system/`
+skills and symlinked skills are left untouched.
 
 ### Write command bodies host-neutral
 

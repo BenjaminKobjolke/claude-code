@@ -15,6 +15,7 @@
   "ftp": "Set up FTP backups with mirrored downloads and zip revisions.",
   "git": "Commit changes, configure Git, and handle repository maintenance.",
   "github": "Set up GitHub repositories, releases, and release workflows.",
+  "google-play": "Check Google Play Data safety answers and sync the app's privacy policy page.",
   "handoff": "Create or continue a handoff for work that spans sessions.",
   "insights": "Analyze usage reports and plan command improvements.",
   "issue": "Turn an issue list entry into a planned implementation todo.",
